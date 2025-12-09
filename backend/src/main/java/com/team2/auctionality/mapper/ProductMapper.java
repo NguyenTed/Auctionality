@@ -18,16 +18,18 @@ public class ProductMapper {
 
         return ProductDto.builder()
                 .id(product.getId())
-                .name(product.getName())
-                .description(product.getDescription())
+                .title(product.getTitle())
+                .status(product.getStatus())
                 .startPrice(product.getStartPrice())
                 .currentPrice(product.getCurrentPrice())
-                .createdAt(product.getCreatedAt())
+                .buyNowPrice(product.getBuyNowPrice())
+                .bidIncrement(product.getBidIncrement())
+                .startTime(product.getStartTime())
                 .endTime(product.getEndTime())
+                .autoExtensionEnabled(product.getAutoExtensionEnabled())
 
                 .sellerId(product.getSeller() != null ? product.getSeller().getId() : null)
                 .category(product.getCategory() != null ? categoryMapper.toDto(product.getCategory()) : null)
-                .subcategory(product.getSubcategory() != null ? categoryMapper.toDto(product.getSubcategory()) : null)
                 .build();
     }
 }

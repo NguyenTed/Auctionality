@@ -12,42 +12,44 @@ import java.util.Date;
 @Builder
 public class ProductTopMostBidDto {
     private Integer id;
-    private String name;
-    private String description;
-    private Double startPrice;
-    private Double currentPrice;
-    private LocalDateTime createdAt;
+    private String title;
+    private String status;
+    private Float startPrice;
+    private Float currentPrice;
+    private Float buyNowPrice;
+    private Float bidIncrement;
+    private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private Boolean autoExtensionEnabled;
 
     private Integer sellerId;
 
     private CategoryDto category;
 
-    private CategoryDto subcategory;
-
     private Integer bidCount;
 
     public ProductTopMostBidDto(
-            Integer id, String name, String description,
-            Double startPrice, Double currentPrice,
-            LocalDateTime createdAt, LocalDateTime endTime,
-            Integer sellerId,
+            Integer id, String title, String status,
+            Float startPrice, Float currentPrice, Float buyNowPrice, Float bidIncrement,
+            LocalDateTime startTime, LocalDateTime endTime,
+            Boolean autoExtensionEnabled, Integer sellerId,
             Integer categoryId, String categoryName, String categorySlug,
-            Integer subcategoryId, String subcategoryName, String subcategorySlug,
             Long bidCount
     ){
         this.id = id;
-        this.name = name;
-        this.description = description;
+        this.title = title;
+        this.status = status;
         this.startPrice = startPrice;
         this.currentPrice = currentPrice;
-        this.createdAt = createdAt;
+        this.buyNowPrice = buyNowPrice;
+        this.bidIncrement = bidIncrement;
+        this.startTime = startTime;
         this.endTime = endTime;
+        this.autoExtensionEnabled = autoExtensionEnabled;
 
         this.sellerId = sellerId;
 
         this.category = new CategoryDto(categoryId, categoryName, categorySlug, null);
-        this.subcategory = new CategoryDto(subcategoryId, subcategoryName, subcategorySlug, null);
 
         this.bidCount = bidCount.intValue();
     }

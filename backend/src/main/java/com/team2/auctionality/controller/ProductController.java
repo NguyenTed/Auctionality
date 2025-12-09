@@ -43,4 +43,15 @@ public class ProductController {
         return productService.getTop5HighestPrice();
     }
 
+    @GetMapping("/search")
+    public Page<ProductDto> searchProducts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "endTimeDesc") String sort // endTimeDesc | priceAsc
+    ) {
+        return productService.searchProducts(keyword, categoryId, page - 1, size, sort);
+    }
+
 }

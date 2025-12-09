@@ -3,10 +3,13 @@ package com.team2.auctionality.service;
 import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
 import com.team2.auctionality.mapper.ProductMapper;
+import com.team2.auctionality.model.Product;
 import com.team2.auctionality.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -40,5 +43,29 @@ public class ProductService {
     public Page<ProductDto> getProductsByCategory(Integer categoryId, int page, int size) {
         return productRepository.findByCategory(categoryId, PageRequest.of(page, size))
                 .map(productMapper::toDto);
+    }
+
+    public Page<ProductDto> searchProducts(
+            String keyword,
+            Integer categoryId,
+            int page,
+            int size,
+            String sort
+    ) {
+        Pageable pageable = PageRequest.of(page, size, getSort(sort));
+
+        Page<Product> products = productRepository.searchProducts(keyword, categoryId, pageable);
+
+        return products.map(productMapper::toDto);
+    }
+
+    private Sort getSort(String sortKey) {
+        return switch (sortKey) {
+            case "priceAsc" -> Sort.by("currentPrice").ascending();
+            case "priceDesc" -> Sort.by("currentPrice").descending();
+            case "endTimeAsc" -> Sort.by("endTime").ascending();
+            case "endTimeDesc" -> Sort.by("endTime").descending();
+            default -> Sort.by("endTime").descending();
+        };
     }
 }

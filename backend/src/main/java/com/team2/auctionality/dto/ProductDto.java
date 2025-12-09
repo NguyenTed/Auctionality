@@ -12,18 +12,19 @@ import java.time.LocalDateTime;
 public class ProductDto {
 
     private Integer id;
-    private String name;
-    private String description;
-    private Double startPrice;
-    private Double currentPrice;
-    private LocalDateTime createdAt;
+    private String title;
+    private String status;
+    private Float startPrice;
+    private Float currentPrice;
+    private Float buyNowPrice;
+    private Float bidIncrement;
+    private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private Boolean autoExtensionEnabled;
 
     private Integer sellerId;
 
     private CategoryDto category;
-
-    private CategoryDto subcategory;
 
 }
 

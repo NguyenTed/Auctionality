@@ -18,23 +18,32 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "title")
+    private String title;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "status")
+    private String status;
 
     @Column(name = "start_price")
-    private Double startPrice;
+    private Float startPrice;
 
     @Column(name = "current_price")
-    private Double currentPrice;
+    private Float currentPrice;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "buy_now_price")
+    private Float buyNowPrice;
+
+    @Column(name = "bid_increment")
+    private Float bidIncrement;
+
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
 
     @Column(name = "end_time")
     private LocalDateTime endTime;
+
+    @Column(name = "auto_extension_enabled")
+    private Boolean autoExtensionEnabled;
 
     // ==== RELATIONS ====
 

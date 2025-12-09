@@ -10,12 +10,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Map;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
 
-    // Top 5 gần kết thúc (chưa kết thúc)
     @Query(
             value = """
             SELECT * 
@@ -30,38 +28,34 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Query("""
     SELECT new com.team2.auctionality.dto.ProductTopMostBidDto(
         p.id,
-        p.name,
-        p.description,
+        p.title,
+        p.status,
         p.startPrice,
         p.currentPrice,
-        p.createdAt,
+        p.buyNowPrice,
+        p.bidIncrement,
+        p.startTime,
         p.endTime,
+        p.autoExtensionEnabled,
         p.seller.id,
         c.id,
         c.name,
         c.slug,
-        sc.id,
-        sc.name,
-        sc.slug,
         COUNT(b)
     )
     FROM Product p
     LEFT JOIN p.bids b
     LEFT JOIN p.category c
-    LEFT JOIN p.subcategory sc
     GROUP BY 
-        p.id, p.name, p.description,
-        p.startPrice, p.currentPrice,
-        p.createdAt, p.endTime,
+        p.id, p.title, p.status,
+        p.startPrice, p.currentPrice, p.buyNowPrice,
+        p.bidIncrement, p.startTime, p.endTime, p.autoExtensionEnabled,
         p.seller.id,
-        c.id, c.name, c.slug,
-        sc.id, sc.name, sc.slug
+        c.id, c.name, c.slug
     ORDER BY COUNT(b) DESC
     """)
     List<ProductTopMostBidDto> findTop5MostBid(Pageable pageable);
 
-
-    // Top 5 có giá hiện tại cao nhất
     @Query(
             value = """
             SELECT * 
@@ -73,7 +67,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     List<Product> findTop5HighestPrice(Pageable pageable);
 
 
-    // Product theo category + phân trang
     @Query(
             value = """
             SELECT * 
@@ -89,5 +82,22 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     )
 
     Page<Product> findByCategory(@Param("categoryId") Integer categoryId, Pageable pageable);
+
+    @Query(
+        """
+        SELECT p FROM Product p
+        WHERE 
+            (:categoryId IS NULL OR p.category.id = :categoryId)
+            AND (
+                :keyword IS NULL 
+                OR LOWER(FUNCTION('unaccent', p.title)) LIKE LOWER(CONCAT('%', FUNCTION('unaccent', CAST(:keyword AS string)), '%'))
+            )
+        """
+    )
+    Page<Product> searchProducts(
+            @Param("keyword") String keyword,
+            @Param("categoryId") Integer categoryId,
+            Pageable pageable
+    );
 }
 
