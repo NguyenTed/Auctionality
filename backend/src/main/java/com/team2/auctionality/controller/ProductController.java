@@ -1,12 +1,12 @@
 package com.team2.auctionality.controller;
 
+import com.team2.auctionality.dto.PagedResponse;
 import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
-import com.team2.auctionality.model.Product;
+import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.service.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,15 +17,24 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductController {
 
+    private static final int PAGE_DEFAULT_VALUE = 1;
+    private static final int PAGE_SIZE_DEFAULT_VALUE = 10;
+
     private final ProductService productService;
 
     @GetMapping("/category/{categoryId}")
-    public Page<ProductDto> getProductsByCategory(
+    public PagedResponse<ProductDto> getProductsByCategory(
             @PathVariable Integer categoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return productService.getProductsByCategory(categoryId, page - 1, size);
+        if (page < 1) {
+            page = PAGE_DEFAULT_VALUE;
+        }
+        if (size < 1) {
+            size = PAGE_SIZE_DEFAULT_VALUE;
+        }
+        return PaginationMapper.from(productService.getProductsByCategory(categoryId, page - 1, size));
     }
 
     @GetMapping("/top-ending-soon")
@@ -44,14 +53,20 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    public Page<ProductDto> searchProducts(
+    public PagedResponse<ProductDto> searchProducts(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "endTimeDesc") String sort // endTimeDesc | priceAsc
     ) {
-        return productService.searchProducts(keyword, categoryId, page - 1, size, sort);
+        if (page < 1) {
+            page = PAGE_DEFAULT_VALUE;
+        }
+        if (size < 1) {
+            size = PAGE_SIZE_DEFAULT_VALUE;
+        }
+        return PaginationMapper.from(productService.searchProducts(keyword, categoryId, page - 1, size, sort));
     }
 
 }
