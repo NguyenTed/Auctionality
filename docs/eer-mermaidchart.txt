@@ -1,0 +1,325 @@
+---
+config:
+  layout: elk
+---
+erDiagram
+  USER {
+    int id PK
+    string email
+    string password_hash
+    boolean is_email_verified
+    string status
+    datetime created_at
+  }
+
+  USER_PROFILE {
+    int user_id PK,FK
+    string full_name
+    string phone_number
+    string avatar_url
+    int rating_positive_count
+    int rating_negative_count
+    float rating_percent
+  }
+
+  ROLE {
+    int id PK
+    string name
+    string description
+  }
+
+  PERMISSION {
+    int id PK
+    string name
+    string description
+  }
+
+  EMAIL_VERIFICATION_TOKEN {
+    int id PK
+    int user_id FK
+    string token
+    datetime expires_at
+    datetime used_at
+  }
+
+  PASSWORD_RESET_TOKEN {
+    int id PK
+    int user_id FK
+    string token
+    datetime expires_at
+    datetime used_at
+  }
+
+  REFRESH_TOKEN {
+    int id PK
+    int user_id FK
+    string token
+    datetime expires_at
+    datetime revoked_at
+  }
+
+  SOCIAL_LOGIN_ACCOUNT {
+    int id PK
+    int user_id FK
+    string provider
+    string provider_user_id
+  }
+
+  SELLER_UPGRADE_REQUEST {
+    int id PK
+    int user_id FK
+    int processed_by_admin_id FK
+    string status
+    datetime requested_at
+    datetime processed_at
+  }
+  ORDER_RATING {
+    int id PK
+    int order_id FK
+    int from_user_id FK
+    int to_user_id FK
+    int value
+    string comment
+    datetime created_at
+  }
+  CATEGORY {
+    int id PK
+    string name
+    string slug
+    int parent_id FK
+  }
+
+  PRODUCT {
+    int id PK
+    int seller_id FK
+    int category_id FK
+    string title
+    string status
+    float start_price
+    float current_price
+    float buy_now_price
+    float bid_increment
+    datetime start_time
+    datetime end_time
+    boolean auto_extension_enabled
+  }
+
+  PRODUCT_IMAGE {
+    int id PK
+    int product_id FK
+    string url
+    int position
+    boolean is_thumbnail
+  }
+
+  PRODUCT_EXTRA_DESCRIPTION {
+    int id PK
+    int product_id FK
+    string content
+    datetime created_at
+  }
+
+  WATCHLIST_ITEM {
+    int id PK
+    int user_id FK
+    int product_id FK
+    datetime created_at
+  }
+
+  PRODUCT_QUESTION {
+    int id PK
+    int product_id FK
+    int asker_id FK
+    string content
+    datetime created_at
+  }
+
+  PRODUCT_ANSWER {
+    int id PK
+    int question_id FK
+    int responder_id FK
+    string content
+    datetime created_at
+  }
+  BID {
+    int id PK
+    int product_id FK
+    int bidder_id FK
+    float amount
+    boolean is_auto_bid
+    datetime created_at
+  }
+
+  AUTO_BID_CONFIG {
+    int id PK
+    int product_id FK
+    int bidder_id FK
+    float max_price
+    datetime created_at
+  }
+
+  REJECTED_BIDDER {
+    int id PK
+    int product_id FK
+    int bidder_id FK
+    string reason
+    datetime created_at
+  }
+
+  BIDDER_APPROVAL {
+    int id PK
+    int product_id FK
+    int bidder_id FK
+    string status
+    datetime created_at
+  }
+
+  SYSTEM_AUCTION_RULE {
+    int id PK
+    int time_threshold_minutes
+    int extension_minutes
+    boolean is_active
+  }
+  "ORDER" {
+    int id PK
+    int product_id FK
+    int buyer_id FK
+    int seller_id FK
+    float final_price
+    string status
+    datetime created_at
+  }
+
+  PAYMENT {
+    int id PK
+    int order_id FK
+    string gateway
+    float amount
+    string currency
+    string status
+    string transaction_code
+    datetime paid_at
+  }
+
+  SHIPPING_ADDRESS {
+    int id PK
+    int order_id FK
+    string receiver_name
+    string phone
+    string address_line1
+    string address_line2
+    string city
+    string country
+    string postal_code
+  }
+
+  SHIPMENT {
+    int id PK
+    int order_id FK
+    string carrier
+    string tracking_number
+    datetime shipped_at
+    datetime delivered_at
+  }
+
+  TRANSACTION_CANCELLATION {
+    int id PK
+    int order_id FK
+    int cancelled_by_user_id FK
+    string reason
+    datetime created_at
+  }
+  CHAT_THREAD {
+    int id PK
+    int order_id FK
+    int buyer_id FK
+    int seller_id FK
+    datetime created_at
+  }
+
+  CHAT_MESSAGE {
+    int id PK
+    int thread_id FK
+    int sender_id FK
+    string content
+    string message_type
+    boolean is_read
+    datetime created_at
+  }
+  NOTIFICATION {
+    int id PK
+    int user_id FK
+    string type
+    string title
+    string message
+    string reference_type
+    int reference_id
+    boolean is_read
+    datetime created_at
+  }
+
+  PRODUCT_MODERATION {
+    int id PK
+    int product_id FK
+    int admin_id FK
+    string action
+    string reason
+    datetime created_at
+  }
+
+  USER_AUDIT_LOG {
+    int id PK
+    int user_id FK
+    string action
+    string ip_address
+    string user_agent
+    datetime created_at
+  }
+
+  SYSTEM_SETTING {
+    string key PK
+    string value
+    datetime updated_at
+    int updated_by_admin_id FK
+  }
+  USER ||--|| USER_PROFILE : has
+  USER ||--o{ REFRESH_TOKEN : "owns"
+  USER ||--o{ EMAIL_VERIFICATION_TOKEN : "verifies"
+  USER ||--o{ PASSWORD_RESET_TOKEN : "resets"
+  USER ||--o{ SOCIAL_LOGIN_ACCOUNT : "links"
+  USER ||--o{ SELLER_UPGRADE_REQUEST : "requests"
+  USER ||--o{ ORDER_RATING : "rates"
+  USER ||--o{ PRODUCT : "sells"
+  USER ||--o{ BID : "places"
+  USER ||--o{ WATCHLIST_ITEM : "watches"
+  USER ||--o{ PRODUCT_QUESTION : "asks"
+  USER ||--o{ PRODUCT_ANSWER : "answers"
+  USER ||--o{ CHAT_MESSAGE : "sends"
+  USER ||--o{ NOTIFICATION : "receives"
+  USER ||--o{ PRODUCT_MODERATION : "moderates"
+  USER ||--o{ USER_AUDIT_LOG : "actions"
+  USER }o--o{ ROLE : "assigned"
+  ROLE }o--o{ PERMISSION : "grants"
+  CATEGORY ||--o{ CATEGORY : "child_of"
+  CATEGORY ||--o{ PRODUCT : "categorizes"
+
+  PRODUCT ||--o{ PRODUCT_IMAGE : "has"
+  PRODUCT ||--o{ PRODUCT_EXTRA_DESCRIPTION : "adds"
+  PRODUCT ||--o{ WATCHLIST_ITEM : "is_watched"
+  PRODUCT ||--o{ PRODUCT_QUESTION : "has"
+  PRODUCT ||--o{ BID : "receives"
+  PRODUCT ||--o{ AUTO_BID_CONFIG : "auto_bid_for"
+  PRODUCT ||--o{ REJECTED_BIDDER : "rejects"
+  PRODUCT ||--o{ BIDDER_APPROVAL : "approves"
+  PRODUCT ||--|| "ORDER" : "results_in"
+
+  PRODUCT_QUESTION ||--o{ PRODUCT_ANSWER : "has"
+  "ORDER" ||--o{ PAYMENT : "has"
+  "ORDER" ||--|| SHIPPING_ADDRESS : "ships_to"
+  "ORDER" ||--|| SHIPMENT : "has"
+  "ORDER" ||--o{ ORDER_RATING : "rated"
+  "ORDER" ||--o{ TRANSACTION_CANCELLATION : "may_have"
+  "ORDER" ||--|| CHAT_THREAD : "has"
+
+  CHAT_THREAD ||--o{ CHAT_MESSAGE : "contains"
+  SYSTEM_SETTING ||--o{ SYSTEM_AUCTION_RULE : "configures"
