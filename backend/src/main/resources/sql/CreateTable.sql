@@ -115,7 +115,6 @@ CREATE TABLE product_image (
                                id SERIAL PRIMARY KEY,
                                product_id INT REFERENCES product(id) ON DELETE CASCADE,
                                url TEXT,
-                               position INT,
                                is_thumbnail BOOLEAN DEFAULT FALSE
 );
 
