@@ -272,3 +272,5 @@ Cargo.lock
 # pnpm-lock.yaml
 # Pipfile.lock
 # poetry.lock
+
+Proposal.md
