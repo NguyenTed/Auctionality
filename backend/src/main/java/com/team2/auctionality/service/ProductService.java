@@ -1,5 +1,6 @@
 package com.team2.auctionality.service;
 
+import com.team2.auctionality.dto.CreateProductDto;
 import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
 import com.team2.auctionality.mapper.ProductMapper;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -67,5 +69,65 @@ public class ProductService {
             case "endTimeDesc" -> Sort.by("endTime").descending();
             default -> Sort.by("endTime").descending();
         };
+    }
+
+    public Page<ProductDto> getAllProducts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return productRepository
+                .findAll(pageable)
+                .map(productMapper::toDto);
+    }
+
+    public ProductDto createProduct(CreateProductDto productDto) {
+        Product product = Product.builder()
+                .title(productDto.getTitle())
+                .status(productDto.getStatus())
+                .startPrice(productDto.getStartPrice())
+                .currentPrice(productDto.getCurrentPrice())
+                .buyNowPrice(productDto.getBuyNowPrice())
+                .bidIncrement(productDto.getBidIncrement())
+                .startTime(productDto.getStartTime())
+                .endTime(productDto.getEndTime())
+                .autoExtensionEnabled(productDto.getAutoExtensionEnabled())
+                .seller(productRepository.getReferenceById(productDto.getSellerId()).getSeller())
+                .category(productRepository.getReferenceById(productDto.getCategoryId()).getCategory())
+                .build();
+
+        Product addedProduct = productRepository.save(product);
+        return productMapper.toDto(addedProduct);
+
+    }
+
+    public void deleteProductById(Integer id) {
+        productRepository.deleteById(id);
+    }
+
+    public ProductDto getProductById(Integer id) {
+        Product product =  productRepository.findById(id).orElse(null);
+        if (product != null) {
+            return productMapper.toDto(product);
+        }
+        return null;
+    }
+
+    public ProductDto editProductById(Integer id, CreateProductDto productDto) {
+        Product product = productRepository.findById(id).orElse(null);
+        if (product != null) {
+            product.setTitle(productDto.getTitle());
+            product.setStatus(productDto.getStatus());
+            product.setStartPrice(productDto.getStartPrice());
+            product.setCurrentPrice(productDto.getCurrentPrice());
+            product.setBuyNowPrice(productDto.getBuyNowPrice());
+            product.setBidIncrement(productDto.getBidIncrement());
+            product.setStartTime(productDto.getStartTime());
+            product.setEndTime(productDto.getEndTime());
+            product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled());
+            product.setSeller(productRepository.getReferenceById(productDto.getSellerId()).getSeller());
+            product.setCategory(productRepository.getReferenceById(productDto.getCategoryId()).getCategory());
+            Product editedProduct = productRepository.save(product);
+            return productMapper.toDto(editedProduct);
+        }
+        return null;
+
     }
 }

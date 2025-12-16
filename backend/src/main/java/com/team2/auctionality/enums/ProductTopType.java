@@ -1,4 +1,7 @@
 package com.team2.auctionality.enums;
 
-public class ProductTopType {
+public enum ProductTopType {
+    ENDING_SOON,
+    MOST_BID,
+    HIGHEST_PRICE
 }

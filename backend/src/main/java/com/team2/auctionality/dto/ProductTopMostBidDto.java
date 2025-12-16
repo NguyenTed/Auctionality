@@ -1,5 +1,7 @@
 package com.team2.auctionality.dto;
 
+import com.team2.auctionality.mapper.CategoryMapper;
+import com.team2.auctionality.model.Category;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -33,7 +35,7 @@ public class ProductTopMostBidDto {
             Float startPrice, Float currentPrice, Float buyNowPrice, Float bidIncrement,
             LocalDateTime startTime, LocalDateTime endTime,
             Boolean autoExtensionEnabled, Integer sellerId,
-            Integer categoryId, String categoryName, String categorySlug,
+            Category category,
             Long bidCount
     ){
         this.id = id;
@@ -49,7 +51,7 @@ public class ProductTopMostBidDto {
 
         this.sellerId = sellerId;
 
-        this.category = new CategoryDto(categoryId, categoryName, categorySlug, null);
+        this.category = CategoryMapper.toDto(category);
 
         this.bidCount = bidCount.intValue();
     }

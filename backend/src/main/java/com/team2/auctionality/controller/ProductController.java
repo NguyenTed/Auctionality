@@ -1,9 +1,12 @@
 package com.team2.auctionality.controller;
 
+import com.team2.auctionality.dto.CreateProductDto;
 import com.team2.auctionality.dto.PagedResponse;
 import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
+import com.team2.auctionality.enums.ProductTopType;
 import com.team2.auctionality.mapper.PaginationMapper;
+import com.team2.auctionality.model.Product;
 import com.team2.auctionality.service.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +14,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.team2.auctionality.enums.ProductTopType.ENDING_SOON;
+
 @RestController
 @RequestMapping("/api/products")
 @Tag(name = "Product", description = "Product API")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 public class ProductController {
 
     private static final int PAGE_DEFAULT_VALUE = 1;
@@ -37,19 +43,15 @@ public class ProductController {
         return PaginationMapper.from(productService.getProductsByCategory(categoryId, page - 1, size));
     }
 
-    @GetMapping("/top-ending-soon")
-    public List<ProductDto> getTopEndingSoon() {
-        return productService.getTop5EndingSoon();
-    }
-
-    @GetMapping("/top-most-bid")
-    public List<ProductTopMostBidDto> getTopMostBid() {
-        return productService.getTop5MostBid();
-    }
-
-    @GetMapping("/top-highest-price")
-    public List<ProductDto> getTopHighestPrice() {
-        return productService.getTop5HighestPrice();
+    @GetMapping("/top")
+    public List<?> getTopProducts(
+            @RequestParam ProductTopType type
+    ) {
+        return switch (type) {
+            case ENDING_SOON -> productService.getTop5EndingSoon();
+            case MOST_BID -> productService.getTop5MostBid();
+            case HIGHEST_PRICE -> productService.getTop5HighestPrice();
+        };
     }
 
     @GetMapping("/search")
@@ -67,6 +69,40 @@ public class ProductController {
             size = PAGE_SIZE_DEFAULT_VALUE;
         }
         return PaginationMapper.from(productService.searchProducts(keyword, categoryId, page - 1, size, sort));
+    }
+
+    @GetMapping
+    public PagedResponse<ProductDto> getAllProducts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        if (page < 1) {
+            page = PAGE_DEFAULT_VALUE;
+        }
+        if (size < 1) {
+            size = PAGE_SIZE_DEFAULT_VALUE;
+        }
+        return PaginationMapper.from(productService.getAllProducts(page - 1, size));
+    }
+
+    @GetMapping("/{id}")
+    public ProductDto getProductById(@PathVariable Integer id) {
+        return productService.getProductById(id);
+    }
+
+    @PostMapping
+    public ProductDto createProduct(@RequestBody CreateProductDto productDto) {
+         return productService.createProduct(productDto);
+    }
+
+    @PutMapping("/{id}")
+    public ProductDto editProductById(@PathVariable Integer id, @RequestBody CreateProductDto productDto) {
+        return productService.editProductById(id, productDto);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteProductById(@PathVariable Integer id) {
+        productService.deleteProductById(id);
     }
 
 }

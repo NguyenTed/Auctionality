@@ -16,12 +16,10 @@ public class CategoryService {
 
     private final CategoryRepository repository;
 
-    private final CategoryMapper mapper;
-
     public List<CategoryDto> getCategoryTree() {
         return repository.findByParentIsNull()
                 .stream()
-                .map(mapper::toDto)
+                .map(CategoryMapper::toDto)
                 .collect(Collectors.toList());
     }
 

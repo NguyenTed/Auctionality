@@ -1,5 +1,6 @@
 package com.team2.auctionality.repository;
 
+import com.team2.auctionality.dto.CreateProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
 import com.team2.auctionality.model.Product;
 import org.springframework.data.domain.Page;
@@ -38,9 +39,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
         p.endTime,
         p.autoExtensionEnabled,
         p.seller.id,
-        c.id,
-        c.name,
-        c.slug,
+        c,
         COUNT(b)
     )
     FROM Product p
@@ -99,5 +98,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             @Param("categoryId") Integer categoryId,
             Pageable pageable
     );
+
 }
 
