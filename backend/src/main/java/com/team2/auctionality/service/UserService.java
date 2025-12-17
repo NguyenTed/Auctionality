@@ -3,7 +3,6 @@ package com.team2.auctionality.service;
 import com.team2.auctionality.model.Product;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.model.WatchListItem;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.Date;

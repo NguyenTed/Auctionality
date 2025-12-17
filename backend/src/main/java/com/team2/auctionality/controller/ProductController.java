@@ -1,13 +1,11 @@
 package com.team2.auctionality.controller;
 
-import com.team2.auctionality.dto.CreateProductDto;
-import com.team2.auctionality.dto.PagedResponse;
-import com.team2.auctionality.dto.ProductDto;
-import com.team2.auctionality.dto.ProductTopMostBidDto;
+import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductTopType;
 import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.Product;
+import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +28,8 @@ public class ProductController {
     private static final int PAGE_SIZE_DEFAULT_VALUE = 10;
 
     private final ProductService productService;
+    private final BidService bidService;
+
 
     @GetMapping("/category/{categoryId}")
     public PagedResponse<ProductDto> getProductsByCategory(
@@ -89,8 +89,17 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getProductById(@PathVariable Integer id) {
-        return ResponseEntity.ok(ProductMapper.toDto(productService.getProductById(id)));
+    public ProductDto getProductById(@PathVariable Integer id) {
+        return ProductMapper.toDto(productService.getProductById(id));
+    }
+
+    @GetMapping("/{productId}/bids")
+    public ResponseEntity<List<BidHistoryDto>> getBidHistory(
+            @PathVariable Integer productId) {
+
+        return ResponseEntity.ok(
+                bidService.getBidHistory(productId)
+        );
     }
 
     @PostMapping

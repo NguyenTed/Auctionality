@@ -22,8 +22,9 @@ public class Bid {
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Product product;
 
-    @Column(name = "bidder_id")
-    private Integer bidderId;
+    @JoinColumn(name = "bidder_id")
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private User bidder;
 
     @Column(name = "amount")
     private float amount;

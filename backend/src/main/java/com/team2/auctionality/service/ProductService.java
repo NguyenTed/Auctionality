@@ -107,23 +107,21 @@ public class ProductService {
     }
 
     public ProductDto editProductById(Integer id, CreateProductDto productDto) {
-        Product product = productRepository.findById(id).orElse(null);
-        if (product != null) {
-            product.setTitle(productDto.getTitle());
-            product.setStatus(productDto.getStatus());
-            product.setStartPrice(productDto.getStartPrice());
-            product.setCurrentPrice(productDto.getCurrentPrice());
-            product.setBuyNowPrice(productDto.getBuyNowPrice());
-            product.setBidIncrement(productDto.getBidIncrement());
-            product.setStartTime(productDto.getStartTime());
-            product.setEndTime(productDto.getEndTime());
-            product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled());
-            product.setSeller(productRepository.getReferenceById(productDto.getSellerId()).getSeller());
-            product.setCategory(productRepository.getReferenceById(productDto.getCategoryId()).getCategory());
-            Product editedProduct = productRepository.save(product);
-            return ProductMapper.toDto(editedProduct);
-        }
-        return null;
+        Product product = getProductById(id);
+
+        product.setTitle(productDto.getTitle());
+        product.setStatus(productDto.getStatus());
+        product.setStartPrice(productDto.getStartPrice());
+        product.setCurrentPrice(productDto.getCurrentPrice());
+        product.setBuyNowPrice(productDto.getBuyNowPrice());
+        product.setBidIncrement(productDto.getBidIncrement());
+        product.setStartTime(productDto.getStartTime());
+        product.setEndTime(productDto.getEndTime());
+        product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled());
+        product.setSeller(productRepository.getReferenceById(productDto.getSellerId()).getSeller());
+        product.setCategory(productRepository.getReferenceById(productDto.getCategoryId()).getCategory());
+        Product editedProduct = productRepository.save(product);
+        return ProductMapper.toDto(editedProduct);
 
     }
 }
