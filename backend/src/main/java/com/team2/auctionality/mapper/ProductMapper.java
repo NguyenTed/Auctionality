@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ProductMapper {
 
-    public ProductDto toDto(Product product) {
+    public static ProductDto toDto(Product product) {
         if (product == null) return null;
 
         return ProductDto.builder()

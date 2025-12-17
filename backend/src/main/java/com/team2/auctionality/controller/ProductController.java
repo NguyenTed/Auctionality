@@ -6,13 +6,16 @@ import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
 import com.team2.auctionality.enums.ProductTopType;
 import com.team2.auctionality.mapper.PaginationMapper;
+import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.Product;
 import com.team2.auctionality.service.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.team2.auctionality.enums.ProductTopType.ENDING_SOON;
 
@@ -86,8 +89,8 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ProductDto getProductById(@PathVariable Integer id) {
-        return productService.getProductById(id);
+    public ResponseEntity<ProductDto> getProductById(@PathVariable Integer id) {
+        return ResponseEntity.ok(ProductMapper.toDto(productService.getProductById(id)));
     }
 
     @PostMapping

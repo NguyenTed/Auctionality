@@ -1,5 +1,7 @@
 package com.team2.auctionality.exception;
 
+import com.team2.auctionality.dto.ErrorResponse;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,6 +110,28 @@ public class GlobalExceptionHandler {
         error.put("error", "An unexpected error occurred");
         error.put("message", message);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(EntityNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.NOT_FOUND.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(WatchListAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleWatchListExists(WatchListAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT) // 409
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.CONFLICT.value(),
+                        Instant.now()
+                ));
     }
 }
 

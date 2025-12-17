@@ -6,6 +6,7 @@ import com.team2.auctionality.dto.ProductTopMostBidDto;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.Product;
 import com.team2.auctionality.repository.ProductRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,12 +22,11 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final ProductMapper productMapper;
 
     public List<ProductDto> getTop5EndingSoon() {
         return productRepository.findTop5EndingSoon(PageRequest.of(0, 5))
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
 
     }
@@ -38,13 +38,13 @@ public class ProductService {
     public List<ProductDto> getTop5HighestPrice() {
         return productRepository.findTop5HighestPrice(PageRequest.of(0, 5))
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
     }
 
     public Page<ProductDto> getProductsByCategory(Integer categoryId, int page, int size) {
         return productRepository.findByCategory(categoryId, PageRequest.of(page, size))
-                .map(productMapper::toDto);
+                .map(ProductMapper::toDto);
     }
 
     public Page<ProductDto> searchProducts(
@@ -58,7 +58,7 @@ public class ProductService {
 
         Page<Product> products = productRepository.searchProducts(keyword, categoryId, pageable);
 
-        return products.map(productMapper::toDto);
+        return products.map(ProductMapper::toDto);
     }
 
     private Sort getSort(String sortKey) {
@@ -75,7 +75,7 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page, size);
         return productRepository
                 .findAll(pageable)
-                .map(productMapper::toDto);
+                .map(ProductMapper::toDto);
     }
 
     public ProductDto createProduct(CreateProductDto productDto) {
@@ -94,7 +94,7 @@ public class ProductService {
                 .build();
 
         Product addedProduct = productRepository.save(product);
-        return productMapper.toDto(addedProduct);
+        return ProductMapper.toDto(addedProduct);
 
     }
 
@@ -102,12 +102,8 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    public ProductDto getProductById(Integer id) {
-        Product product =  productRepository.findById(id).orElse(null);
-        if (product != null) {
-            return productMapper.toDto(product);
-        }
-        return null;
+    public Product getProductById(Integer id) {
+        return productRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Product not found"));
     }
 
     public ProductDto editProductById(Integer id, CreateProductDto productDto) {
@@ -125,7 +121,7 @@ public class ProductService {
             product.setSeller(productRepository.getReferenceById(productDto.getSellerId()).getSeller());
             product.setCategory(productRepository.getReferenceById(productDto.getCategoryId()).getCategory());
             Product editedProduct = productRepository.save(product);
-            return productMapper.toDto(editedProduct);
+            return ProductMapper.toDto(editedProduct);
         }
         return null;
 
