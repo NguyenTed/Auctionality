@@ -27,6 +27,6 @@ public class BidController {
         );
     }
 
-    @PostMapping()
-    public ResponseEntity<List<BidHistoryDto>> placeBid(@RequestBody BidHistoryDto bidHistoryDto) {}
+//    @PostMapping()
+//    public ResponseEntity<List<BidHistoryDto>> placeBid(@RequestBody BidHistoryDto bidHistoryDto) {}
 }

@@ -4,6 +4,7 @@ import com.team2.auctionality.model.Product;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.model.WatchListItem;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.Optional;
@@ -25,5 +26,9 @@ public class UserService {
                 .build();
         return Optional.ofNullable(watchListItemService.createWatchListItem(watchListItem));
 
+    }
+
+    public void deleteWatchList(Integer userId, Integer productId) {
+        watchListItemService.deleteWatchListItem(userId, productId);
     }
 }

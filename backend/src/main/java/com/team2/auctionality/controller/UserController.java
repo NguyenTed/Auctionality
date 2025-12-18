@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -52,5 +54,19 @@ public class UserController {
                                     dto
                             ));
                 }).orElse(null);
+    }
+
+    @DeleteMapping("/watchlist/{productId}")
+    public ResponseEntity<Map<String, Object>> deleteWatchlist(
+            @PathVariable Integer productId,
+            Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+
+        userService.deleteWatchList(user.getId(), productId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Delete watchlist successfully");
+        return ResponseEntity.ok(response);
     }
 }
