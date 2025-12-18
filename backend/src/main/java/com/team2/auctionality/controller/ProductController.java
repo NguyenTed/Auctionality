@@ -4,7 +4,9 @@ import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductTopType;
 import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.ProductMapper;
+import com.team2.auctionality.mapper.ProductQuestionMapper;
 import com.team2.auctionality.model.Bid;
+import com.team2.auctionality.model.ProductQuestion;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.AuthService;
 import com.team2.auctionality.service.BidService;
@@ -113,7 +115,7 @@ public class ProductController {
 
 
     // Bids api
-    @GetMapping("/products/{productId}/bids")
+    @GetMapping("/{productId}/bids")
     @Operation(summary = "Get bids histories by productId")
     public ResponseEntity<List<BidHistoryDto>> getBidHistoryByProductId(
             @PathVariable Integer productId
@@ -123,7 +125,7 @@ public class ProductController {
         );
     }
 
-    @PostMapping("/products/{productId}/bids")
+    @PostMapping("/{productId}/bids")
     @Operation(summary = "Place bid")
     public ResponseEntity<ApiResponse<Bid>> placeBid(
             @PathVariable Integer productId,
@@ -143,6 +145,31 @@ public class ProductController {
                         "Bid placed successfully",
                         bid
                 ));
+    }
+
+    @PostMapping("/{productId}/questions")
+    @Operation(summary = "Add question")
+    public ResponseEntity<ApiResponse<ProductQuestionDto>> addQuestion(
+            @PathVariable Integer productId,
+            @RequestBody AddQuestionDto questionDto,
+            Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+
+        ProductQuestion question = productService.addQuestion(user, productId, questionDto);
+        URI location = URI.create("/api/bids/" + question.getId());
+
+        return ResponseEntity
+                .created(location)
+                .body(new ApiResponse<>(
+                        "Add question successfully",
+                        ProductQuestionMapper.toDto(question)
+                ));
+    }
+    @GetMapping("/{productId}/questions")
+    @Operation(summary = "Get all questions by id")
+    public ResponseEntity<List<ProductQuestionDto>> getQuestionById(@PathVariable Integer productId) {
+        return ResponseEntity.ok(productService.getQuestionById(productId));
     }
 
 }

@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: Auctionality Backend
+  devtools:
+    restart:
+      enabled: false
   config:
     import: optional:secrets.properties
   datasource:

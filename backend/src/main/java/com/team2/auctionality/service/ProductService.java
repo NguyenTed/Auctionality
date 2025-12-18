@@ -1,14 +1,17 @@
 package com.team2.auctionality.service;
 
-import com.team2.auctionality.dto.CreateProductDto;
-import com.team2.auctionality.dto.ProductDto;
-import com.team2.auctionality.dto.ProductTopMostBidDto;
+import com.team2.auctionality.dto.*;
 import com.team2.auctionality.exception.InvalidBidPriceException;
 import com.team2.auctionality.mapper.ProductMapper;
+import com.team2.auctionality.mapper.ProductQuestionMapper;
 import com.team2.auctionality.model.Product;
+import com.team2.auctionality.model.ProductQuestion;
+import com.team2.auctionality.model.User;
+import com.team2.auctionality.repository.ProductQuestionRepository;
 import com.team2.auctionality.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +26,7 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductQuestionRepository productQuestionRepository;
 
     public List<ProductDto> getTop5EndingSoon() {
         return productRepository.findTop5EndingSoon(PageRequest.of(0, 5))
@@ -133,5 +137,29 @@ public class ProductService {
                     "Bid price must increase by step of " + step
             );
         }
+    }
+
+    public void save(Product product) {
+        productRepository.save(product);
+    }
+
+    public ProductQuestion addQuestion(User user, Integer productId, AddQuestionDto questionDto) {
+        Product product = getProductById(productId);
+        ProductQuestion question = ProductQuestionMapper.toEntity(user, product, questionDto);
+
+        return productQuestionRepository.save(question);
+    }
+
+    public List<ProductQuestionDto> getQuestionById(Integer productId) {
+        List<ProductQuestion> questions =
+                productQuestionRepository.findByProductId(productId);
+
+        if (questions.isEmpty()) {
+            throw new EntityNotFoundException("Questions not found");
+        }
+
+        return questions.stream()
+                .map(ProductQuestionMapper::toDto)
+                .toList();
     }
 }

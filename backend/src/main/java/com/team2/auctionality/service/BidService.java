@@ -3,6 +3,7 @@ package com.team2.auctionality.service;
 import com.team2.auctionality.dto.BidHistoryDto;
 import com.team2.auctionality.dto.PlaceBidRequest;
 import com.team2.auctionality.enums.ApproveStatus;
+import com.team2.auctionality.exception.AuctionClosedException;
 import com.team2.auctionality.exception.BidNotAllowedException;
 import com.team2.auctionality.exception.BidPendingApprovalException;
 import com.team2.auctionality.mapper.BidMapper;
@@ -13,6 +14,9 @@ import com.team2.auctionality.repository.BidderApprovalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +28,8 @@ public class BidService {
     private final AutoBidConfigRepository autoBidConfigRepository;
     private final BidderApprovalRepository bidderApprovalRepository;
     private final ProductService productService;
+    private final SystemAuctionRuleService systemAuctionRuleService;
+
 
     public List<BidHistoryDto> getBidHistory(Integer productId) {
 
@@ -39,6 +45,11 @@ public class BidService {
         UserProfile bidderProfile = bidder.getProfile();
         Product product = productService.getProductById(productId);
         Float ratingPercent = bidderProfile.getRatingPercent();
+        LocalDateTime now = LocalDateTime.now();
+
+        if (product.getEndTime().isBefore(now) || product.getEndTime().isEqual(now)) {
+            throw new AuctionClosedException("Auction has already ended");
+        }
 
         ProductService.checkIsAmountAvailable(bidRequest.getAmount(), product.getBidIncrement(), product.getCurrentPrice());
 
@@ -52,10 +63,9 @@ public class BidService {
                 bidderApprovalRepository.save(bidderApproval);
                 throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
             } else {
-                throw new BidNotAllowedException(String.format(
-                        "User %d is not allowed",
-                        bidder.getId()
-                ));
+                throw new BidNotAllowedException(
+                        "Your rating does not meet the requirement to place bids"
+                );
             }
         }
 
@@ -66,6 +76,22 @@ public class BidService {
                 .isAutoBid(bidRequest.getIsAutoBid())
                 .build();
 
-        return bidRepository.save(bid);
+        Bid savedBid = bidRepository.save(bid);
+
+        systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
+
+            long minutesToEnd = java.time.Duration
+                    .between(now, product.getEndTime())
+                    .toMinutes();
+
+            if (minutesToEnd <= rule.getTimeThresholdMinutes()) {
+                product.setEndTime(
+                        product.getEndTime().plusMinutes(rule.getExtensionMinutes())
+                );
+                productService.save(product);
+            }
+        });
+
+        return savedBid;
     }
 }
