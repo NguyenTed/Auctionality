@@ -1,5 +1,6 @@
 package com.team2.auctionality.model;
 
+import com.team2.auctionality.enums.ApproveStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,28 +14,26 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "bid")
-public class Bid {
+@Table(name = "bidder_approval")
+public class BidderApproval {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @JoinColumn(name = "product_id")
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Product product;
+    @Column(name = "product_id")
+    private Integer productId;
 
-    @JoinColumn(name = "bidder_id")
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private User bidder;
+    @Column(name = "bidder_id")
+    private Integer bidderId;
 
     @Column(name = "amount")
-    private float amount;
+    private Float amount;
 
-    @Column(name = "is_auto_bid")
-    private Boolean isAutoBid;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private ApproveStatus status;
 
     @Column(name = "created_at")
     private Date createdAt;
-
 }

@@ -26,10 +26,9 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private AuthService authService;
+
+    private final UserService userService;
+    private final AuthService authService;
 
     @PostMapping("/watchlist/{productId}")
     public ResponseEntity<ApiResponse<WatchListItemDto>> addWatchlist(

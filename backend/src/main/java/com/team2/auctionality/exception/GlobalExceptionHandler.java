@@ -133,5 +133,46 @@ public class GlobalExceptionHandler {
                         Instant.now()
                 ));
     }
+
+    @ExceptionHandler(BidNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleBidNotAllowed(BidNotAllowedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.FORBIDDEN.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(InvalidBidPriceException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPrice(InvalidBidPriceException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(AuctionClosedException.class)
+    public ResponseEntity<ErrorResponse> handleAuctionClosed(AuctionClosedException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(BidPendingApprovalException.class)
+    public ResponseEntity<ErrorResponse> handleBidPendingApproval(BidPendingApprovalException ex) {
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.ACCEPTED.value(),
+                        Instant.now()
+                ));
+    }
 }
 

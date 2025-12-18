@@ -3,6 +3,7 @@ package com.team2.auctionality.service;
 import com.team2.auctionality.dto.CreateProductDto;
 import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
+import com.team2.auctionality.exception.InvalidBidPriceException;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.Product;
 import com.team2.auctionality.repository.ProductRepository;
@@ -123,5 +124,14 @@ public class ProductService {
         Product editedProduct = productRepository.save(product);
         return ProductMapper.toDto(editedProduct);
 
+    }
+
+    public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {
+        if (amount <= currentPrice) throw new InvalidBidPriceException("Bid ammount more than " + currentPrice + ".");
+        if ((amount - currentPrice) % step != 0) {
+            throw new InvalidBidPriceException(
+                    "Bid price must increase by step of " + step
+            );
+        }
     }
 }

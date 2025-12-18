@@ -181,6 +181,7 @@ CREATE TABLE bidder_approval (
                                  id SERIAL PRIMARY KEY,
                                  product_id INT REFERENCES product(id),
                                  bidder_id INT REFERENCES "user"(id),
+                                 amount FLOAT NOT NULL,
                                  status TEXT,
                                  created_at TIMESTAMP DEFAULT NOW()
 );
