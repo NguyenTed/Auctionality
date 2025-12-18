@@ -4,13 +4,19 @@ import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductTopType;
 import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.ProductMapper;
+import com.team2.auctionality.model.Bid;
+import com.team2.auctionality.model.User;
+import com.team2.auctionality.service.AuthService;
 import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -24,6 +30,8 @@ public class ProductController {
     private static final int PAGE_SIZE_DEFAULT_VALUE = 10;
 
     private final ProductService productService;
+    private final BidService bidService;
+    private final AuthService authService;
 
 
     @GetMapping("/category/{categoryId}")
@@ -101,6 +109,40 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public void deleteProductById(@PathVariable Integer id) {
         productService.deleteProductById(id);
+    }
+
+
+    // Bids api
+    @GetMapping("/products/{productId}/bids")
+    @Operation(summary = "Get bids histories by productId")
+    public ResponseEntity<List<BidHistoryDto>> getBidHistoryByProductId(
+            @PathVariable Integer productId
+    ) {
+        return ResponseEntity.ok(
+                bidService.getBidHistory(productId)
+        );
+    }
+
+    @PostMapping("/products/{productId}/bids")
+    @Operation(summary = "Place bid")
+    public ResponseEntity<ApiResponse<Bid>> placeBid(
+            @PathVariable Integer productId,
+            @RequestBody PlaceBidRequest bidRequest,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+
+        Bid bid = bidService.placeBid(user, productId, bidRequest);
+
+        URI location = URI.create("/api/bids/" + bid.getId());
+
+        return ResponseEntity
+                .created(location)
+                .body(new ApiResponse<>(
+                        "Bid placed successfully",
+                        bid
+                ));
     }
 
 }

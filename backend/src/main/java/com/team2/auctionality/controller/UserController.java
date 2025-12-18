@@ -38,21 +38,16 @@ public class UserController {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);
 
-        return userService.addWatchList(user, productId)
-                .map(item -> {
-                    WatchListItemDto dto = WatchListItemMapper.toDto(item);
-
-                    URI location = URI.create(
-                            "/api/users/watchlist/" + productId
-                    );
-
-                    return ResponseEntity
-                            .created(location)
-                            .body(new ApiResponse<>(
-                                    "Add product to watchlist successfully",
-                                    dto
-                            ));
-                }).orElse(null);
+        URI location = URI.create(
+                "/api/users/watchlist/" + productId
+        );
+        WatchListItemDto watchListItemDto = WatchListItemMapper.toDto(userService.addWatchList(user, productId));
+        return ResponseEntity
+                .created(location)
+                .body(new ApiResponse<>(
+                        "Add product to watchlist successfully",
+                        watchListItemDto
+                ));
     }
 
     @DeleteMapping("/watchlist/{productId}")

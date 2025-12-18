@@ -16,7 +16,7 @@ public class UserService {
     private final WatchListItemService watchListItemService;
     private final ProductService productService;
 
-    public Optional<WatchListItem> addWatchList(User user, Integer productId) {
+    public WatchListItem addWatchList(User user, Integer productId) {
         Product product = productService.getProductById(productId);
 
         WatchListItem watchListItem = WatchListItem.builder()
@@ -24,7 +24,7 @@ public class UserService {
                 .product(product)
                 .createdAt(new Date())
                 .build();
-        return Optional.ofNullable(watchListItemService.createWatchListItem(watchListItem));
+        return watchListItemService.createWatchListItem(watchListItem);
 
     }
 

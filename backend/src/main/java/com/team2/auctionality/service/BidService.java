@@ -35,7 +35,7 @@ public class BidService {
                 .toList();
     }
 
-    public Optional<Bid> placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
+    public Bid placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
         UserProfile bidderProfile = bidder.getProfile();
         Product product = productService.getProductById(productId);
         Float ratingPercent = bidderProfile.getRatingPercent();
@@ -66,6 +66,6 @@ public class BidService {
                 .isAutoBid(bidRequest.getIsAutoBid())
                 .build();
 
-        return Optional.of(bidRepository.save(bid));
+        return bidRepository.save(bid);
     }
 }
