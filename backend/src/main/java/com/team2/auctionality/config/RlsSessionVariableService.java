@@ -41,10 +41,10 @@ public class RlsSessionVariableService {
             
             // Use SET LOCAL to set variable for current transaction only
             // This ensures the variable is automatically cleared when transaction ends
-            String sql = userId != null 
-                ? "SET LOCAL app.user_id = " + userId
-                : "SET LOCAL app.user_id = NULL";
-            
+            String sql = (userId != null)
+                    ? "SET LOCAL app.user_id = '" + userId + "'"
+                    : "RESET app.user_id";
+
             try (var stmt = connection.createStatement()) {
                 stmt.execute(sql);
                 log.debug("Set RLS session variable app.user_id = {}", userId);
