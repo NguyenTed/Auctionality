@@ -11,7 +11,6 @@ import com.team2.auctionality.repository.ProductQuestionRepository;
 import com.team2.auctionality.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -161,5 +159,13 @@ public class ProductService {
         return questions.stream()
                 .map(ProductQuestionMapper::toDto)
                 .toList();
+    }
+
+    public List<Product> getAuctionProductsByUser(Integer userId) {
+        return productRepository.findProductsUserHasBidOn(userId);
+    }
+
+    public List<Product> getWonProducts(User user) {
+        return productRepository.findWonProductsByUserId(user.getId());
     }
 }

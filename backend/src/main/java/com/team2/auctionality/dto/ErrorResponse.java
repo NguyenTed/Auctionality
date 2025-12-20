@@ -8,7 +8,7 @@ import java.time.Instant;
 @Getter
 @AllArgsConstructor
 public class ErrorResponse {
-    private String message;
+    private Object message;
     private int status;
     private Instant timestamp;
 }

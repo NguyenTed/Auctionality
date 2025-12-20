@@ -1,27 +1,24 @@
 package com.team2.auctionality.controller;
 
-import com.team2.auctionality.dto.ApiResponse;
-import com.team2.auctionality.dto.SellerUpgradeRequestDto;
-import com.team2.auctionality.dto.WatchListItemDto;
-import com.team2.auctionality.mapper.ProductQuestionMapper;
-import com.team2.auctionality.mapper.SellerUpgradeRequestMapper;
-import com.team2.auctionality.mapper.WatchListItemMapper;
-import com.team2.auctionality.model.SellerUpgradeRequest;
-import com.team2.auctionality.model.User;
-import com.team2.auctionality.model.WatchListItem;
+import com.team2.auctionality.dto.*;
+import com.team2.auctionality.mapper.*;
+import com.team2.auctionality.model.*;
 import com.team2.auctionality.service.AuthService;
 import com.team2.auctionality.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -69,13 +66,13 @@ public class UserController {
     }
 
     /*
-        Upgrade from bidder to seller in 7 days
+        Request to be upgraded from bidder to seller in 7 days
      */
     @PostMapping("/seller-upgrade-requests")
+    @Operation(summary = "Request to be upgraded from bidder to seller in 7 days")
     public ResponseEntity<SellerUpgradeRequestDto> upgradeRequests(Authentication authentication) {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);
-        System.out.println(user.getId());
         SellerUpgradeRequest request = userService.createSellerUpgradeRequest(user);
 
         URI location = URI.create("/api/users/seller-upgrade-requests" + request.getId());
@@ -85,5 +82,64 @@ public class UserController {
                 .body(
                         SellerUpgradeRequestMapper.toDto(request)
                 );
+    }
+
+    @GetMapping("/rates")
+    @Operation(summary = "Get user's rates")
+    public List<OrderRatingDto> getRatings(Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+        List<OrderRating> ratings = userService.getOrderRatings(user);
+
+        return ratings
+                .stream()
+                .filter(Objects::nonNull)
+                .map(OrderRatingMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @PostMapping("/rates")
+    @Operation(summary = "Rates seller / buyer")
+    public ResponseEntity<OrderRatingDto> rateUser(
+            Authentication authentication,
+            @Valid  @RequestBody RatingRequest ratingRequest ) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+        userService.rateUser(user, ratingRequest);
+        URI location = URI.create("/api/users/rates");
+
+        return ResponseEntity
+                .created(location)
+                .body(
+                        OrderRatingMapper.toDto(userService.rateUser(user, ratingRequest))
+                );
+    }
+
+    @GetMapping("/auction-products")
+    @Operation(summary = "Get products that user has placed bids on")
+    public List<ProductDto> getAuctionProducts(Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+        List<Product> products = userService.getAuctionProducts(user);
+
+        return products
+                .stream()
+                .filter(Objects::nonNull)
+                .map(ProductMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/won-products")
+    @Operation(summary = "Get products that user has won")
+    public List<ProductDto> getWonProducts(Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+        List<Product> products = userService.getWonProducts(user);
+
+        return products
+                .stream()
+                .filter(Objects::nonNull)
+                .map(ProductMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

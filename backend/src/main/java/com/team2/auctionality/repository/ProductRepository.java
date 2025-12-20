@@ -1,6 +1,7 @@
 package com.team2.auctionality.repository;
 
 import com.team2.auctionality.dto.CreateProductDto;
+import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
 import com.team2.auctionality.model.Product;
 import org.springframework.data.domain.Page;
@@ -99,5 +100,20 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
             Pageable pageable
     );
 
+    @Query(value = """
+        SELECT DISTINCT p.*
+        FROM product p
+        JOIN bid b ON b.product_id = p.id
+        WHERE b.bidder_id = :userId
+        """, nativeQuery = true)
+    List<Product> findProductsUserHasBidOn(@Param("userId") Integer userId);
+
+    @Query(value = """
+        SELECT p.*
+        FROM "order" o
+        JOIN product p ON p.id = o.product_id
+        WHERE o.buyer_id = :userId
+        """, nativeQuery = true)
+    List<Product> findWonProductsByUserId(@Param("userId") Integer userId);
 }
 
