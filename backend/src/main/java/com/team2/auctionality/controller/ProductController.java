@@ -7,6 +7,7 @@ import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.service.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -68,5 +69,21 @@ public class ProductController {
         }
         return PaginationMapper.from(productService.searchProducts(keyword, categoryId, page - 1, size, sort));
     }
+
+    // TODO: When implementing write operations, add method-level security annotations:
+    // Example for product creation:
+    // @PostMapping
+    // @PreAuthorize("hasRole('SELLER') or hasPermission(null, 'PRODUCT_CREATE')")
+    // public ResponseEntity<ProductDto> createProduct(@RequestBody CreateProductRequest request) { ... }
+    //
+    // Example for product update:
+    // @PutMapping("/{id}")
+    // @PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    // public ResponseEntity<ProductDto> updateProduct(@PathVariable Integer id, @RequestBody UpdateProductRequest request) { ... }
+    //
+    // Example for product deletion:
+    // @DeleteMapping("/{id}")
+    // @PreAuthorize("hasPermission(null, 'PRODUCT_DELETE') or (hasPermission(null, 'PRODUCT_DELETE_OWN') and @productService.isOwner(#id))")
+    // public ResponseEntity<Void> deleteProduct(@PathVariable Integer id) { ... }
 
 }

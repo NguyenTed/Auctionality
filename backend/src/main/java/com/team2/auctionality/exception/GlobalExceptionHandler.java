@@ -3,6 +3,7 @@ package com.team2.auctionality.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -70,6 +71,22 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         error.put("error", "Invalid email or password");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
+        log.warn("AccessDeniedException: {}", e.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage() != null ? e.getMessage() : "Access denied. You do not have permission to perform this action.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    @ExceptionHandler(com.team2.auctionality.exception.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleCustomAccessDenied(com.team2.auctionality.exception.AccessDeniedException e) {
+        log.warn("AccessDeniedException: {}", e.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage() != null ? e.getMessage() : "Access denied. You do not have permission to perform this action.");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
     @ExceptionHandler(RuntimeException.class)

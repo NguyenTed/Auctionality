@@ -27,7 +27,7 @@ public class RlsSessionVariableService {
 
     /**
      * Set PostgreSQL session variables for the current connection.
-     * Uses SET LOCAL to ensure variables are scoped to the current transaction.
+     * Uses SET LOCAL for transactional operations and SET for non-transactional operations.
      * 
      * @param connection Database connection
      */
@@ -39,19 +39,30 @@ public class RlsSessionVariableService {
         try {
             Integer userId = getCurrentUserId();
             
-            // Use SET LOCAL to set variable for current transaction only
-            // This ensures the variable is automatically cleared when transaction ends
-            String sql = (userId != null)
+            // Determine if we're in a transaction
+            boolean inTransaction = !connection.getAutoCommit();
+            
+            // Use SET LOCAL for transactions (scoped to transaction)
+            // Use SET for non-transactional operations (scoped to session)
+            String sql;
+            if (userId != null) {
+                sql = inTransaction 
                     ? "SET LOCAL app.user_id = '" + userId + "'"
+                    : "SET app.user_id = '" + userId + "'";
+            } else {
+                sql = inTransaction
+                    ? "RESET app.user_id"
                     : "RESET app.user_id";
+            }
 
             try (var stmt = connection.createStatement()) {
                 stmt.execute(sql);
-                log.debug("Set RLS session variable app.user_id = {}", userId);
+                log.debug("Set RLS session variable app.user_id = {} (transactional: {})", userId, inTransaction);
             }
         } catch (SQLException e) {
-            log.warn("Failed to set RLS session variables: {}", e.getMessage());
+            log.error("Failed to set RLS session variables: {}", e.getMessage(), e);
             // Don't throw exception - allow query to proceed without RLS if setting fails
+            // This prevents breaking the application if RLS setup fails
         }
     }
 
