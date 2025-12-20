@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
 
     public static UserDto toDto(User user) {
+        if (user == null) return null;
 
         UserProfile profile = user.getProfile();
 

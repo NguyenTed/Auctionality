@@ -1,8 +1,12 @@
 package com.team2.auctionality.controller;
 
 import com.team2.auctionality.dto.ApiResponse;
+import com.team2.auctionality.dto.SellerUpgradeRequestDto;
 import com.team2.auctionality.dto.WatchListItemDto;
+import com.team2.auctionality.mapper.ProductQuestionMapper;
+import com.team2.auctionality.mapper.SellerUpgradeRequestMapper;
 import com.team2.auctionality.mapper.WatchListItemMapper;
+import com.team2.auctionality.model.SellerUpgradeRequest;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.model.WatchListItem;
 import com.team2.auctionality.service.AuthService;
@@ -62,5 +66,24 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Delete watchlist successfully");
         return ResponseEntity.ok(response);
+    }
+
+    /*
+        Upgrade from bidder to seller in 7 days
+     */
+    @PostMapping("/seller-upgrade-requests")
+    public ResponseEntity<SellerUpgradeRequestDto> upgradeRequests(Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+        System.out.println(user.getId());
+        SellerUpgradeRequest request = userService.createSellerUpgradeRequest(user);
+
+        URI location = URI.create("/api/users/seller-upgrade-requests" + request.getId());
+
+        return ResponseEntity
+                .created(location)
+                .body(
+                        SellerUpgradeRequestMapper.toDto(request)
+                );
     }
 }
