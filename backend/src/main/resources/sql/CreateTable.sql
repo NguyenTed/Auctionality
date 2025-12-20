@@ -115,7 +115,6 @@ CREATE TABLE product_image (
                                id SERIAL PRIMARY KEY,
                                product_id INT REFERENCES product(id) ON DELETE CASCADE,
                                url TEXT,
-                               position INT,
                                is_thumbnail BOOLEAN DEFAULT FALSE
 );
 
@@ -182,6 +181,7 @@ CREATE TABLE bidder_approval (
                                  id SERIAL PRIMARY KEY,
                                  product_id INT REFERENCES product(id),
                                  bidder_id INT REFERENCES "user"(id),
+                                 amount FLOAT NOT NULL,
                                  status TEXT,
                                  created_at TIMESTAMP DEFAULT NOW()
 );

@@ -1,8 +1,10 @@
 package com.team2.auctionality.dto;
 
+import com.team2.auctionality.model.ProductImage;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -25,6 +27,8 @@ public class ProductDto {
     private Integer sellerId;
 
     private CategoryDto category;
+
+    private List<ProductImageDto> images;
 
 }
 

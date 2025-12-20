@@ -9,17 +9,19 @@ import java.util.stream.Collectors;
 
 @Component
 public class CategoryMapper {
-    public CategoryDto toDto(Category category) {
+    public static CategoryDto toDto(Category category) {
         List<CategoryDto> childDtos = category.getChildren()
                 .stream()
-                .map(this::toDto)
+                .map(CategoryMapper::toDto)
                 .collect(Collectors.toList());
 
-        return new CategoryDto(
-                category.getId(),
-                category.getName(),
-                category.getSlug(),
-                childDtos
-        );
+        return  CategoryDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .slug(category.getSlug())
+                .parentId(category.getParent() != null ? category.getParent().getId() : null)
+                .children(childDtos)
+                .build();
+
     }
 }

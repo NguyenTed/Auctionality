@@ -1,5 +1,7 @@
 package com.team2.auctionality.exception;
 
+import com.team2.auctionality.dto.ErrorResponse;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,12 +12,49 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException e) {
+
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        e.getBindingResult().getAllErrors().forEach(error -> {
+
+            String errorMessage = error.getDefaultMessage() != null
+                    ? error.getDefaultMessage()
+                    : "Invalid value";
+
+            if (error instanceof FieldError fieldError) {
+                // field-level validation
+                String fieldName = fieldError.getField();
+                errors.put(fieldName, fieldName + " " + errorMessage);
+            } else {
+                // object-level validation (@Valid on class)
+                String objectName = error.getObjectName();
+                errors.put(objectName, objectName + " " + errorMessage);
+            }
+        });
+
+        ErrorResponse response = new ErrorResponse(
+                errors,
+                HttpStatus.BAD_REQUEST.value(),
+                Instant.now()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
 
     @ExceptionHandler(AuthException.class)
     public ResponseEntity<Map<String, String>> handleAuthException(AuthException e) {
@@ -101,17 +140,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException e) {
-        log.warn("ValidationException: {}", e.getMessage());
-        Map<String, String> errors = new HashMap<>();
-        e.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage != null ? errorMessage : "Invalid value");
-        });
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
-    }
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException e) {
+//        log.warn("ValidationException: {}", e.getMessage());
+//        Map<String, String> errors = new HashMap<>();
+//        e.getBindingResult().getAllErrors().forEach((error) -> {
+//            String fieldName = ((FieldError) error).getField();
+//            String errorMessage = error.getDefaultMessage();
+//            errors.put(fieldName, errorMessage != null ? errorMessage : "Invalid value");
+//        });
+//        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+//    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception e) {
@@ -124,6 +163,79 @@ public class GlobalExceptionHandler {
         error.put("error", "An unexpected error occurred");
         error.put("message", message);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(EntityNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.NOT_FOUND.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(WatchListAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleWatchListExists(WatchListAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT) // 409
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.CONFLICT.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(BidNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleBidNotAllowed(BidNotAllowedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.FORBIDDEN.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(InvalidBidPriceException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPrice(InvalidBidPriceException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(AuctionClosedException.class)
+    public ResponseEntity<ErrorResponse> handleAuctionClosed(AuctionClosedException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(BidPendingApprovalException.class)
+    public ResponseEntity<ErrorResponse> handleBidPendingApproval(BidPendingApprovalException ex) {
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.ACCEPTED.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(RatingException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRating(RatingException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
     }
 }
 

@@ -1,10 +1,15 @@
 package com.team2.auctionality.service;
 
-import com.team2.auctionality.dto.ProductDto;
-import com.team2.auctionality.dto.ProductTopMostBidDto;
+import com.team2.auctionality.dto.*;
+import com.team2.auctionality.exception.InvalidBidPriceException;
 import com.team2.auctionality.mapper.ProductMapper;
+import com.team2.auctionality.mapper.ProductQuestionMapper;
 import com.team2.auctionality.model.Product;
+import com.team2.auctionality.model.ProductQuestion;
+import com.team2.auctionality.model.User;
+import com.team2.auctionality.repository.ProductQuestionRepository;
 import com.team2.auctionality.repository.ProductRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,12 +24,12 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final ProductMapper productMapper;
+    private final ProductQuestionRepository productQuestionRepository;
 
     public List<ProductDto> getTop5EndingSoon() {
         return productRepository.findTop5EndingSoon(PageRequest.of(0, 5))
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
 
     }
@@ -36,13 +41,13 @@ public class ProductService {
     public List<ProductDto> getTop5HighestPrice() {
         return productRepository.findTop5HighestPrice(PageRequest.of(0, 5))
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
     }
 
     public Page<ProductDto> getProductsByCategory(Integer categoryId, int page, int size) {
         return productRepository.findByCategory(categoryId, PageRequest.of(page, size))
-                .map(productMapper::toDto);
+                .map(ProductMapper::toDto);
     }
 
     public Page<ProductDto> searchProducts(
@@ -56,7 +61,7 @@ public class ProductService {
 
         Page<Product> products = productRepository.searchProducts(keyword, categoryId, pageable);
 
-        return products.map(productMapper::toDto);
+        return products.map(ProductMapper::toDto);
     }
 
     private Sort getSort(String sortKey) {
@@ -67,5 +72,100 @@ public class ProductService {
             case "endTimeDesc" -> Sort.by("endTime").descending();
             default -> Sort.by("endTime").descending();
         };
+    }
+
+    public Page<ProductDto> getAllProducts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return productRepository
+                .findAll(pageable)
+                .map(ProductMapper::toDto);
+    }
+
+    public ProductDto createProduct(CreateProductDto productDto) {
+        Product product = Product.builder()
+                .title(productDto.getTitle())
+                .status(productDto.getStatus())
+                .startPrice(productDto.getStartPrice())
+                .currentPrice(productDto.getCurrentPrice())
+                .buyNowPrice(productDto.getBuyNowPrice())
+                .bidIncrement(productDto.getBidIncrement())
+                .startTime(productDto.getStartTime())
+                .endTime(productDto.getEndTime())
+                .autoExtensionEnabled(productDto.getAutoExtensionEnabled())
+                .seller(productRepository.getReferenceById(productDto.getSellerId()).getSeller())
+                .category(productRepository.getReferenceById(productDto.getCategoryId()).getCategory())
+                .build();
+
+        Product addedProduct = productRepository.save(product);
+        return ProductMapper.toDto(addedProduct);
+
+    }
+
+    public void deleteProductById(Integer id) {
+        productRepository.deleteById(id);
+    }
+
+    public Product getProductById(Integer id) {
+        return productRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Product not found"));
+    }
+
+    public ProductDto editProductById(Integer id, CreateProductDto productDto) {
+        Product product = getProductById(id);
+
+        product.setTitle(productDto.getTitle());
+        product.setStatus(productDto.getStatus());
+        product.setStartPrice(productDto.getStartPrice());
+        product.setCurrentPrice(productDto.getCurrentPrice());
+        product.setBuyNowPrice(productDto.getBuyNowPrice());
+        product.setBidIncrement(productDto.getBidIncrement());
+        product.setStartTime(productDto.getStartTime());
+        product.setEndTime(productDto.getEndTime());
+        product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled());
+        product.setSeller(productRepository.getReferenceById(productDto.getSellerId()).getSeller());
+        product.setCategory(productRepository.getReferenceById(productDto.getCategoryId()).getCategory());
+        Product editedProduct = productRepository.save(product);
+        return ProductMapper.toDto(editedProduct);
+
+    }
+
+    public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {
+        if (amount <= currentPrice) throw new InvalidBidPriceException("Bid ammount more than " + currentPrice + ".");
+        if ((amount - currentPrice) % step != 0) {
+            throw new InvalidBidPriceException(
+                    "Bid price must increase by step of " + step
+            );
+        }
+    }
+
+    public void save(Product product) {
+        productRepository.save(product);
+    }
+
+    public ProductQuestion addQuestion(User user, Integer productId, AddQuestionDto questionDto) {
+        Product product = getProductById(productId);
+        ProductQuestion question = ProductQuestionMapper.toEntity(user, product, questionDto);
+
+        return productQuestionRepository.save(question);
+    }
+
+    public List<ProductQuestionDto> getQuestionById(Integer productId) {
+        List<ProductQuestion> questions =
+                productQuestionRepository.findByProductId(productId);
+
+        if (questions.isEmpty()) {
+            throw new EntityNotFoundException("Questions not found");
+        }
+
+        return questions.stream()
+                .map(ProductQuestionMapper::toDto)
+                .toList();
+    }
+
+    public List<Product> getAuctionProductsByUser(Integer userId) {
+        return productRepository.findProductsUserHasBidOn(userId);
+    }
+
+    public List<Product> getWonProducts(User user) {
+        return productRepository.findWonProductsByUserId(user.getId());
     }
 }
