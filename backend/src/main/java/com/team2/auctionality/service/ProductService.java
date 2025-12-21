@@ -1,6 +1,7 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.*;
+import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.exception.InvalidBidPriceException;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.mapper.ProductQuestionMapper;
@@ -25,6 +26,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductQuestionRepository productQuestionRepository;
+    private final CategoryService categoryService;
 
     public List<ProductDto> getTop5EndingSoon() {
         return productRepository.findTop5EndingSoon(PageRequest.of(0, 5))
@@ -81,19 +83,19 @@ public class ProductService {
                 .map(ProductMapper::toDto);
     }
 
-    public ProductDto createProduct(CreateProductDto productDto) {
+    public ProductDto createProduct(User seller, CreateProductDto productDto) {
         Product product = Product.builder()
                 .title(productDto.getTitle())
-                .status(productDto.getStatus())
+                .status(ProductStatus.active)
                 .startPrice(productDto.getStartPrice())
-                .currentPrice(productDto.getCurrentPrice())
+                .currentPrice(0f)
                 .buyNowPrice(productDto.getBuyNowPrice())
                 .bidIncrement(productDto.getBidIncrement())
                 .startTime(productDto.getStartTime())
                 .endTime(productDto.getEndTime())
                 .autoExtensionEnabled(productDto.getAutoExtensionEnabled())
-                .seller(productRepository.getReferenceById(productDto.getSellerId()).getSeller())
-                .category(productRepository.getReferenceById(productDto.getCategoryId()).getCategory())
+                .seller(seller)
+                .category(categoryService.getCategoryById(productDto.getCategoryId()))
                 .build();
 
         Product addedProduct = productRepository.save(product);
@@ -109,24 +111,24 @@ public class ProductService {
         return productRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Product not found"));
     }
 
-    public ProductDto editProductById(Integer id, CreateProductDto productDto) {
-        Product product = getProductById(id);
-
-        product.setTitle(productDto.getTitle());
-        product.setStatus(productDto.getStatus());
-        product.setStartPrice(productDto.getStartPrice());
-        product.setCurrentPrice(productDto.getCurrentPrice());
-        product.setBuyNowPrice(productDto.getBuyNowPrice());
-        product.setBidIncrement(productDto.getBidIncrement());
-        product.setStartTime(productDto.getStartTime());
-        product.setEndTime(productDto.getEndTime());
-        product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled());
-        product.setSeller(productRepository.getReferenceById(productDto.getSellerId()).getSeller());
-        product.setCategory(productRepository.getReferenceById(productDto.getCategoryId()).getCategory());
-        Product editedProduct = productRepository.save(product);
-        return ProductMapper.toDto(editedProduct);
-
-    }
+//    public ProductDto editProductById(Integer id, CreateProductDto productDto) {
+//        Product product = getProductById(id);
+//
+//        product.setTitle(productDto.getTitle());
+//        product.setStatus(productDto.getStatus());
+//        product.setStartPrice(productDto.getStartPrice());
+//        product.setCurrentPrice(productDto.getCurrentPrice());
+//        product.setBuyNowPrice(productDto.getBuyNowPrice());
+//        product.setBidIncrement(productDto.getBidIncrement());
+//        product.setStartTime(productDto.getStartTime());
+//        product.setEndTime(productDto.getEndTime());
+//        product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled());
+//        product.setSeller(productRepository.getReferenceById(productDto.getSellerId()).getSeller());
+//        product.setCategory(productRepository.getReferenceById(productDto.getCategoryId()).getCategory());
+//        Product editedProduct = productRepository.save(product);
+//        return ProductMapper.toDto(editedProduct);
+//
+//    }
 
     public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {
         if (amount <= currentPrice) throw new InvalidBidPriceException("Bid ammount more than " + currentPrice + ".");

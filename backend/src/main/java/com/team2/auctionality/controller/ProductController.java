@@ -13,6 +13,7 @@ import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -99,14 +100,19 @@ public class ProductController {
     }
 
     @PostMapping
-    public ProductDto createProduct(@RequestBody CreateProductDto productDto) {
-         return productService.createProduct(productDto);
+    @Operation(summary = "Create product")
+    public ProductDto createProduct(
+            Authentication authentication,
+            @Valid @RequestBody CreateProductDto productDto) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+         return productService.createProduct(user, productDto);
     }
 
-    @PutMapping("/{id}")
-    public ProductDto editProductById(@PathVariable Integer id, @RequestBody CreateProductDto productDto) {
-        return productService.editProductById(id, productDto);
-    }
+//    @PutMapping("/{id}")
+//    public ProductDto editProductById(@PathVariable Integer id, @RequestBody CreateProductDto productDto) {
+//        return productService.editProductById(id, productDto);
+//    }
 
     @DeleteMapping("/{id}")
     public void deleteProductById(@PathVariable Integer id) {

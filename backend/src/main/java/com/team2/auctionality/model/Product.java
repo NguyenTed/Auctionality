@@ -1,5 +1,6 @@
 package com.team2.auctionality.model;
 
+import com.team2.auctionality.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -21,8 +22,9 @@ public class Product {
     @Column(name = "title")
     private String title;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private ProductStatus status;
 
     @Column(name = "start_price")
     private Float startPrice;

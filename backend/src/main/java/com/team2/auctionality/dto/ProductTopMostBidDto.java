@@ -1,5 +1,6 @@
 package com.team2.auctionality.dto;
 
+import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.mapper.CategoryMapper;
 import com.team2.auctionality.model.Category;
 import lombok.*;
@@ -15,7 +16,7 @@ import java.util.Date;
 public class ProductTopMostBidDto {
     private Integer id;
     private String title;
-    private String status;
+    private ProductStatus status;
     private Float startPrice;
     private Float currentPrice;
     private Float buyNowPrice;
@@ -31,7 +32,7 @@ public class ProductTopMostBidDto {
     private Integer bidCount;
 
     public ProductTopMostBidDto(
-            Integer id, String title, String status,
+            Integer id, String title, ProductStatus status,
             Float startPrice, Float currentPrice, Float buyNowPrice, Float bidIncrement,
             LocalDateTime startTime, LocalDateTime endTime,
             Boolean autoExtensionEnabled, Integer sellerId,
