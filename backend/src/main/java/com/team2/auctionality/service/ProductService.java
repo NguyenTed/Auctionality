@@ -6,8 +6,10 @@ import com.team2.auctionality.exception.InvalidBidPriceException;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.mapper.ProductQuestionMapper;
 import com.team2.auctionality.model.Product;
+import com.team2.auctionality.model.ProductExtraDescription;
 import com.team2.auctionality.model.ProductQuestion;
 import com.team2.auctionality.model.User;
+import com.team2.auctionality.repository.ProductExtraDescriptionRepository;
 import com.team2.auctionality.repository.ProductQuestionRepository;
 import com.team2.auctionality.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -26,6 +29,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductQuestionRepository productQuestionRepository;
+    private final ProductExtraDescriptionRepository productExtraDescriptionRepository;
     private final CategoryService categoryService;
 
     public List<ProductDto> getTop5EndingSoon() {
@@ -169,5 +173,20 @@ public class ProductService {
 
     public List<Product> getWonProducts(User user) {
         return productRepository.findWonProductsByUserId(user.getId());
+    }
+
+    public ProductExtraDescription addExtraDescription(Integer productId, CreateExtraDescriptionDto dto) {
+        Product product = getProductById(productId);
+
+        ProductExtraDescription description = ProductExtraDescription.builder()
+                .productId(productId)
+                .content(dto.getContent())
+                .createdAt(new Date())
+                .build();
+        return productExtraDescriptionRepository.save(description);
+    }
+
+    public List<ProductExtraDescription> getDescriptionByProductId(Integer productId) {
+        return productExtraDescriptionRepository.getProductExtraDescriptionByProductId(productId);
     }
 }

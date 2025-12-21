@@ -6,6 +6,7 @@ import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.mapper.ProductQuestionMapper;
 import com.team2.auctionality.model.Bid;
+import com.team2.auctionality.model.ProductExtraDescription;
 import com.team2.auctionality.model.ProductQuestion;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.AuthService;
@@ -107,6 +108,28 @@ public class ProductController {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);
          return productService.createProduct(user, productDto);
+    }
+
+    @PostMapping("/{productId}/descriptions")
+    @Operation(summary = "Add extra description for product")
+    public ResponseEntity<ProductExtraDescription> addExtraDescription(@PathVariable Integer productId, @Valid @RequestBody CreateExtraDescriptionDto dto) {
+        ProductExtraDescription productExtraDescription = productService.addExtraDescription(productId, dto);
+        URI location = URI.create("/api/" + productId + "/descriptions");
+
+        return ResponseEntity
+                .created(location)
+                .body(
+                        productExtraDescription
+                );
+    }
+
+    @GetMapping("/{productId}/descriptions")
+    @Operation(summary = "Get all extra description by productId")
+    public ResponseEntity<List<ProductExtraDescription>> getDescriptionByProductId(@PathVariable Integer productId) {
+        List<ProductExtraDescription> productExtraDescriptions = productService.getDescriptionByProductId(productId);
+
+        return ResponseEntity
+                .ok(productExtraDescriptions);
     }
 
 //    @PutMapping("/{id}")
