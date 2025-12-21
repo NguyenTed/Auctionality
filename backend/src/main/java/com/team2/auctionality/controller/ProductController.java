@@ -5,10 +5,8 @@ import com.team2.auctionality.enums.ProductTopType;
 import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.mapper.ProductQuestionMapper;
-import com.team2.auctionality.model.Bid;
-import com.team2.auctionality.model.ProductExtraDescription;
-import com.team2.auctionality.model.ProductQuestion;
-import com.team2.auctionality.model.User;
+import com.team2.auctionality.mapper.RejectedBidderMapper;
+import com.team2.auctionality.model.*;
 import com.team2.auctionality.service.AuthService;
 import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
@@ -140,6 +138,21 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public void deleteProductById(@PathVariable Integer id) {
         productService.deleteProductById(id);
+    }
+
+    @PostMapping("/{productId}/bidders/{bidderId}/reject")
+    public ResponseEntity<RejectedBidderDto> rejectBidder(
+            @PathVariable Integer productId,
+            @PathVariable Integer bidderId,
+            @RequestBody(required = false) RejectBidderRequest request
+    ) {
+        RejectedBidder rejectedBidder = productService.rejectBidder(
+                productId,
+                bidderId,
+                request != null ? request.getReason() : null
+        );
+
+        return ResponseEntity.ok(RejectedBidderMapper.toDto(rejectedBidder));
     }
 
 

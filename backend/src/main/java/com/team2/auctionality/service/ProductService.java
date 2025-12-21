@@ -1,17 +1,13 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.*;
+import com.team2.auctionality.enums.ApproveStatus;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.exception.InvalidBidPriceException;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.mapper.ProductQuestionMapper;
-import com.team2.auctionality.model.Product;
-import com.team2.auctionality.model.ProductExtraDescription;
-import com.team2.auctionality.model.ProductQuestion;
-import com.team2.auctionality.model.User;
-import com.team2.auctionality.repository.ProductExtraDescriptionRepository;
-import com.team2.auctionality.repository.ProductQuestionRepository;
-import com.team2.auctionality.repository.ProductRepository;
+import com.team2.auctionality.model.*;
+import com.team2.auctionality.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,9 +15,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +28,10 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductQuestionRepository productQuestionRepository;
     private final ProductExtraDescriptionRepository productExtraDescriptionRepository;
+    private final BidderApprovalRepository bidderApprovalRepository;
+    private final RejectedBidderRepository rejectedBidderRepository;
+    private final BidRepository bidRepository;
+    private final UserRepository userRepository;
     private final CategoryService categoryService;
 
     public List<ProductDto> getTop5EndingSoon() {
@@ -188,5 +190,52 @@ public class ProductService {
 
     public List<ProductExtraDescription> getDescriptionByProductId(Integer productId) {
         return productExtraDescriptionRepository.getProductExtraDescriptionByProductId(productId);
+    }
+
+    @Transactional
+    public RejectedBidder rejectBidder(
+            Integer productId,
+            Integer bidderId,
+            String reason
+    ) {
+        Product product = getProductById(productId);
+        User bidder = userRepository.findById(bidderId).orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
+
+        // Set reject status if bidder approval was sent
+        bidderApprovalRepository
+                .findByProductIdAndBidderId(productId, bidderId)
+                .ifPresent(approval -> {
+                    approval.setStatus(ApproveStatus.REJECTED);
+                });
+
+        RejectedBidder rejectedBidder = rejectedBidderRepository
+                .findByProductIdAndBidderId(productId, bidderId)
+                .orElseGet(() -> rejectedBidderRepository.save(
+                        RejectedBidder.builder()
+                                .productId(productId)
+                                .bidder(bidder)
+                                .reason(reason)
+                                .createdAt(new Date())
+                                .build()
+                ));
+
+        // Set to the next if rejected bidder is who is having the highest price
+        Optional<Bid> currentTopBidOpt =
+                bidRepository.findTopBidByProductId(productId);
+
+        if (currentTopBidOpt.isPresent()
+                && currentTopBidOpt.get().getBidder().getId().equals(bidderId)) {
+
+            List<Bid> validBids = bidRepository.findValidBids(productId);
+
+            if (!validBids.isEmpty()) {
+                Bid nextBid = validBids.getFirst();
+                product.setCurrentPrice(nextBid.getAmount());
+            } else {
+                product.setCurrentPrice(product.getStartPrice());
+            }
+        }
+
+        return rejectedBidder;
     }
 }

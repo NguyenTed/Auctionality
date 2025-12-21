@@ -5,6 +5,8 @@ import com.team2.auctionality.enums.ApproveStatus;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.OrderRatingRepository;
 import com.team2.auctionality.repository.SellerUpgradeRequestRepository;
+import com.team2.auctionality.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.Date;
@@ -14,11 +16,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
 
+    private final UserRepository userRepository;
     private final WatchListItemService watchListItemService;
     private final ProductService productService;
     private final SellerUpgradeRequestRepository sellerUpgradeRequestRepository;
     private final OrderRatingRepository orderRatingRepository;
     private final OrderService orderService;
+
+    public User getUserById(Integer userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
 
     public WatchListItem addWatchList(User user, Integer productId) {
         Product product = productService.getProductById(productId);
