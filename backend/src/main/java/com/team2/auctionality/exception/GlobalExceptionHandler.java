@@ -79,6 +79,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<Map<String, String>> handleEmailNotVerified(EmailNotVerifiedException e) {
+        log.warn("EmailNotVerifiedException: {}", e.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage() != null ? e.getMessage() : "Email not verified");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
     @ExceptionHandler(TokenExpiredException.class)
     public ResponseEntity<Map<String, String>> handleTokenExpired(TokenExpiredException e) {
         log.warn("TokenExpiredException: {}", e.getMessage());

@@ -117,6 +117,21 @@ public class JwtService {
     // Get signing key from secret
     private SecretKey getSigningKey() {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        
+        // Validate key length - must be at least 256 bits (32 bytes) for HMAC-SHA
+        if (keyBytes.length < 32) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "JWT secret key is too short: %d bytes (232 bits). " +
+                    "The key must be at least 32 bytes (256 bits) for HMAC-SHA algorithms. " +
+                    "Please set a longer JWT_SECRET in your environment variables or secrets.properties file. " +
+                    "Current secret length: %d characters",
+                    keyBytes.length,
+                    secret.length()
+                )
+            );
+        }
+        
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

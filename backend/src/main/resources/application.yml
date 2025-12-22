@@ -38,8 +38,11 @@ springdoc:
     path: /swagger-ui.html
 
 # JWT Configuration
+# IMPORTANT: JWT_SECRET must be at least 32 characters (256 bits) long
+# Set JWT_SECRET in your environment variables or secrets.properties file
+# Example: JWT_SECRET=your-super-secret-key-that-is-at-least-32-characters-long-for-security
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-minimum-32-characters}
+  secret: ${JWT_SECRET:default-secret-key-must-be-at-least-32-characters-long-for-jwt-security-please-change-this}
   access-token-expiration: 900000  # 15 minutes in milliseconds
   refresh-token-expiration: 604800000  # 7 days in milliseconds
 

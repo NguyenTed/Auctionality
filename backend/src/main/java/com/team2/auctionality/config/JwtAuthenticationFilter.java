@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -47,12 +48,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Validate token
                 if (jwtService.validateToken(jwt, userDetails)) {
+                    // Extract user ID from JWT token for RLS
+                    Integer userId = jwtService.extractUserId(jwt);
+                    
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
                             userDetails.getAuthorities()
                     );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    
+                    // Store user ID in authentication details for RLS service
+                    WebAuthenticationDetails webDetails = new WebAuthenticationDetailsSource().buildDetails(request);
+                    if (userId != null) {
+                        // Store userId in a map in details
+                        java.util.Map<String, Object> detailsMap = new java.util.HashMap<>();
+                        detailsMap.put("remoteAddress", webDetails.getRemoteAddress());
+                        detailsMap.put("sessionId", webDetails.getSessionId());
+                        detailsMap.put("userId", userId);
+                        authToken.setDetails(detailsMap);
+                    } else {
+                        authToken.setDetails(webDetails);
+                    }
+                    
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }

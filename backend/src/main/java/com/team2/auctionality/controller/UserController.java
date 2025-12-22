@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ public class UserController {
     private final AuthService authService;
 
     @PostMapping("/watchlist/{productId}")
+    @PreAuthorize("hasRole('BUYER') or hasAuthority('WATCHLIST_MANAGE')")
     public ResponseEntity<ApiResponse<WatchListItemDto>> addWatchlist(
             @PathVariable Integer productId,
             Authentication authentication) {
@@ -52,6 +54,7 @@ public class UserController {
     }
 
     @DeleteMapping("/watchlist/{productId}")
+    @PreAuthorize("hasRole('BUYER') or hasAuthority('WATCHLIST_MANAGE')")
     public ResponseEntity<Map<String, Object>> deleteWatchlist(
             @PathVariable Integer productId,
             Authentication authentication) {
@@ -70,6 +73,7 @@ public class UserController {
      */
     @PostMapping("/seller-upgrade-requests")
     @Operation(summary = "Request to be upgraded from bidder to seller in 7 days")
+    @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<SellerUpgradeRequestDto> upgradeRequests(Authentication authentication) {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);
@@ -86,6 +90,7 @@ public class UserController {
 
     @GetMapping("/rates")
     @Operation(summary = "Get user's rates")
+    @PreAuthorize("isAuthenticated()")
     public List<OrderRatingDto> getRatings(Authentication authentication) {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);
@@ -100,6 +105,7 @@ public class UserController {
 
     @PostMapping("/rates")
     @Operation(summary = "Rates seller / buyer")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderRatingDto> rateUser(
             Authentication authentication,
             @Valid  @RequestBody RatingRequest ratingRequest ) {
@@ -117,6 +123,7 @@ public class UserController {
 
     @GetMapping("/auction-products")
     @Operation(summary = "Get products that user has placed bids on")
+    @PreAuthorize("isAuthenticated()")
     public List<ProductDto> getAuctionProducts(Authentication authentication) {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);
@@ -131,6 +138,7 @@ public class UserController {
 
     @GetMapping("/won-products")
     @Operation(summary = "Get products that user has won")
+    @PreAuthorize("isAuthenticated()")
     public List<ProductDto> getWonProducts(Authentication authentication) {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);

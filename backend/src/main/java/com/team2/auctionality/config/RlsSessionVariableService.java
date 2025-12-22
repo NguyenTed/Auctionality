@@ -41,13 +41,16 @@ public class RlsSessionVariableService {
             
             // Use SET LOCAL to set variable for current transaction only
             // This ensures the variable is automatically cleared when transaction ends
-            String sql = userId != null 
-                ? "SET LOCAL app.user_id = " + userId
-                : "SET LOCAL app.user_id = NULL";
-            
-            try (var stmt = connection.createStatement()) {
-                stmt.execute(sql);
-                log.debug("Set RLS session variable app.user_id = {}", userId);
+            // For unauthenticated users (userId is null), don't set the variable
+            // RLS policies will handle NULL correctly via current_setting('app.user_id', true)::INTEGER
+            if (userId != null) {
+                String sql = "SET LOCAL app.user_id = " + userId;
+                try (var stmt = connection.createStatement()) {
+                    stmt.execute(sql);
+                    log.debug("Set RLS session variable app.user_id = {}", userId);
+                }
+            } else {
+                log.debug("No authenticated user - skipping RLS session variable setting");
             }
         } catch (SQLException e) {
             log.warn("Failed to set RLS session variables: {}", e.getMessage());
@@ -57,6 +60,7 @@ public class RlsSessionVariableService {
 
     /**
      * Get current user ID from Spring Security context or JWT token.
+     * Priority: Authentication details > JWT from request header
      */
     private Integer getCurrentUserId() {
         try {
@@ -66,7 +70,18 @@ public class RlsSessionVariableService {
                 return null;
             }
 
-            // Extract from JWT token (most reliable method)
+            // First, try to get userId from Authentication details (set by JwtAuthenticationFilter)
+            Object details = authentication.getDetails();
+            if (details instanceof java.util.Map) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> detailsMap = (java.util.Map<String, Object>) details;
+                Object userIdObj = detailsMap.get("userId");
+                if (userIdObj instanceof Integer) {
+                    return (Integer) userIdObj;
+                }
+            }
+
+            // Fallback: Extract from JWT token in request header
             return extractUserIdFromRequest();
             
         } catch (Exception e) {

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DelegatingDataSource;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.sql.DataSource;
@@ -78,6 +79,24 @@ public class RlsDataSourceConfiguration {
                 String resourceKey = "rls.set." + connection.hashCode();
                 if (!TransactionSynchronizationManager.hasResource(resourceKey)) {
                     TransactionSynchronizationManager.bindResource(resourceKey, true);
+                    
+                    // Register synchronization to ensure RLS variables are set before commit
+                    // and to clean up resources after transaction completes
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void beforeCommit(boolean readOnly) {
+                            // Ensure RLS variables are set before commit
+                            rlsService.setSessionVariables(connection);
+                        }
+                        
+                        @Override
+                        public void afterCompletion(int status) {
+                            // Clean up resource
+                            TransactionSynchronizationManager.unbindResource(resourceKey);
+                        }
+                    });
+                    
+                    // Set immediately for queries that execute during the transaction
                     rlsService.setSessionVariables(connection);
                 }
             } else {

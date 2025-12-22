@@ -116,10 +116,10 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(InvalidCredentialsException::new);
 
-        // Check if email is verified (optional - can be removed if not required)
-        // if (!user.getIsEmailVerified()) {
-        //     throw new EmailNotVerifiedException();
-        // }
+        // Check if email is verified (required per proposal)
+        if (!user.getIsEmailVerified()) {
+            throw new EmailNotVerifiedException();
+        }
 
         // Check if user is active
         if (!user.getStatus().equals("active")) {

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -100,6 +101,7 @@ public class ProductController {
 
     @PostMapping
     @Operation(summary = "Create product")
+    @PreAuthorize("hasRole('SELLER') or hasAuthority('PRODUCT_CREATE')")
     public ProductDto createProduct(
             Authentication authentication,
             @Valid @RequestBody CreateProductDto productDto) {
@@ -110,6 +112,7 @@ public class ProductController {
 
     @PostMapping("/{productId}/descriptions")
     @Operation(summary = "Add extra description for product")
+    @PreAuthorize("hasRole('SELLER') or hasAuthority('PRODUCT_UPDATE')")
     public ResponseEntity<ProductExtraDescription> addExtraDescription(@PathVariable Integer productId, @Valid @RequestBody CreateExtraDescriptionDto dto) {
         ProductExtraDescription productExtraDescription = productService.addExtraDescription(productId, dto);
         URI location = URI.create("/api/" + productId + "/descriptions");
@@ -136,11 +139,13 @@ public class ProductController {
 //    }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SELLER') or hasAuthority('PRODUCT_DELETE_OWN')")
     public void deleteProductById(@PathVariable Integer id) {
         productService.deleteProductById(id);
     }
 
     @PostMapping("/{productId}/bidders/{bidderId}/reject")
+    @PreAuthorize("hasRole('SELLER')")
     public ResponseEntity<RejectedBidderDto> rejectBidder(
             @PathVariable Integer productId,
             @PathVariable Integer bidderId,
@@ -169,6 +174,7 @@ public class ProductController {
 
     @PostMapping("/{productId}/bids")
     @Operation(summary = "Place bid")
+    @PreAuthorize("hasRole('BUYER') or hasAuthority('BID_PLACE')")
     public ResponseEntity<ApiResponse<Bid>> placeBid(
             @PathVariable Integer productId,
             @RequestBody PlaceBidRequest bidRequest,
@@ -191,6 +197,7 @@ public class ProductController {
 
     @PostMapping("/{productId}/questions")
     @Operation(summary = "Add question")
+    @PreAuthorize("hasRole('BUYER')")
     public ResponseEntity<ApiResponse<ProductQuestionDto>> addQuestion(
             @PathVariable Integer productId,
             @RequestBody AddQuestionDto questionDto,
