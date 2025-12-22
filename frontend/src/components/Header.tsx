@@ -1,18 +1,28 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import SearchIcon from "@mui/icons-material/Search";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 import logo from "../assets/imgs/catawikiLogo.png";
 import type Category from "../interfaces/Category";
 import { getCategoryTree } from "../api/categoryApi";
+import { useAuth } from "../contexts/AuthContext";
 
 // const categories = ["Art", "Jewelry", "Watches", "Collectibles", "Cars"];
 
 const Header = () => {
+  const { user, isAuthenticated, logout, isLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Debug: Log auth state (remove in production)
+  useEffect(() => {
+    console.log("Header - Auth state:", { isAuthenticated, user: user?.email, isLoading });
+  }, [isAuthenticated, user, isLoading]);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -22,6 +32,19 @@ const Header = () => {
 
     loadCategories();
   }, []);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showUserMenu && !target.closest(".relative")) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showUserMenu]);
 
   return (
     <header className="border-b bg-white">
@@ -87,13 +110,61 @@ const Header = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-4">
-          <FavoriteBorderIcon className="cursor-pointer text-primary hover:opacity-75 transition-opacity duration-300 ease-in-out" />
+          {isAuthenticated && user && (
+            <FavoriteBorderIcon className="cursor-pointer text-primary hover:opacity-75 transition-opacity duration-300 ease-in-out" />
+          )}
 
-          <img
-            src="https://i.pravatar.cc/32"
-            alt="User"
-            className="h-8 w-8 rounded-full cursor-pointer"
-          />
+          {isAuthenticated && user ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <span className="text-sm text-gray-700 hidden sm:inline">
+                  {user.fullName || user.email}
+                </span>
+                <img
+                  src={user.avatarUrl || "https://i.pravatar.cc/32"}
+                  alt="User"
+                  className="h-8 w-8 rounded-full cursor-pointer"
+                />
+              </button>
+
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md border bg-white shadow-lg z-50">
+                  <div className="px-4 py-2 border-b">
+                    <p className="text-sm font-medium text-gray-900">{user.fullName || user.email}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await logout();
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <LogoutIcon fontSize="small" />
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="text-sm font-medium text-gray-700 hover:text-primary"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/signup"
+                className="text-sm font-medium text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded-md"
+              >
+                Sign up
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>
