@@ -14,5 +14,5 @@ public class ProductQuestionDto {
     private String content;
     private Date createdAt;
     private UserDto asker;
-    private ProductDto product;
+    private Integer productId;
 }

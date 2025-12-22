@@ -199,7 +199,7 @@ public class ProductController {
         User user = authService.getUserByEmail(email);
 
         ProductQuestion question = productService.addQuestion(user, productId, questionDto);
-        URI location = URI.create("/api/bids/" + question.getId());
+        URI location = URI.create("/api/products/" + productId + "/questions/");
 
         return ResponseEntity
                 .created(location)
@@ -212,6 +212,30 @@ public class ProductController {
     @Operation(summary = "Get all questions by id")
     public ResponseEntity<List<ProductQuestionDto>> getQuestionById(@PathVariable Integer productId) {
         return ResponseEntity.ok(productService.getQuestionById(productId));
+    }
+
+    @PostMapping("/{productId}/questions/{questionId}/answer")
+    @Operation(summary = "Answer question")
+    public ResponseEntity<ProductAnswer> answerQuestion(
+            @PathVariable Integer productId,
+            @PathVariable Integer questionId,
+            @RequestBody AddAnswerDto answerDto,
+            Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+
+        ProductAnswer answer = productService.answerQuestion(user.getId(), productId, questionId, answerDto);
+        URI location = URI.create("/api/products/" + productId + "/questions/" + questionId);
+
+        return ResponseEntity
+                .created(location)
+                .body(answer);
+    }
+
+    @GetMapping("/{productId}/questions/{questionId}/answer")
+    @Operation(summary = "Get all answer by product id")
+    public ResponseEntity<List<ProductAnswer>> getAnswerByProductId(@PathVariable Integer productId) {
+        return ResponseEntity.ok(productService.getAnswerByProductId(productId));
     }
 
 }

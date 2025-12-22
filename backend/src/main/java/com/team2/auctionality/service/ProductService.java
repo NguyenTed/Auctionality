@@ -30,6 +30,7 @@ public class ProductService {
     private final ProductExtraDescriptionRepository productExtraDescriptionRepository;
     private final BidderApprovalRepository bidderApprovalRepository;
     private final RejectedBidderRepository rejectedBidderRepository;
+    private final ProductAnswerRepository productAnswerRepository;
     private final BidRepository bidRepository;
     private final UserRepository userRepository;
     private final CategoryService categoryService;
@@ -237,5 +238,21 @@ public class ProductService {
         }
 
         return rejectedBidder;
+    }
+
+    public ProductAnswer answerQuestion(Integer userId, Integer productId, Integer questionId, AddAnswerDto answerDto) {
+        ProductQuestion question = productQuestionRepository.findById(questionId).orElseThrow(() -> new EntityNotFoundException("Question not found"));
+        ProductAnswer productAnswer = ProductAnswer.builder()
+                .questionId(questionId)
+                .responderId(userId)
+                .content(answerDto.getContent())
+                .createdAt(new Date())
+                .build();
+        return productAnswerRepository.save(productAnswer);
+    }
+
+    public List<ProductAnswer> getAnswerByProductId(Integer productId) {
+        List<ProductAnswer> answers = productAnswerRepository.findByProductId(productId);
+        return answers;
     }
 }

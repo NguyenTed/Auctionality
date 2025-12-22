@@ -8,11 +8,10 @@ import com.team2.auctionality.exception.BidNotAllowedException;
 import com.team2.auctionality.exception.BidPendingApprovalException;
 import com.team2.auctionality.mapper.BidMapper;
 import com.team2.auctionality.model.*;
-import com.team2.auctionality.repository.AutoBidConfigRepository;
-import com.team2.auctionality.repository.BidRepository;
-import com.team2.auctionality.repository.BidderApprovalRepository;
+import com.team2.auctionality.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -27,6 +26,8 @@ public class BidService {
     private final BidRepository bidRepository;
     private final AutoBidConfigRepository autoBidConfigRepository;
     private final BidderApprovalRepository bidderApprovalRepository;
+    private final RejectedBidderRepository rejectedBidderRepository;
+    private final UserRepository userRepository;
     private final ProductService productService;
     private final SystemAuctionRuleService systemAuctionRuleService;
 
@@ -41,18 +42,28 @@ public class BidService {
                 .toList();
     }
 
+    @Transactional
     public Bid placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
+
+        // 1. Check if bidder is in RejectedBidder
+        if (rejectedBidderRepository.existsByProductIdAndBidderId(productId, bidder.getId())) {
+            throw new BidNotAllowedException("You are not allowed to bid on this product");
+        }
+
         UserProfile bidderProfile = bidder.getProfile();
         Product product = productService.getProductById(productId);
         Float ratingPercent = bidderProfile.getRatingPercent();
         LocalDateTime now = LocalDateTime.now();
 
+
+        // 2. Check if product is ended
         if (product.getEndTime().isBefore(now) || product.getEndTime().isEqual(now)) {
             throw new AuctionClosedException("Auction has already ended");
         }
 
         ProductService.checkIsAmountAvailable(bidRequest.getAmount(), product.getBidIncrement(), product.getCurrentPrice());
 
+        // 3. Operate if user rating percent is <= 80 --> create approval
         if (ratingPercent <= 80) {
             if (bidderProfile.getRatingNegativeCount() == 0 && bidderProfile.getRatingPositiveCount() == 0) {
                 BidderApproval bidderApproval = BidderApproval.builder()
@@ -69,6 +80,35 @@ public class BidService {
             }
         }
 
+        // 4. Operate if placed bid is configured auto
+        if (Boolean.TRUE.equals(bidRequest.getIsAutoBid())) {
+
+            AutoBidConfig config = autoBidConfigRepository
+                    .findByProductIdAndBidderId(productId, bidder.getId())
+                    .orElse(null);
+
+            if (config == null) {
+                autoBidConfigRepository.save(
+                        AutoBidConfig.builder()
+                                .productId(productId)
+                                .bidderId(bidder.getId())
+                                .maxPrice(bidRequest.getAmount())
+                                .createdAt(new Date())
+                                .build()
+                );
+            } else {
+                if (bidRequest.getAmount() < config.getMaxPrice()) {
+                    throw new IllegalArgumentException(
+                            "Your max price is lower than the current auto-bid max price"
+                    );
+                }
+                // update max price
+                config.setMaxPrice(bidRequest.getAmount());
+            }
+        }
+
+
+        // 6. Save bid
         Bid bid = Bid.builder()
                 .product(product)
                 .bidder(bidder)
@@ -78,6 +118,7 @@ public class BidService {
 
         Bid savedBid = bidRepository.save(bid);
 
+        // 7. If product's endTime <= timeThreshold --> plus extension minutes.
         systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
 
             long minutesToEnd = java.time.Duration
