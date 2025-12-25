@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface BidRepository extends JpaRepository<Bid,Integer> {
-    List<Bid> findByProductId(Integer productId);
+    List<Bid> findByProductIdOrderByCreatedAtDesc(Integer productId);
 
     Optional<Bid> findTopByProductIdOrderByAmountDescCreatedAtAsc(Integer productId);
 

@@ -72,7 +72,7 @@ public class AutoBidEngine {
         // generate bid history
         Bid bid = Bid.builder()
                 .product(product)
-                .bidder(userService.getUserById(winnerConfig.getId()))
+                .bidder(userService.getUserById(winnerConfig.getBidderId()))
                 .amount(newPrice)
                 .isAutoBid(true)
                 .createdAt(new Date())

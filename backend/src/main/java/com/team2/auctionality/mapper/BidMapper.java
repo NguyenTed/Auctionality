@@ -9,17 +9,33 @@ public class BidMapper {
 
     public static BidHistoryDto toDto(Bid bid){
         return BidHistoryDto.builder()
-                .bidderName(maskName(bid.getBidder().getProfile().getFullName()))
+                .bidderName(maskName(bid.getBidder().getProfile() != null ? bid.getBidder().getProfile().getFullName() : "****"))
                 .amount(bid.getAmount())
                 .createdAt(bid.getCreatedAt())
                 .build();
     }
 
     private static String maskName(String fullName) {
-        if (fullName == null || fullName.length() <= 1) {
+        if (fullName == null || fullName.isBlank()) {
             return "****";
         }
-        return "****" + fullName.substring(fullName.length() - 1);
+
+        String[] parts = fullName.trim().split("\\s+");
+
+        if (parts.length == 1) {
+            return parts[0];
+        }
+
+        StringBuilder masked = new StringBuilder();
+
+        for (int i = 0; i < parts.length - 1; i++) {
+            masked.append("**** ");
+        }
+
+        masked.append(parts[parts.length - 1]);
+
+        return masked.toString();
     }
+
 
 }

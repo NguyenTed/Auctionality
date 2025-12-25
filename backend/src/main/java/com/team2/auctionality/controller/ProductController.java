@@ -10,6 +10,7 @@ import com.team2.auctionality.model.*;
 import com.team2.auctionality.service.AuthService;
 import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
+import com.team2.auctionality.sse.SseEmitterManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.net.URI;
 import java.util.List;
@@ -34,6 +36,8 @@ public class ProductController {
     private final ProductService productService;
     private final BidService bidService;
     private final AuthService authService;
+
+    private final SseEmitterManager emitterManager;
 
 
     @GetMapping("/category/{categoryId}")
@@ -159,12 +163,23 @@ public class ProductController {
     // Bids api
     @GetMapping("/{productId}/bids")
     @Operation(summary = "Get bids histories by productId")
-    public ResponseEntity<List<BidHistoryDto>> getBidHistoryByProductId(
-            @PathVariable Integer productId
-    ) {
-        return ResponseEntity.ok(
-                bidService.getBidHistory(productId)
-        );
+    public SseEmitter subscribeBidHistory(@PathVariable Integer productId) {
+        // 1. Subscribe
+        SseEmitter emitter = emitterManager.subscribe(productId);
+
+        // 2. Send existed bid histories
+        try {
+            List<BidHistoryDto> histories =
+                    bidService.getBidHistory(productId);
+            emitter.send(
+                    SseEmitter.event()
+                            .name("bid-history")
+                            .data(histories)
+            );
+        } catch (Exception e) {
+            emitter.completeWithError(e);
+        }
+        return emitter;
     }
 
     @PostMapping("/{productId}/bids")

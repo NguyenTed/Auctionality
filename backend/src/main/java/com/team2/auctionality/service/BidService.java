@@ -10,10 +10,13 @@ import com.team2.auctionality.exception.BidNotAllowedException;
 import com.team2.auctionality.exception.BidPendingApprovalException;
 import com.team2.auctionality.mapper.BidMapper;
 import com.team2.auctionality.model.*;
+import com.team2.auctionality.rabbitmq.BidEventPublisher;
 import com.team2.auctionality.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -31,6 +34,7 @@ public class BidService {
     private final RejectedBidderRepository rejectedBidderRepository;
     private final ProductService productService;
     private final AutoBidEngine autoBidEngine;
+    private final BidEventPublisher bidEventPublisher;
 
 
 
@@ -38,7 +42,7 @@ public class BidService {
 
         productService.getProductById(productId);
 
-        return bidRepository.findByProductId(productId)
+        return bidRepository.findByProductIdOrderByCreatedAtDesc(productId)
                 .stream()
                 .map(BidMapper::toDto)
                 .toList();
@@ -66,26 +70,26 @@ public class BidService {
         ProductService.checkIsAmountAvailable(bidRequest.getAmount(), product.getBidIncrement(), product.getCurrentPrice());
 
         // 3. Operate if user rating percent is <= 80 --> create approval
-//        if (ratingPercent <= 80) {
-//            if (bidderProfile.getRatingNegativeCount() == 0 && bidderProfile.getRatingPositiveCount() == 0) {
-//                if (bidderApprovalRepository.findByProductIdAndBidderId(productId, bidder.getId()).isPresent()) {
-//                    throw new BidPendingApprovalException("Your bid requires seller approval request has already been sent");
-//                }
-//                BidderApproval bidderApproval = BidderApproval.builder()
-//                        .amount(bidRequest.getAmount())
-//                        .productId(productId)
-//                        .bidderId(bidder.getId())
-//                        .status(ApproveStatus.PENDING)
-//                        .createdAt(new Date())
-//                        .build();
-//                bidderApprovalRepository.save(bidderApproval);
-//                throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
-//            } else {
-//                throw new BidNotAllowedException(
-//                        "Your rating does not meet the requirement to place bids"
-//                );
-//            }
-//        }
+        if (ratingPercent <= 80) {
+            if (bidderProfile.getRatingNegativeCount() == 0 && bidderProfile.getRatingPositiveCount() == 0) {
+                if (bidderApprovalRepository.findByProductIdAndBidderId(productId, bidder.getId()).isPresent()) {
+                    throw new BidPendingApprovalException("Your bid requires seller approval request has already been sent");
+                }
+                BidderApproval bidderApproval = BidderApproval.builder()
+                        .amount(bidRequest.getAmount())
+                        .productId(productId)
+                        .bidderId(bidder.getId())
+                        .status(ApproveStatus.PENDING)
+                        .createdAt(new Date())
+                        .build();
+                bidderApprovalRepository.save(bidderApproval);
+                throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
+            } else {
+                throw new BidNotAllowedException(
+                        "Your rating does not meet the requirement to place bids"
+                );
+            }
+        }
 
         // 4. Operate if placed bid is configured auto
         AutoBidConfig config = autoBidConfigRepository
@@ -93,7 +97,7 @@ public class BidService {
                 .orElse(null);
 
         if (config == null) {
-            autoBidConfigRepository.save(
+            config = autoBidConfigRepository.save(
                     AutoBidConfig.builder()
                             .productId(productId)
                             .bidderId(bidder.getId())
@@ -112,6 +116,18 @@ public class BidService {
         }
 
         AutoBidResult result = autoBidEngine.recalculate(product.getId());
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        List<BidHistoryDto> histories =
+                                getBidHistory(productId);
+
+                        bidEventPublisher.publishBidHistory(productId, histories);
+                    }
+                }
+        );
 
         // 6. Save bid
 //        Bid bid = Bid.builder()
