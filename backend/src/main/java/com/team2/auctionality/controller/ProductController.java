@@ -169,7 +169,7 @@ public class ProductController {
 
     @PostMapping("/{productId}/bids")
     @Operation(summary = "Place bid")
-    public ResponseEntity<ApiResponse<Bid>> placeBid(
+    public ResponseEntity<ApiResponse<AutoBidConfig>> placeBid(
             @PathVariable Integer productId,
             @RequestBody PlaceBidRequest bidRequest,
             Authentication authentication
@@ -177,15 +177,15 @@ public class ProductController {
         String email = authentication.getName();
         User user = authService.getUserByEmail(email);
 
-        Bid bid = bidService.placeBid(user, productId, bidRequest);
+        AutoBidConfig bidConfig = bidService.placeBid(user, productId, bidRequest);
 
-        URI location = URI.create("/api/bids/" + bid.getId());
+        URI location = URI.create("/api/products/" + productId + "/bids");
 
         return ResponseEntity
                 .created(location)
                 .body(new ApiResponse<>(
                         "Bid placed successfully",
-                        bid
+                        bidConfig
                 ));
     }
 

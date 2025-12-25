@@ -138,7 +138,7 @@ public class ProductService {
 //    }
 
     public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {
-        if (amount <= currentPrice) throw new InvalidBidPriceException("Bid ammount more than " + currentPrice + ".");
+        if (amount <= currentPrice) throw new InvalidBidPriceException("Bid amount more than " + currentPrice + ".");
         if ((amount - currentPrice) % step != 0) {
             throw new InvalidBidPriceException(
                     "Bid price must increase by step of " + step

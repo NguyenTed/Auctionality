@@ -27,7 +27,7 @@ public class AutoBidConfig {
     private Integer bidderId;
 
     @Column(name = "max_price")
-    private float maxPrice;
+    private Float maxPrice;
 
     @Column(name = "created_at")
     private Date createdAt;
