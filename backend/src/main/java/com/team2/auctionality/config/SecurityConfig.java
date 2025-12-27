@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         // Public read-only endpoints for categories (GET only)
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payments/vnpay-return").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )

@@ -17,7 +17,6 @@ import java.util.List;
 @RequestMapping("/api/categories")
 @Tag(name = "Category", description = "Category & Subcategory API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class CategoryController {
 
     @Autowired

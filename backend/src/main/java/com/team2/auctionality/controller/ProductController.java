@@ -28,7 +28,6 @@ import java.util.List;
 @RequestMapping("/api/products")
 @Tag(name = "Product", description = "Product API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class ProductController {
 
     private static final int PAGE_DEFAULT_VALUE = 1;

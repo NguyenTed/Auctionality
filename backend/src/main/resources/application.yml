@@ -69,8 +69,15 @@ oauth2:
         scope:
           - read:user
           - user:email
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+rabbitmq:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+
+
+vnpay:
+  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  tmn-code: YS32FM63
+  secret-key: P5S429BEYLZBPUPP0TV87KU8I4EBQRT9
+  return-url:  https://512f9e3961dc.ngrok-free.app/api/payments/vnpay-return

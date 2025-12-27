@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -115,5 +116,18 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
         WHERE o.buyer_id = :userId
         """, nativeQuery = true)
     List<Product> findWonProductsByUserId(@Param("userId") Integer userId);
+
+    @Query("""
+    SELECT p
+    FROM Product p
+    WHERE p.endTime <= :now
+      AND p.status = 'active'
+      AND NOT EXISTS (
+          SELECT o
+          FROM Order o
+          WHERE o.product.id = p.id
+      )
+""")
+    List<Product> findExpiredAndNotOrdered(LocalDateTime now);
 }
 
