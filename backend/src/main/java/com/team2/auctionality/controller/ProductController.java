@@ -99,8 +99,24 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ProductDto getProductById(@PathVariable Integer id) {
-        return ProductMapper.toDto(productService.getProductById(id));
+    @Operation(summary = "Get product by id in realtime")
+    public SseEmitter getProductById(@PathVariable Integer id) {
+        // 1. Subscribe
+        SseEmitter emitter = emitterManager.subscribe(id);
+
+        // 2. Send existed bid histories
+        try {
+            ProductDto existedProduct =
+                    ProductMapper.toDto(productService.getProductById(id));
+            emitter.send(
+                    SseEmitter.event()
+                            .name("product")
+                            .data(existedProduct)
+            );
+        } catch (Exception e) {
+            emitter.completeWithError(e);
+        }
+        return emitter;
     }
 
     @PostMapping
