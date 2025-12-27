@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { loginAsync, selectAuthLoading } from "../../features/auth/authSlice";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -8,14 +9,15 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 function LoginPageContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const dispatch = useAppDispatch();
+  const authLoading = useAppSelector(selectAuthLoading);
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -41,20 +43,20 @@ function LoginPageContent() {
       return;
     }
 
-    setIsLoading(true);
     setErrors({});
 
     try {
-      await login(formData);
+      const result = await dispatch(loginAsync(formData));
       
-      // Redirect to the page user was trying to access, or home
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
-      navigate(from, { replace: true });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Login failed. Please try again.";
-      setErrors({ general: errorMessage });
-    } finally {
-      setIsLoading(false);
+      if (loginAsync.fulfilled.match(result)) {
+        // Redirect to the page user was trying to access, or home
+        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+        navigate(from, { replace: true });
+      } else {
+        setErrors({ general: result.payload as string || "Login failed. Please try again." });
+      }
+    } catch (error: unknown) {
+      setErrors({ general: "An unexpected error occurred. Please try again." });
     }
   };
 
@@ -163,10 +165,10 @@ function LoginPageContent() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={authLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {authLoading ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>

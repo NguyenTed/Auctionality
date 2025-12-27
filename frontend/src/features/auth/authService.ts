@@ -1,4 +1,9 @@
-import axiosClient from "./axiosClient";
+/**
+ * Auth Service
+ * Axios API calls for authentication feature
+ */
+
+import axiosInstance from "../../api/axiosInstance";
 
 export interface LoginRequest {
   email: string;
@@ -9,10 +14,6 @@ export interface RegisterRequest {
   email: string;
   password: string;
   fullName: string;
-}
-
-export interface EmailVerificationRequest {
-  token: string;
 }
 
 export interface AuthResponse {
@@ -34,46 +35,58 @@ export interface AuthResponse {
   permissions: string[];
 }
 
-export const authApi = {
+export interface User {
+  id: number;
+  email: string;
+  fullName: string;
+  phoneNumber?: string;
+  avatarUrl?: string;
+  isEmailVerified: boolean;
+  status: string;
+  ratingPercent?: number;
+  createdAt: string;
+}
+
+export const authService = {
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await axiosClient.post<AuthResponse>("/auth/register", data);
+    const response = await axiosInstance.post<AuthResponse>("/auth/register", data);
     return response.data;
   },
 
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await axiosClient.post<AuthResponse>("/auth/login", data);
+    const response = await axiosInstance.post<AuthResponse>("/auth/login", data);
     return response.data;
   },
 
   verifyEmail: async (token: string): Promise<void> => {
-    await axiosClient.post("/auth/verify-email", { token });
+    await axiosInstance.post("/auth/verify-email", { token });
   },
 
   resendVerificationEmail: async (email: string): Promise<void> => {
-    await axiosClient.post("/auth/resend-verification", { email });
+    await axiosInstance.post("/auth/resend-verification", { email });
   },
 
   forgotPassword: async (email: string): Promise<void> => {
-    await axiosClient.post("/auth/forgot-password", { email });
+    await axiosInstance.post("/auth/forgot-password", { email });
   },
 
   resetPassword: async (token: string, newPassword: string): Promise<void> => {
-    await axiosClient.post("/auth/reset-password", { token, newPassword });
+    await axiosInstance.post("/auth/reset-password", { token, newPassword });
   },
 
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
-    const response = await axiosClient.post<AuthResponse>("/auth/refresh", {
+    const response = await axiosInstance.post<AuthResponse>("/auth/refresh", {
       refreshToken,
     });
     return response.data;
   },
 
   logout: async (refreshToken: string): Promise<void> => {
-    await axiosClient.post("/auth/logout", { refreshToken });
+    await axiosInstance.post("/auth/logout", { refreshToken });
   },
 
-  getCurrentUser: async () => {
-    const response = await axiosClient.get("/auth/me");
+  getCurrentUser: async (): Promise<User> => {
+    const response = await axiosInstance.get<User>("/auth/me");
     return response.data;
   },
 };

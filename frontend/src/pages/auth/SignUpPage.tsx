@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { registerAsync, selectAuthLoading } from "../../features/auth/authSlice";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 function SignUpPageContent() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const dispatch = useAppDispatch();
+  const authLoading = useAppSelector(selectAuthLoading);
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,7 +26,6 @@ function SignUpPageContent() {
     fullName?: string;
     general?: string;
   }>({});
-  const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
     const newErrors: {
@@ -70,23 +72,23 @@ function SignUpPageContent() {
       return;
     }
 
-    setIsLoading(true);
     setErrors({});
 
     try {
-      await register({
+      const result = await dispatch(registerAsync({
         email: formData.email,
         password: formData.password,
         fullName: formData.fullName,
-      });
+      }));
 
-      // Redirect to email verification page
-      navigate("/verify-email", { state: { email: formData.email } });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Registration failed. Please try again.";
-      setErrors({ general: errorMessage });
-    } finally {
-      setIsLoading(false);
+      if (registerAsync.fulfilled.match(result)) {
+        // Redirect to email verification page
+        navigate("/verify-email", { state: { email: formData.email } });
+      } else {
+        setErrors({ general: result.payload as string || "Registration failed. Please try again." });
+      }
+    } catch (error: unknown) {
+      setErrors({ general: "An unexpected error occurred. Please try again." });
     }
   };
 
@@ -248,10 +250,10 @@ function SignUpPageContent() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={authLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Creating account..." : "Create account"}
+              {authLoading ? "Creating account..." : "Create account"}
             </button>
           </div>
         </form>

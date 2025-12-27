@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
-import type { Product } from "../../interfaces/Product";
-import { getTopProducts } from "../../api/productApi";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { fetchTopProductsAsync, selectTopProducts, selectProductLoading } from "../../features/product/productSlice";
 const responsive = {
   desktop: {
     breakpoint: { max: 3000, min: 1024 },
@@ -52,18 +52,15 @@ function formatRemainingTime(endTime: Date) {
 }
 
 export default function HomePage() {
-  const [endingSoonProducts, setEndingSoonProducts] = useState<Product[]>([]);
+  const dispatch = useAppDispatch();
+  const endingSoonProducts = useAppSelector(selectTopProducts);
+  const isLoading = useAppSelector(selectProductLoading);
 
   useEffect(() => {
-    const loadProducts = async () => {
-      const res = await getTopProducts("ENDING_SOON");
-      setEndingSoonProducts(res.data);
-    };
+    dispatch(fetchTopProductsAsync("ENDING_SOON"));
+  }, [dispatch]);
 
-    loadProducts();
-  }, []);
-
-  if (!endingSoonProducts) {
+  if (isLoading) {
     return <div className="p-6">Loading...</div>;
   }
   return (

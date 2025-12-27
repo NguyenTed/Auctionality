@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -7,31 +7,30 @@ import SearchIcon from "@mui/icons-material/Search";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 import logo from "../assets/imgs/catawikiLogo.png";
-import type Category from "../interfaces/Category";
-import { getCategoryTree } from "../api/categoryApi";
-import { useAuth } from "../contexts/AuthContext";
-
-// const categories = ["Art", "Jewelry", "Watches", "Collectibles", "Cars"];
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import {
+  selectUser,
+  selectIsAuthenticated,
+  logoutAsync,
+} from "../features/auth/authSlice";
+import {
+  fetchCategoriesAsync,
+  selectCategories,
+} from "../features/category/categorySlice";
 
 const Header = () => {
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const categories = useAppSelector(selectCategories);
+
   const [open, setOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
-  // Debug: Log auth state (remove in production)
-  useEffect(() => {
-    console.log("Header - Auth state:", { isAuthenticated, user: user?.email, isLoading });
-  }, [isAuthenticated, user, isLoading]);
 
   useEffect(() => {
-    const loadCategories = async () => {
-      const res = await getCategoryTree();
-      setCategories(res.data);
-    };
-
-    loadCategories();
-  }, []);
+    dispatch(fetchCategoriesAsync());
+  }, [dispatch]);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -133,13 +132,16 @@ const Header = () => {
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 rounded-md border bg-white shadow-lg z-50">
                   <div className="px-4 py-2 border-b">
-                    <p className="text-sm font-medium text-gray-900">{user.fullName || user.email}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {user.fullName || user.email}
+                    </p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <button
                     onClick={async () => {
-                      await logout();
+                      await dispatch(logoutAsync());
                       setShowUserMenu(false);
+                      navigate("/login");
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
                   >

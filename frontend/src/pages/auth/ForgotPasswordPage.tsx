@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { authApi } from "../../api/authApi";
+import { authService } from "../../features/auth/authService";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -33,10 +33,11 @@ export default function ForgotPasswordPage() {
     setIsSuccess(false);
 
     try {
-      await authApi.forgotPassword(email);
+      await authService.forgotPassword(email);
       setIsSuccess(true);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Failed to send reset email. Please try again.";
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      const errorMessage = err.response?.data?.error || "Failed to send reset email. Please try again.";
       setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
