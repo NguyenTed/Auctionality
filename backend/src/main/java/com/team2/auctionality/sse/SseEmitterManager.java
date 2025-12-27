@@ -1,5 +1,7 @@
 package com.team2.auctionality.sse;
 
+import com.team2.auctionality.dto.BidHistoryDto;
+import com.team2.auctionality.dto.ProductDto;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -32,14 +34,26 @@ public class SseEmitterManager {
         if (productEmitters == null) return;
 
         for (SseEmitter emitter : productEmitters) {
-            try {
-                emitter.send(
-                        SseEmitter.event()
-                                .name("bid-history")
-                                .data(data)
-                );
-            } catch (Exception e) {
-                remove(productId, emitter);
+            if (data instanceof BidHistoryDto) {
+                try {
+                    emitter.send(
+                            SseEmitter.event()
+                                    .name("bid-history")
+                                    .data(data)
+                    );
+                } catch (Exception e) {
+                    remove(productId, emitter);
+                }
+            } else if (data instanceof ProductDto) {
+                try {
+                    emitter.send(
+                            SseEmitter.event()
+                                    .name("product")
+                                    .data(data)
+                    );
+                } catch (Exception e) {
+                    remove(productId, emitter);
+                }
             }
         }
     }

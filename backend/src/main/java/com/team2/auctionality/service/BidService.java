@@ -4,13 +4,16 @@ import com.team2.auctionality.auction.AutoBidEngine;
 import com.team2.auctionality.dto.AutoBidResult;
 import com.team2.auctionality.dto.BidHistoryDto;
 import com.team2.auctionality.dto.PlaceBidRequest;
+import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.enums.ApproveStatus;
 import com.team2.auctionality.exception.AuctionClosedException;
 import com.team2.auctionality.exception.BidNotAllowedException;
 import com.team2.auctionality.exception.BidPendingApprovalException;
 import com.team2.auctionality.mapper.BidMapper;
+import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.rabbitmq.BidEventPublisher;
+import com.team2.auctionality.rabbitmq.ProductEventPublisher;
 import com.team2.auctionality.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,7 +37,10 @@ public class BidService {
     private final RejectedBidderRepository rejectedBidderRepository;
     private final ProductService productService;
     private final AutoBidEngine autoBidEngine;
+
+    // RabbitMQ
     private final BidEventPublisher bidEventPublisher;
+    private final ProductEventPublisher productEventPublisher;
 
 
 
@@ -121,10 +127,11 @@ public class BidService {
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        List<BidHistoryDto> histories =
-                                getBidHistory(productId);
+                        List<BidHistoryDto> histories = getBidHistory(productId);
+                        ProductDto productDto = ProductMapper.toDto(product);
 
                         bidEventPublisher.publishBidHistory(productId, histories);
+                        productEventPublisher.publishProduct(productDto);
                     }
                 }
         );

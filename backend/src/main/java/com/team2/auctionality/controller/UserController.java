@@ -32,6 +32,14 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
 
+    @GetMapping("/watchlist")
+    public List<WatchListItemDto> getWatchlist(Authentication authentication) {
+        String email = authentication.getName();
+        User user = authService.getUserByEmail(email);
+
+        return userService.getWatchList(user);
+    }
+
     @PostMapping("/watchlist/{productId}")
     @PreAuthorize("hasRole('BUYER') or hasAuthority('WATCHLIST_MANAGE')")
     public ResponseEntity<ApiResponse<WatchListItemDto>> addWatchlist(

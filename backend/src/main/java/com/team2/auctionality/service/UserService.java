@@ -1,6 +1,7 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.RatingRequest;
+import com.team2.auctionality.dto.WatchListItemDto;
 import com.team2.auctionality.enums.ApproveStatus;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.OrderRatingRepository;
@@ -89,5 +90,9 @@ public class UserService {
         orderRating.setValue(ratingRequest.getValue());
 
         return orderRatingRepository.save(orderRating);
+    }
+
+    public List<WatchListItemDto> getWatchList(User user) {
+        return watchListItemService.getWatchList(user);
     }
 }

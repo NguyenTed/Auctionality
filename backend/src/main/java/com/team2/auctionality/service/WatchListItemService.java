@@ -1,6 +1,8 @@
 package com.team2.auctionality.service;
 
+import com.team2.auctionality.dto.WatchListItemDto;
 import com.team2.auctionality.exception.WatchListAlreadyExistsException;
+import com.team2.auctionality.model.User;
 import com.team2.auctionality.model.WatchListItem;
 import com.team2.auctionality.repository.WatchListItemRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -8,6 +10,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -39,5 +42,9 @@ public class WatchListItemService {
                     )
             );
         }
+    }
+
+    public List<WatchListItemDto> getWatchList(User user) {
+        return watchListItemRepository.getWatchListItemByUser(user);
     }
 }
