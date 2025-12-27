@@ -7,5 +7,4 @@ import lombok.Getter;
 @AllArgsConstructor
 public class PlaceBidRequest {
     private Float amount;
-    private Boolean isAutoBid;
 }

@@ -24,7 +24,7 @@ public class ProductQuestionMapper {
     public static ProductQuestionDto toDto(ProductQuestion productQuestion) {
         return ProductQuestionDto.builder()
                 .id(productQuestion.getId())
-                .product(ProductMapper.toDto(productQuestion.getProduct()))
+                .productId(productQuestion.getProduct().getId())
                 .asker(UserMapper.toDto(productQuestion.getAsker()))
                 .content(productQuestion.getContent())
                 .createdAt(productQuestion.getCreatedAt())
