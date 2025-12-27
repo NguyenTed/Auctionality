@@ -15,5 +15,7 @@ public class CategoryDto {
     private Integer id;
     private String name;
     private String slug;
+    private Integer parentId;
     private List<CategoryDto> children;
+
 }

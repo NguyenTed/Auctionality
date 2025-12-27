@@ -2,6 +2,7 @@ package com.team2.auctionality.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Table(name = "bid")
 public class Bid {
 
@@ -22,8 +24,9 @@ public class Bid {
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Product product;
 
-    @Column(name = "bidder_id")
-    private Integer bidderId;
+    @JoinColumn(name = "bidder_id")
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private User bidder;
 
     @Column(name = "amount")
     private float amount;

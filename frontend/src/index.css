@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+:root {
+  --primary: #2563eb;
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.border-primary {
+  border-color: var(--primary);
+}
+
+.ring-primary {
+  --tw-ring-color: var(--primary);
+}
+
+.focus\:ring-primary:focus {
+  --tw-ring-color: var(--primary);
+}
+
+.hover\:text-primary\/80:hover {
+  color: rgb(37 99 235 / 0.8);
+}
+
+.hover\:bg-primary\/90:hover {
+  background-color: rgb(37 99 235 / 0.9);
+}

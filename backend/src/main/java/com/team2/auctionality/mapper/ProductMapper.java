@@ -4,6 +4,7 @@ import com.team2.auctionality.dto.CategoryDto;
 import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.model.Category;
 import com.team2.auctionality.model.Product;
+import com.team2.auctionality.model.ProductImage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -11,9 +12,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ProductMapper {
 
-    private final CategoryMapper categoryMapper;
-
-    public ProductDto toDto(Product product) {
+    public static ProductDto toDto(Product product) {
         if (product == null) return null;
 
         return ProductDto.builder()
@@ -29,7 +28,8 @@ public class ProductMapper {
                 .autoExtensionEnabled(product.getAutoExtensionEnabled())
 
                 .sellerId(product.getSeller() != null ? product.getSeller().getId() : null)
-                .category(product.getCategory() != null ? categoryMapper.toDto(product.getCategory()) : null)
+                .category(product.getCategory() != null ? CategoryMapper.toDto(product.getCategory()) : null)
+                .images(product.getImages() != null ? ProductImageMapper.toListDto(product.getImages()) : null)
                 .build();
     }
 }

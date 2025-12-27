@@ -13,6 +13,7 @@ public class PagedResponse<T> {
     private List<T> items;
     private Pagination pagination;
 
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -24,4 +25,5 @@ public class PagedResponse<T> {
         private boolean hasNext;
         private boolean hasPrevious;
     }
+
 }
