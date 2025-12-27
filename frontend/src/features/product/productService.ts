@@ -12,6 +12,7 @@ export interface ProductSearchParams {
   size?: number;
   keyword?: string;
   categoryId?: number | null;
+  sort?: string;
 }
 
 export interface ProductResponse {
@@ -43,10 +44,11 @@ export const productService = {
     page = 1,
     size = 10,
     keyword = "",
-    categoryId?: number | null
+    categoryId?: number | null,
+    sort = "endTimeDesc"
   ): Promise<ProductResponse> => {
     const response = await axiosInstance.get<ProductResponse>("/products/search", {
-      params: { keyword, page, size, categoryId },
+      params: { keyword, page, size, categoryId, sort },
     });
     return response.data;
   },

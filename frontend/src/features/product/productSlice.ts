@@ -74,8 +74,8 @@ export const searchProductsAsync = createAppAsyncThunk(
   "product/searchProducts",
   async (params: ProductSearchParams, { rejectWithValue }) => {
     try {
-      const { page = 1, size = 10, keyword = "", categoryId } = params;
-      const response = await productService.searchProducts(page, size, keyword, categoryId);
+      const { page = 1, size = 10, keyword = "", categoryId, sort = "endTimeDesc" } = params;
+      const response = await productService.searchProducts(page, size, keyword, categoryId, sort);
       return { items: response.items, pagination: response.pagination, searchParams: params };
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };

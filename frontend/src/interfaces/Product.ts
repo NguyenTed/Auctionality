@@ -1,5 +1,12 @@
 import type Category from "./Category";
 
+export interface ProductImage {
+  id: number;
+  url: string;
+  isThumbnail: boolean;
+  productId: number;
+}
+
 export interface Product {
   id: number;
   title: string;
@@ -8,11 +15,13 @@ export interface Product {
   currentPrice?: number | null;
   buyNowPrice?: number | null;
   bidIncrement?: number | null;
-  startTime?: Date | null;
-  endTime?: Date | null;
+  startTime?: string | null; // ISO string from backend
+  endTime?: string | null; // ISO string from backend
   autoExtensionEnabled: boolean;
   sellerId: number;
   category?: Category | null;
+  images?: ProductImage[];
+  bidCount?: number; // For top products
 }
 
 export interface ProductRequest {

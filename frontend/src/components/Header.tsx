@@ -49,10 +49,10 @@ const Header = () => {
     <header className="border-b bg-white">
       <div className="mx-auto max-w-7xl flex items-center gap-6 px-4 py-3">
         {/* Logo */}
-        <div className="flex items-center gap-2 cursor-pointer">
+        <Link to="/" className="flex items-center gap-2 cursor-pointer">
           <img src={logo} alt="Catawiki" className="h-8 w-8" />
           <span className="text-xl font-semibold text-primary">catawiki</span>
-        </div>
+        </Link>
 
         {/* Categories */}
         <div className="relative">
@@ -98,14 +98,25 @@ const Header = () => {
         </div>
 
         {/* Search */}
-        <div className="relative flex-1">
+        <form
+          className="relative flex-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const keyword = formData.get("search") as string;
+            if (keyword) {
+              navigate(`/products?keyword=${encodeURIComponent(keyword)}`);
+            }
+          }}
+        >
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
+            name="search"
             placeholder="Search for title, category..."
             className="w-full rounded-full border pl-10 pr-4 py-2 focus:border-primary focus:outline-none"
           />
-        </div>
+        </form>
 
         {/* Actions */}
         <div className="flex items-center gap-4">

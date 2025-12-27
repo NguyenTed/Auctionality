@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #2563eb;
+  --primary: #ff6200; /* Catawiki orange */
 }
 
 .text-primary {
@@ -25,9 +25,9 @@
 }
 
 .hover\:text-primary\/80:hover {
-  color: rgb(37 99 235 / 0.8);
+  color: rgb(255 98 0 / 0.8);
 }
 
 .hover\:bg-primary\/90:hover {
-  background-color: rgb(37 99 235 / 0.9);
+  background-color: rgb(255 98 0 / 0.9);
 }

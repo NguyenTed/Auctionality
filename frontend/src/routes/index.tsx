@@ -4,6 +4,8 @@ import { useAppDispatch } from "../app/hooks";
 import { initializeAuthAsync, updateTokens } from "../features/auth/authSlice";
 import GuestLayout from "../layouts/GuestLayout";
 import HomePage from "../pages/common/HomePage";
+import ProductListPage from "../pages/products/ProductListPage";
+import ProductDetailPage from "../pages/products/ProductDetailPage";
 import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
@@ -44,14 +46,16 @@ function AppRouterContent() {
   }, [dispatch]);
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route element={<GuestLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Routes>
+        {/* Public routes */}
+        <Route element={<GuestLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<ProductListPage />} />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         
         {/* Protected routes - add requireAuth prop to routes that need authentication */}
         {/* Example:

@@ -1,10 +1,22 @@
-import { useEffect } from "react";
+/**
+ * HomePage Component
+ * Main landing page with hero section, featured auctions, and categories
+ */
 
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+  fetchTopProductsAsync,
+  selectTopProducts,
+  selectProductLoading,
+} from "../../features/product/productSlice";
+import { selectCategories } from "../../features/category/categorySlice";
+import ProductGrid from "../../components/ProductGrid";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { fetchTopProductsAsync, selectTopProducts, selectProductLoading } from "../../features/product/productSlice";
-const responsive = {
+
+const carouselResponsive = {
   desktop: {
     breakpoint: { max: 3000, min: 1024 },
     items: 4,
@@ -19,82 +31,164 @@ const responsive = {
   },
 };
 
-function formatRemainingTime(endTime: Date) {
-  const now = Date.now();
-
-  const diffMs = new Date(endTime).getTime() - now;
-
-  if (diffMs <= 0) {
-    return "Ended";
-  }
-
-  const minutes = Math.floor(diffMs / (1000 * 60));
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (days > 3) {
-    return `${new Date(endTime).toLocaleString()}`;
-  }
-
-  // if (days <= 3 && days > 1) {
-  //   return `${days} days `;
-  // }
-
-  if (days >= 1) {
-    return `${days} day${days > 1 ? "s" : ""} `;
-  }
-
-  if (hours >= 1) {
-    return `${hours} hour${hours > 1 ? "s" : ""} `;
-  }
-
-  return `${minutes} minute${minutes > 1 ? "s" : ""} `;
-}
-
 export default function HomePage() {
   const dispatch = useAppDispatch();
   const endingSoonProducts = useAppSelector(selectTopProducts);
   const isLoading = useAppSelector(selectProductLoading);
+  const categories = useAppSelector(selectCategories);
 
   useEffect(() => {
     dispatch(fetchTopProductsAsync("ENDING_SOON"));
   }, [dispatch]);
 
-  if (isLoading) {
-    return <div className="p-6">Loading...</div>;
-  }
   return (
-    <div className="w-full min-h-screen">
-      {/* Auction Ending Soon */}
-      <div className="">
-        <span className="font-semibold px-[200px]">Auction ending soon</span>
-        <div className="">
-          <Carousel
-            responsive={responsive}
-            infinite
-            arrows
-            draggable
-            swipeable
-            keyBoardControl
-            containerClass="mt-4"
-            itemClass="px-2"
-          >
-            {endingSoonProducts.map((product) => (
-              <div key={product.id} className="flex flex-col gap-2">
-                <img
-                  src="https://assets.catawiki.com/image/cw_auction_large/plain/assets/catawiki/assets/2025/10/2/c/f/8/cf83a0e6-9204-4500-ac6e-b7fb2824a2c8.jpg"
-                  alt={product.title}
-                  className="rounded"
-                />
-                <span className="font-bold">{product.title}</span>
-                <span className="text-[#919397] font-bold">
-                  Ends in {formatRemainingTime(product.endTime!)}
-                </span>
-              </div>
-            ))}
-          </Carousel>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-r from-primary to-orange-600 text-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Discover Unique Items at Auction
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-blue-100">
+              Bid on rare collectibles, art, jewelry, and more
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/products"
+                className="px-8 py-3 bg-white text-primary font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Browse Auctions
+              </Link>
+              <Link
+                to="/signup"
+                className="px-8 py-3 bg-transparent border-2 border-white text-white font-semibold rounded-lg hover:bg-white/10 transition-colors"
+              >
+                Start Selling
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Categories Section */}
+      {categories.length > 0 && (
+        <section className="py-12 bg-white border-b">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop by Category</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {categories.slice(0, 12).map((category) => (
+                <Link
+                  key={category.id}
+                  to={`/products?categoryId=${category.id}`}
+                  className="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+                    <span className="text-2xl">📦</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 text-center">
+                    {category.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Ending Soon Section */}
+      <section className="py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Ending Soon</h2>
+            <Link
+              to="/products?sort=endTimeAsc"
+              className="text-primary hover:text-primary/80 font-medium"
+            >
+              View all →
+            </Link>
+          </div>
+          {isLoading ? (
+            <ProductGrid products={[]} isLoading={true} />
+          ) : endingSoonProducts.length > 0 ? (
+            <div className="overflow-hidden">
+              <Carousel
+                responsive={carouselResponsive}
+                infinite={endingSoonProducts.length > 4}
+                arrows
+                draggable
+                swipeable
+                keyBoardControl
+                containerClass="pb-4"
+                itemClass="px-2"
+              >
+                {endingSoonProducts.map((product) => (
+                  <div key={product.id} className="h-full">
+                    <ProductGrid products={[product]} />
+                  </div>
+                ))}
+              </Carousel>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No auctions ending soon</p>
+          )}
+        </div>
+      </section>
+
+      {/* Most Bids Section */}
+      <section className="py-12 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Most Bids</h2>
+            <Link
+              to="/products?sort=bidCountDesc"
+              className="text-primary hover:text-primary/80 font-medium"
+            >
+              View all →
+            </Link>
+          </div>
+          <MostBidsSection />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function MostBidsSection() {
+  const dispatch = useAppDispatch();
+  const mostBidProducts = useAppSelector((state) => state.product.topProducts);
+  const isLoading = useAppSelector(selectProductLoading);
+
+  useEffect(() => {
+    dispatch(fetchTopProductsAsync("MOST_BID"));
+  }, [dispatch]);
+
+  if (isLoading) {
+    return <ProductGrid products={[]} isLoading={true} />;
+  }
+
+  if (mostBidProducts.length === 0) {
+    return <p className="text-gray-500 text-center py-8">No products with bids</p>;
+  }
+
+  return (
+    <div className="overflow-hidden">
+      <Carousel
+        responsive={carouselResponsive}
+        infinite={mostBidProducts.length > 4}
+        arrows
+        draggable
+        swipeable
+        keyBoardControl
+        containerClass="pb-4"
+        itemClass="px-2"
+      >
+        {mostBidProducts.map((product) => (
+          <div key={product.id} className="h-full">
+            <ProductGrid products={[product]} />
+          </div>
+        ))}
+      </Carousel>
     </div>
   );
 }
