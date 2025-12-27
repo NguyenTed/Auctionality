@@ -12,7 +12,10 @@ import {
   selectProductLoading,
 } from "../../features/product/productSlice";
 import { selectCategories } from "../../features/category/categorySlice";
+import { selectIsAuthenticated } from "../../features/auth/authSlice";
+import { fetchWatchlistAsync } from "../../features/watchlist/watchlistSlice";
 import ProductGrid from "../../components/ProductGrid";
+import ProductCard from "../../components/ProductCard";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 
@@ -36,10 +39,14 @@ export default function HomePage() {
   const endingSoonProducts = useAppSelector(selectTopProducts);
   const isLoading = useAppSelector(selectProductLoading);
   const categories = useAppSelector(selectCategories);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   useEffect(() => {
     dispatch(fetchTopProductsAsync("ENDING_SOON"));
-  }, [dispatch]);
+    if (isAuthenticated) {
+      dispatch(fetchWatchlistAsync());
+    }
+  }, [dispatch, isAuthenticated]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -123,8 +130,8 @@ export default function HomePage() {
                 itemClass="px-2"
               >
                 {endingSoonProducts.map((product) => (
-                  <div key={product.id} className="h-full">
-                    <ProductGrid products={[product]} />
+                  <div key={product.id} className="h-full px-2">
+                    <ProductCard product={product} />
                   </div>
                 ))}
               </Carousel>
@@ -184,8 +191,8 @@ function MostBidsSection() {
         itemClass="px-2"
       >
         {mostBidProducts.map((product) => (
-          <div key={product.id} className="h-full">
-            <ProductGrid products={[product]} />
+          <div key={product.id} className="h-full px-2">
+            <ProductCard product={product} />
           </div>
         ))}
       </Carousel>

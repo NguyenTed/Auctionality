@@ -55,8 +55,8 @@ export default function ProductCard({
     "https://via.placeholder.com/300x300?text=No+Image";
 
   return (
-    <div className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-      <Link to={`/products/${product.id}`} className="block">
+    <div className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
+      <Link to={`/products/${product.id}`} className="block flex-1 flex flex-col">
         {/* Image */}
         <div className="relative aspect-square bg-gray-100 overflow-hidden">
           <img
@@ -86,9 +86,9 @@ export default function ProductCard({
         </div>
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 flex-1 flex flex-col">
           {/* Title */}
-          <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 group-hover:text-primary transition-colors min-h-[3rem]">
             {product.title}
           </h3>
 
@@ -98,7 +98,7 @@ export default function ProductCard({
           )}
 
           {/* Price and Time */}
-          <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center justify-between mt-auto">
             <div>
               <p className="text-lg font-bold text-gray-900">
                 {formatPrice(product.currentPrice || product.startPrice)}
