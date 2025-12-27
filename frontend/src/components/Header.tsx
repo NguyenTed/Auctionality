@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -7,31 +7,30 @@ import SearchIcon from "@mui/icons-material/Search";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 import logo from "../assets/imgs/catawikiLogo.png";
-import type Category from "../interfaces/Category";
-import { getCategoryTree } from "../api/categoryApi";
-import { useAuth } from "../contexts/AuthContext";
-
-// const categories = ["Art", "Jewelry", "Watches", "Collectibles", "Cars"];
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import {
+  selectUser,
+  selectIsAuthenticated,
+  logoutAsync,
+} from "../features/auth/authSlice";
+import {
+  fetchCategoriesAsync,
+  selectCategories,
+} from "../features/category/categorySlice";
 
 const Header = () => {
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const categories = useAppSelector(selectCategories);
+
   const [open, setOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
-  // Debug: Log auth state (remove in production)
-  useEffect(() => {
-    console.log("Header - Auth state:", { isAuthenticated, user: user?.email, isLoading });
-  }, [isAuthenticated, user, isLoading]);
 
   useEffect(() => {
-    const loadCategories = async () => {
-      const res = await getCategoryTree();
-      setCategories(res.data);
-    };
-
-    loadCategories();
-  }, []);
+    dispatch(fetchCategoriesAsync());
+  }, [dispatch]);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -50,10 +49,10 @@ const Header = () => {
     <header className="border-b bg-white">
       <div className="mx-auto max-w-7xl flex items-center gap-6 px-4 py-3">
         {/* Logo */}
-        <div className="flex items-center gap-2 cursor-pointer">
+        <Link to="/" className="flex items-center gap-2 cursor-pointer">
           <img src={logo} alt="Catawiki" className="h-8 w-8" />
           <span className="text-xl font-semibold text-primary">catawiki</span>
-        </div>
+        </Link>
 
         {/* Categories */}
         <div className="relative">
@@ -99,14 +98,25 @@ const Header = () => {
         </div>
 
         {/* Search */}
-        <div className="relative flex-1">
+        <form
+          className="relative flex-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const keyword = formData.get("search") as string;
+            if (keyword) {
+              navigate(`/products?keyword=${encodeURIComponent(keyword)}`);
+            }
+          }}
+        >
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
+            name="search"
             placeholder="Search for title, category..."
             className="w-full rounded-full border pl-10 pr-4 py-2 focus:border-primary focus:outline-none"
           />
-        </div>
+        </form>
 
         {/* Actions */}
         <div className="flex items-center gap-4">
@@ -133,13 +143,16 @@ const Header = () => {
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 rounded-md border bg-white shadow-lg z-50">
                   <div className="px-4 py-2 border-b">
-                    <p className="text-sm font-medium text-gray-900">{user.fullName || user.email}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {user.fullName || user.email}
+                    </p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <button
                     onClick={async () => {
-                      await logout();
+                      await dispatch(logoutAsync());
                       setShowUserMenu(false);
+                      navigate("/login");
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
                   >

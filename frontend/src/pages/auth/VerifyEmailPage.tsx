@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { authApi } from "../../api/authApi";
+import { useAppDispatch } from "../../app/hooks";
+import { verifyEmailAsync, resendVerificationEmailAsync } from "../../features/auth/authSlice";
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
   const email = (location.state as { email?: string })?.email || "";
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -57,12 +59,15 @@ export default function VerifyEmailPage() {
     setErrors({});
 
     try {
-      await authApi.verifyEmail(otpString);
-      // Redirect to home page after successful verification
-      navigate("/");
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Verification failed. Please try again.";
-      setErrors({ general: errorMessage });
+      const result = await dispatch(verifyEmailAsync(otpString));
+      if (verifyEmailAsync.fulfilled.match(result)) {
+        // Redirect to home page after successful verification
+        navigate("/");
+      } else {
+        setErrors({ general: result.payload as string || "Verification failed. Please try again." });
+      }
+    } catch (error: unknown) {
+      setErrors({ general: "An unexpected error occurred. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -79,12 +84,15 @@ export default function VerifyEmailPage() {
     setErrors({});
 
     try {
-      await authApi.resendVerificationEmail(email);
-      setResendMessage("Verification code has been resent to your email");
-      setOtp(["", "", "", "", "", ""]);
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Failed to resend verification code";
-      setErrors({ general: errorMessage });
+      const result = await dispatch(resendVerificationEmailAsync(email));
+      if (resendVerificationEmailAsync.fulfilled.match(result)) {
+        setResendMessage("Verification code has been resent to your email");
+        setOtp(["", "", "", "", "", ""]);
+      } else {
+        setErrors({ general: result.payload as string || "Failed to resend verification code" });
+      }
+    } catch (error: unknown) {
+      setErrors({ general: "An unexpected error occurred. Please try again." });
     } finally {
       setIsResending(false);
     }
