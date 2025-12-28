@@ -29,9 +29,9 @@ public class ShipmentService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow();
 
-//        if (!order.getSeller().getId().equals(seller.getId())) {
-//            throw new AccessDeniedException("Not seller");
-//        }
+        if (!order.getSeller().getId().equals(seller.getId())) {
+            throw new AccessDeniedException("Not seller");
+        }
 
         if (order.getStatus() != OrderStatus.PAID) {
             throw new IllegalStateException("Order not ready to ship");

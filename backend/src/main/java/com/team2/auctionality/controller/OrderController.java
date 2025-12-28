@@ -15,6 +15,7 @@ import com.team2.auctionality.service.ShippingAddressService;
 import com.team2.auctionality.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,7 +52,7 @@ public class OrderController {
     @Operation(summary = "Add shipping address")
     public ResponseEntity<ApiResponse<Void>> createShippingAddress(
             @PathVariable Integer orderId,
-            @RequestBody ShippingAddressRequest request,
+            @RequestBody @Valid ShippingAddressRequest request,
             @CurrentUser User user
     ) {
         log.info("User {} adding shipping address to order {}", user.getId(), orderId);
