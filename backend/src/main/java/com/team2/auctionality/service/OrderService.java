@@ -1,16 +1,22 @@
 package com.team2.auctionality.service;
 
+import com.team2.auctionality.dto.OrderDto;
 import com.team2.auctionality.enums.OrderStatus;
 import com.team2.auctionality.model.Order;
 import com.team2.auctionality.model.Product;
+import com.team2.auctionality.model.User;
 import com.team2.auctionality.repository.OrderRepository;
 import com.team2.auctionality.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -45,4 +51,8 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    public Page<Order> getOrders(User user, Boolean isSeller, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return orderRepository.findOrders(user, isSeller, pageable);
+    }
 }
