@@ -1,23 +1,20 @@
 package com.team2.auctionality.controller;
 
+import com.team2.auctionality.config.CurrentUser;
 import com.team2.auctionality.dto.*;
 import com.team2.auctionality.mapper.*;
 import com.team2.auctionality.model.*;
-import com.team2.auctionality.service.AuthService;
 import com.team2.auctionality.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -26,33 +23,28 @@ import java.util.stream.Collectors;
 @Tag(name = "User", description = "User API")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:5173")
+@Slf4j
 public class UserController {
 
-
     private final UserService userService;
-    private final AuthService authService;
 
     @GetMapping("/watchlist")
-    public List<WatchListItemDto> getWatchlist(Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-
-        return userService.getWatchList(user);
+    @Operation(summary = "Get user's watchlist")
+    public ResponseEntity<List<WatchListItemDto>> getWatchlist(@CurrentUser User user) {
+        log.debug("Getting watchlist for user: {}", user.getId());
+        List<WatchListItemDto> watchlist = userService.getWatchList(user);
+        return ResponseEntity.ok(watchlist);
     }
 
     @PostMapping("/watchlist/{productId}")
-    @PreAuthorize("hasRole('BUYER') or hasAuthority('WATCHLIST_MANAGE')")
+    @Operation(summary = "Add product to watchlist")
     public ResponseEntity<ApiResponse<WatchListItemDto>> addWatchlist(
             @PathVariable Integer productId,
-            Authentication authentication) {
-
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-
-        URI location = URI.create(
-                "/api/users/watchlist/" + productId
-        );
+            @CurrentUser User user
+    ) {
+        log.info("User {} adding product {} to watchlist", user.getId(), productId);
         WatchListItemDto watchListItemDto = WatchListItemMapper.toDto(userService.addWatchList(user, productId));
+        URI location = URI.create("/api/users/watchlist/" + productId);
         return ResponseEntity
                 .created(location)
                 .body(new ApiResponse<>(
@@ -62,100 +54,74 @@ public class UserController {
     }
 
     @DeleteMapping("/watchlist/{productId}")
-    @PreAuthorize("hasRole('BUYER') or hasAuthority('WATCHLIST_MANAGE')")
-    public ResponseEntity<Map<String, Object>> deleteWatchlist(
+    @Operation(summary = "Remove product from watchlist")
+    public ResponseEntity<ApiResponse<Void>> deleteWatchlist(
             @PathVariable Integer productId,
-            Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-
+            @CurrentUser User user
+    ) {
+        log.info("User {} removing product {} from watchlist", user.getId(), productId);
         userService.deleteWatchList(user.getId(), productId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Delete watchlist successfully");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>("Delete watchlist successfully", null));
     }
 
-    /*
-        Request to be upgraded from bidder to seller in 7 days
-     */
     @PostMapping("/seller-upgrade-requests")
-    @Operation(summary = "Request to be upgraded from bidder to seller in 7 days")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<SellerUpgradeRequestDto> upgradeRequests(Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
+    @Operation(summary = "Request to be upgraded from bidder to seller")
+    public ResponseEntity<SellerUpgradeRequestDto> createSellerUpgradeRequest(@CurrentUser User user) {
+        log.info("User {} requesting seller upgrade", user.getId());
         SellerUpgradeRequest request = userService.createSellerUpgradeRequest(user);
-
-        URI location = URI.create("/api/users/seller-upgrade-requests" + request.getId());
-
+        URI location = URI.create("/api/users/seller-upgrade-requests/" + request.getId());
         return ResponseEntity
                 .created(location)
-                .body(
-                        SellerUpgradeRequestMapper.toDto(request)
-                );
+                .body(SellerUpgradeRequestMapper.toDto(request));
     }
 
     @GetMapping("/rates")
-    @Operation(summary = "Get user's rates")
-    @PreAuthorize("isAuthenticated()")
-    public List<OrderRatingDto> getRatings(Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
+    @Operation(summary = "Get user's ratings")
+    public ResponseEntity<List<OrderRatingDto>> getRatings(@CurrentUser User user) {
+        log.debug("Getting ratings for user: {}", user.getId());
         List<OrderRating> ratings = userService.getOrderRatings(user);
-
-        return ratings
-                .stream()
+        List<OrderRatingDto> ratingDtos = ratings.stream()
                 .filter(Objects::nonNull)
                 .map(OrderRatingMapper::toDto)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(ratingDtos);
     }
 
     @PostMapping("/rates")
-    @Operation(summary = "Rates seller / buyer")
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Rate seller or buyer")
     public ResponseEntity<OrderRatingDto> rateUser(
-            Authentication authentication,
-            @Valid  @RequestBody RatingRequest ratingRequest ) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-        userService.rateUser(user, ratingRequest);
-        URI location = URI.create("/api/users/rates");
-
+            @CurrentUser User user,
+            @Valid @RequestBody RatingRequest ratingRequest
+    ) {
+        log.info("User {} rating order {}", user.getId(), ratingRequest.getOrderId());
+        OrderRating rating = userService.rateUser(user, ratingRequest);
+        URI location = URI.create("/api/users/rates/" + rating.getId());
         return ResponseEntity
                 .created(location)
-                .body(
-                        OrderRatingMapper.toDto(userService.rateUser(user, ratingRequest))
-                );
+                .body(OrderRatingMapper.toDto(rating));
     }
 
     @GetMapping("/auction-products")
     @Operation(summary = "Get products that user has placed bids on")
-    @PreAuthorize("isAuthenticated()")
-    public List<ProductDto> getAuctionProducts(Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
+    public ResponseEntity<List<ProductDto>> getAuctionProducts(@CurrentUser User user) {
+        log.debug("Getting auction products for user: {}", user.getId());
         List<Product> products = userService.getAuctionProducts(user);
-
-        return products
-                .stream()
+        List<ProductDto> productDtos = products.stream()
                 .filter(Objects::nonNull)
                 .map(ProductMapper::toDto)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(productDtos);
     }
 
     @GetMapping("/won-products")
     @Operation(summary = "Get products that user has won")
-    @PreAuthorize("isAuthenticated()")
-    public List<ProductDto> getWonProducts(Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
+    public ResponseEntity<List<ProductDto>> getWonProducts(@CurrentUser User user) {
+        log.debug("Getting won products for user: {}", user.getId());
         List<Product> products = userService.getWonProducts(user);
-
-        return products
-                .stream()
+        List<ProductDto> productDtos = products.stream()
                 .filter(Objects::nonNull)
                 .map(ProductMapper::toDto)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(productDtos);
     }
 }

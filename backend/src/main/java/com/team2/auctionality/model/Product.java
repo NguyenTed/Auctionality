@@ -58,8 +58,10 @@ public class Product {
     private Category category;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<Bid> bids;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<ProductImage> images;
 }

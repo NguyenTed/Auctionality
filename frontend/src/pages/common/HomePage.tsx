@@ -3,17 +3,22 @@
  * Main landing page with hero section, featured auctions, and categories
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
   fetchTopProductsAsync,
-  selectTopProducts,
+  selectTopProductsEndingSoon,
+  selectTopProductsMostBid,
   selectProductLoading,
 } from "../../features/product/productSlice";
 import { selectCategories } from "../../features/category/categorySlice";
 import { selectIsAuthenticated } from "../../features/auth/authSlice";
-import { fetchWatchlistAsync } from "../../features/watchlist/watchlistSlice";
+import {
+  fetchWatchlistAsync,
+  selectWatchlistItems,
+  selectWatchlistLoading,
+} from "../../features/watchlist/watchlistSlice";
 import ProductGrid from "../../components/ProductGrid";
 import ProductCard from "../../components/ProductCard";
 import Carousel from "react-multi-carousel";
@@ -36,17 +41,32 @@ const carouselResponsive = {
 
 export default function HomePage() {
   const dispatch = useAppDispatch();
-  const endingSoonProducts = useAppSelector(selectTopProducts);
+  const endingSoonProducts = useAppSelector(selectTopProductsEndingSoon);
   const isLoading = useAppSelector(selectProductLoading);
   const categories = useAppSelector(selectCategories);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const watchlistItems = useAppSelector(selectWatchlistItems);
+  const watchlistLoading = useAppSelector(selectWatchlistLoading);
+  
+  // Use refs to track if we've already initiated fetches (prevents infinite loops)
+  const hasFetchedEndingSoon = useRef(false);
+  const hasFetchedWatchlist = useRef(false);
 
+  // Fetch ending soon products once on mount
   useEffect(() => {
-    dispatch(fetchTopProductsAsync("ENDING_SOON"));
-    if (isAuthenticated) {
+    if (!hasFetchedEndingSoon.current && endingSoonProducts.length === 0 && !isLoading) {
+      hasFetchedEndingSoon.current = true;
+      dispatch(fetchTopProductsAsync("ENDING_SOON"));
+    }
+  }, [dispatch, endingSoonProducts.length, isLoading]);
+
+  // Fetch watchlist once if authenticated
+  useEffect(() => {
+    if (isAuthenticated && !hasFetchedWatchlist.current && watchlistItems.length === 0 && !watchlistLoading) {
+      hasFetchedWatchlist.current = true;
       dispatch(fetchWatchlistAsync());
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch, isAuthenticated, watchlistItems.length, watchlistLoading]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -163,12 +183,19 @@ export default function HomePage() {
 
 function MostBidsSection() {
   const dispatch = useAppDispatch();
-  const mostBidProducts = useAppSelector((state) => state.product.topProducts);
+  const mostBidProducts = useAppSelector(selectTopProductsMostBid);
   const isLoading = useAppSelector(selectProductLoading);
+  
+  // Use ref to track if we've already initiated fetch (prevents infinite loops)
+  const hasFetchedMostBid = useRef(false);
 
+  // Fetch most bid products once on mount
   useEffect(() => {
-    dispatch(fetchTopProductsAsync("MOST_BID"));
-  }, [dispatch]);
+    if (!hasFetchedMostBid.current && mostBidProducts.length === 0 && !isLoading) {
+      hasFetchedMostBid.current = true;
+      dispatch(fetchTopProductsAsync("MOST_BID"));
+    }
+  }, [dispatch, mostBidProducts.length, isLoading]);
 
   if (isLoading) {
     return <ProductGrid products={[]} isLoading={true} />;

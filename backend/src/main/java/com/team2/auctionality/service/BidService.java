@@ -1,10 +1,14 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.auction.AutoBidEngine;
+import com.team2.auctionality.dto.AutoBidConfigDto;
 import com.team2.auctionality.dto.AutoBidResult;
 import com.team2.auctionality.dto.BidHistoryDto;
+import com.team2.auctionality.dto.BidResponse;
 import com.team2.auctionality.dto.PlaceBidRequest;
 import com.team2.auctionality.dto.ProductDto;
+import com.team2.auctionality.email.EmailService;
+import com.team2.auctionality.email.dto.BidNotificationEmailRequest;
 import com.team2.auctionality.enums.ApproveStatus;
 import com.team2.auctionality.exception.AuctionClosedException;
 import com.team2.auctionality.exception.BidNotAllowedException;
@@ -13,15 +17,16 @@ import com.team2.auctionality.mapper.BidMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.rabbitmq.BidEventPublisher;
-import com.team2.auctionality.rabbitmq.ProductEventPublisher;
 import com.team2.auctionality.repository.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -29,6 +34,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BidService {
 
     private final BidRepository bidRepository;
@@ -37,15 +43,20 @@ public class BidService {
     private final RejectedBidderRepository rejectedBidderRepository;
     private final ProductService productService;
     private final AutoBidEngine autoBidEngine;
+    private final SystemAuctionRuleService systemAuctionRuleService;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
     // RabbitMQ
     private final BidEventPublisher bidEventPublisher;
-    private final ProductEventPublisher productEventPublisher;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
 
 
+    @Transactional(readOnly = true)
     public List<BidHistoryDto> getBidHistory(Integer productId) {
-
         productService.getProductById(productId);
 
         return bidRepository.findByProductIdOrderByCreatedAtDesc(productId)
@@ -55,17 +66,19 @@ public class BidService {
     }
 
     @Transactional(noRollbackFor = BidPendingApprovalException.class)
-    public AutoBidConfig placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
+    public BidResponse placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
+        log.info("User {} placing bid {} on product {}", bidder.getId(), bidRequest.getAmount(), productId);
 
         // 1. Check if bidder is in RejectedBidder
         if (rejectedBidderRepository.existsByProductIdAndBidderId(productId, bidder.getId())) {
+            log.warn("Bidder {} is rejected from product {}", bidder.getId(), productId);
             throw new BidNotAllowedException("You are not allowed to bid on this product");
         }
 
         UserProfile bidderProfile = bidder.getProfile();
         Product product = productService.getProductById(productId);
         Float ratingPercent = bidderProfile.getRatingPercent();
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
 
         // 2. Check if product is ended
@@ -121,46 +134,193 @@ public class BidService {
             config.setMaxPrice(bidRequest.getAmount());
         }
 
-        AutoBidResult result = autoBidEngine.recalculate(product.getId());
+        // 5. Recalculate auto-bid engine (this may create a bid if auto-bid triggers)
+        AutoBidResult autoBidResult = autoBidEngine.recalculate(product.getId());
+        
+        // Refresh product to get updated price
+        product = productService.getProductById(productId);
+        
+        // 6. Save the manual bid (if auto-bid didn't create one, or if this is a higher manual bid)
+        Bid savedBid;
+        if (autoBidResult.isPriceChanged() && autoBidResult.getGeneratedBid() != null) {
+            // Auto-bid was triggered, use that bid
+            savedBid = autoBidResult.getGeneratedBid();
+        } else {
+            // Save manual bid
+            savedBid = Bid.builder()
+                    .product(product)
+                    .bidder(bidder)
+                    .amount(bidRequest.getAmount())
+                    .isAutoBid(false)
+                    .createdAt(new Date())
+                    .build();
+            savedBid = bidRepository.save(savedBid);
+        }
 
+        // 7. Check if product's endTime <= timeThreshold --> plus extension minutes
+        final Product finalProduct = product; // Make final for lambda
+        systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
+            long minutesToEnd = java.time.Duration
+                    .between(now, finalProduct.getEndTime())
+                    .toMinutes();
+
+            if (minutesToEnd <= rule.getTimeThresholdMinutes()) {
+                finalProduct.setEndTime(
+                        finalProduct.getEndTime().plusMinutes(rule.getExtensionMinutes())
+                );
+                productService.save(finalProduct);
+            }
+        });
+
+        // 8. Publish events and send email notifications after transaction commits
+        final Integer finalProductId = productId; // Make final for lambda
+        final Bid finalSavedBid = savedBid; // Make final for lambda
+        final Product finalProductForEmail = product; // Make final for lambda
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        List<BidHistoryDto> histories = getBidHistory(productId);
-                        ProductDto productDto = ProductMapper.toDto(product);
+                        // Refresh product to get latest state
+                        List<BidHistoryDto> histories = getBidHistory(finalProductId);
+                        bidEventPublisher.publishBidHistory(finalProductId, histories);
 
-                        bidEventPublisher.publishBidHistory(productId, histories);
-                        productEventPublisher.publishProduct(productDto);
+                        // Send email notifications
+                        sendBidNotifications(finalProductForEmail, finalSavedBid);
                     }
                 }
         );
 
-        // 6. Save bid
-//        Bid bid = Bid.builder()
-//                .product(product)
-//                .bidder(bidder)
-//                .amount(bidRequest.getAmount())
-//                .isAutoBid(true)
-//                .build();
-//
-//        Bid savedBid = bidRepository.save(bid);
-//
-//        // 7. If product's endTime <= timeThreshold --> plus extension minutes.
-//        systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
-//
-//            long minutesToEnd = java.time.Duration
-//                    .between(now, product.getEndTime())
-//                    .toMinutes();
-//
-//            if (minutesToEnd <= rule.getTimeThresholdMinutes()) {
-//                product.setEndTime(
-//                        product.getEndTime().plusMinutes(rule.getExtensionMinutes())
-//                );
-//                productService.save(product);
-//            }
-//        });
+        // 9. Build response
+        AutoBidConfigDto configDto = null;
+        if (config != null) {
+            configDto = AutoBidConfigDto.builder()
+                    .id(config.getId())
+                    .productId(config.getProductId())
+                    .bidderId(config.getBidderId())
+                    .maxPrice(config.getMaxPrice())
+                    .createdAt(config.getCreatedAt())
+                    .build();
+        }
 
-        return config;
+        return BidResponse.builder()
+                .id(savedBid.getId())
+                .productId(productId)
+                .bidderId(bidder.getId())
+                .amount(savedBid.getAmount())
+                .isAutoBid(savedBid.getIsAutoBid())
+                .createdAt(savedBid.getCreatedAt())
+                .autoBidConfig(configDto)
+                .build();
+    }
+
+    @Transactional
+    public RejectedBidder rejectBidder(
+            Integer productId,
+            Integer bidderId,
+            String reason
+    ) {
+        log.info("Rejecting bidder {} from product {}", bidderId, productId);
+        Product product = productService.getProductById(productId);
+        User bidder = userRepository.findById(bidderId)
+                .orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
+
+        // Set reject status if bidder approval was sent
+        bidderApprovalRepository
+                .findByProductIdAndBidderId(productId, bidderId)
+                .ifPresent(approval -> {
+                    approval.setStatus(ApproveStatus.REJECTED);
+                    bidderApprovalRepository.save(approval);
+                });
+
+        RejectedBidder rejectedBidder = rejectedBidderRepository
+                .findByProductIdAndBidderId(productId, bidderId)
+                .orElseGet(() -> rejectedBidderRepository.save(
+                        RejectedBidder.builder()
+                                .productId(productId)
+                                .bidder(bidder)
+                                .reason(reason)
+                                .createdAt(new Date())
+                                .build()
+                ));
+
+        // Set to the next if rejected bidder is who is having the highest price
+        Optional<Bid> currentTopBidOpt = bidRepository.findTopBidByProductId(productId);
+
+        if (currentTopBidOpt.isPresent()
+                && currentTopBidOpt.get().getBidder().getId().equals(bidderId)) {
+
+            List<Bid> validBids = bidRepository.findValidBids(productId);
+
+            if (!validBids.isEmpty()) {
+                Bid nextBid = validBids.getFirst();
+                product.setCurrentPrice(nextBid.getAmount());
+            } else {
+                product.setCurrentPrice(product.getStartPrice());
+            }
+            productService.save(product);
+        }
+
+        // Send rejection email notification
+        String productUrl = frontendBaseUrl + "/products/" + productId;
+        emailService.sendBidderRejectedNotification(
+                bidder.getEmail(),
+                product.getTitle(),
+                reason,
+                productUrl
+        );
+
+        return rejectedBidder;
+    }
+
+    /**
+     * Send bid notifications to seller, new highest bidder, and previous highest bidder
+     */
+    private void sendBidNotifications(Product product, Bid savedBid) {
+        String productUrl = frontendBaseUrl + "/products/" + product.getId();
+        String bidderName = savedBid.getBidder().getProfile().getFullName();
+        Float bidAmount = savedBid.getAmount();
+
+        // 1. Notify seller
+        emailService.sendBidSuccessNotification(
+                new BidNotificationEmailRequest(
+                        product.getSeller().getEmail(),
+                        product.getTitle(),
+                        productUrl,
+                        bidAmount,
+                        bidderName,
+                        BidNotificationEmailRequest.NotificationType.SELLER
+                )
+        );
+
+        // 2. Notify new highest bidder (the one who just placed the bid)
+        emailService.sendBidSuccessNotification(
+                new BidNotificationEmailRequest(
+                        savedBid.getBidder().getEmail(),
+                        product.getTitle(),
+                        productUrl,
+                        bidAmount,
+                        bidderName,
+                        BidNotificationEmailRequest.NotificationType.NEW_HIGHEST_BIDDER
+                )
+        );
+
+        // 3. Find and notify previous highest bidder (if exists and different from current)
+        bidRepository.findTopBidByProductId(product.getId())
+                .filter(bid -> !bid.getId().equals(savedBid.getId()))
+                .ifPresent(previousBid -> {
+                    User previousBidder = previousBid.getBidder();
+                    if (!previousBidder.getId().equals(savedBid.getBidder().getId())) {
+                        emailService.sendBidSuccessNotification(
+                                new BidNotificationEmailRequest(
+                                        previousBidder.getEmail(),
+                                        product.getTitle(),
+                                        productUrl,
+                                        bidAmount,
+                                        bidderName,
+                                        BidNotificationEmailRequest.NotificationType.PREVIOUS_BIDDER
+                                )
+                        );
+                    }
+                });
     }
 }

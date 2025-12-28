@@ -56,104 +56,131 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(AuthException.class)
-    public ResponseEntity<Map<String, String>> handleAuthException(AuthException e) {
+    public ResponseEntity<ErrorResponse> handleAuthException(AuthException e) {
         log.error("AuthException: {}", e.getMessage(), e);
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage() != null ? e.getMessage() : "Authentication error occurred");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(
+                        e.getMessage() != null ? e.getMessage() : "Authentication error occurred",
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleEmailAlreadyExists(EmailAlreadyExistsException e) {
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException e) {
         log.warn("EmailAlreadyExistsException: {}", e.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage() != null ? e.getMessage() : "Email already exists");
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(
+                        e.getMessage() != null ? e.getMessage() : "Email already exists",
+                        HttpStatus.CONFLICT.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidCredentialsException e) {
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException e) {
         log.warn("InvalidCredentialsException: {}", e.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage() != null ? e.getMessage() : "Invalid credentials");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(
+                        e.getMessage() != null ? e.getMessage() : "Invalid credentials",
+                        HttpStatus.UNAUTHORIZED.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(EmailNotVerifiedException.class)
-    public ResponseEntity<Map<String, String>> handleEmailNotVerified(EmailNotVerifiedException e) {
+    public ResponseEntity<ErrorResponse> handleEmailNotVerified(EmailNotVerifiedException e) {
         log.warn("EmailNotVerifiedException: {}", e.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage() != null ? e.getMessage() : "Email not verified");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(
+                        e.getMessage() != null ? e.getMessage() : "Email not verified",
+                        HttpStatus.FORBIDDEN.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(TokenExpiredException.class)
-    public ResponseEntity<Map<String, String>> handleTokenExpired(TokenExpiredException e) {
+    public ResponseEntity<ErrorResponse> handleTokenExpired(TokenExpiredException e) {
         log.warn("TokenExpiredException: {}", e.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage() != null ? e.getMessage() : "Token has expired");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(
+                        e.getMessage() != null ? e.getMessage() : "Token has expired",
+                        HttpStatus.UNAUTHORIZED.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(TokenInvalidException.class)
-    public ResponseEntity<Map<String, String>> handleTokenInvalid(TokenInvalidException e) {
+    public ResponseEntity<ErrorResponse> handleTokenInvalid(TokenInvalidException e) {
         log.warn("TokenInvalidException: {}", e.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage() != null ? e.getMessage() : "Invalid token");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(
+                        e.getMessage() != null ? e.getMessage() : "Invalid token",
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleUserNotFound(UserNotFoundException e) {
+    public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException e) {
         log.warn("UserNotFoundException: {}", e.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage() != null ? e.getMessage() : "User not found");
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(
+                        e.getMessage() != null ? e.getMessage() : "User not found",
+                        HttpStatus.NOT_FOUND.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException e) {
         log.warn("BadCredentialsException: {}", e.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("error", "Invalid email or password");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(
+                        "Invalid email or password",
+                        HttpStatus.UNAUTHORIZED.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
         log.error("RuntimeException: {}", e.getMessage(), e);
-        Map<String, String> error = new HashMap<>();
         String message = e.getMessage();
         if (message == null || message.isEmpty()) {
             message = "An unexpected error occurred: " + e.getClass().getSimpleName();
         }
-        error.put("error", message);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(
+                        message,
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        Instant.now()
+                ));
     }
 
-//    @ExceptionHandler(MethodArgumentNotValidException.class)
-//    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException e) {
-//        log.warn("ValidationException: {}", e.getMessage());
-//        Map<String, String> errors = new HashMap<>();
-//        e.getBindingResult().getAllErrors().forEach((error) -> {
-//            String fieldName = ((FieldError) error).getField();
-//            String errorMessage = error.getDefaultMessage();
-//            errors.put(fieldName, errorMessage != null ? errorMessage : "Invalid value");
-//        });
-//        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
-//    }
-
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGenericException(Exception e) {
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception e) {
         log.error("Unexpected exception: {}", e.getMessage(), e);
-        Map<String, String> error = new HashMap<>();
         String message = e.getMessage();
         if (message == null || message.isEmpty()) {
             message = "An unexpected error occurred: " + e.getClass().getSimpleName();
         }
-        error.put("error", "An unexpected error occurred");
-        error.put("message", message);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(
+                        "An unexpected error occurred",
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        Instant.now()
+                ));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)

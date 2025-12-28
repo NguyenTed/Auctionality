@@ -9,14 +9,14 @@ import { watchlistService, type WatchlistItem } from "./watchlistService";
 
 interface WatchlistState {
   items: WatchlistItem[];
-  productIds: Set<number>; // For quick lookup
+  productIds: number[]; // Array of product IDs for quick lookup (serializable)
   isLoading: boolean;
   error: string | null;
 }
 
 const initialState: WatchlistState = {
   items: [],
-  productIds: new Set(),
+  productIds: [],
   isLoading: false,
   error: null,
 };
@@ -77,7 +77,7 @@ const watchlistSlice = createSlice({
   reducers: {
     clearWatchlist: (state) => {
       state.items = [];
-      state.productIds = new Set();
+      state.productIds = [];
       state.error = null;
     },
   },
@@ -91,7 +91,7 @@ const watchlistSlice = createSlice({
       .addCase(fetchWatchlistAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.items = action.payload;
-        state.productIds = new Set(action.payload.map((item) => item.product.id));
+        state.productIds = action.payload.map((item) => item.product.id);
         state.error = null;
       })
       .addCase(fetchWatchlistAsync.rejected, (state, action) => {
@@ -108,7 +108,10 @@ const watchlistSlice = createSlice({
       .addCase(addToWatchlistAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.items.push(action.payload);
-        state.productIds.add(action.payload.product.id);
+        const productId = action.payload.product.id;
+        if (!state.productIds.includes(productId)) {
+          state.productIds.push(productId);
+        }
         state.error = null;
       })
       .addCase(addToWatchlistAsync.rejected, (state, action) => {
@@ -125,7 +128,7 @@ const watchlistSlice = createSlice({
       .addCase(removeFromWatchlistAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.items = state.items.filter((item) => item.product.id !== action.payload);
-        state.productIds.delete(action.payload);
+        state.productIds = state.productIds.filter((id) => id !== action.payload);
         state.error = null;
       })
       .addCase(removeFromWatchlistAsync.rejected, (state, action) => {
@@ -143,7 +146,7 @@ export const selectWatchlistProductIds = (state: RootState) => state.watchlist.p
 export const selectWatchlistLoading = (state: RootState) => state.watchlist.isLoading;
 export const selectWatchlistError = (state: RootState) => state.watchlist.error;
 export const selectIsInWatchlist = (productId: number) => (state: RootState) =>
-  state.watchlist.productIds.has(productId);
+  state.watchlist.productIds.includes(productId);
 
 export default watchlistSlice.reducer;
 

@@ -19,4 +19,6 @@ public interface ProductAnswerRepository extends JpaRepository<ProductAnswer,Int
             nativeQuery = true
     )
     List<ProductAnswer> findByProductId(Integer productId);
+
+    List<ProductAnswer> findByQuestionId(Integer questionId);
 }

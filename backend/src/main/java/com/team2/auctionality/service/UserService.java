@@ -9,12 +9,16 @@ import com.team2.auctionality.repository.SellerUpgradeRequestRepository;
 import com.team2.auctionality.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Date;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -24,28 +28,33 @@ public class UserService {
     private final OrderRatingRepository orderRatingRepository;
     private final OrderService orderService;
 
+    @Transactional(readOnly = true)
     public User getUserById(Integer userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 
+    @Transactional
     public WatchListItem addWatchList(User user, Integer productId) {
+        log.debug("User {} adding product {} to watchlist", user.getId(), productId);
         Product product = productService.getProductById(productId);
-
         WatchListItem watchListItem = WatchListItem.builder()
                 .user(user)
                 .product(product)
                 .createdAt(new Date())
                 .build();
         return watchListItemService.createWatchListItem(watchListItem);
-
     }
 
+    @Transactional
     public void deleteWatchList(Integer userId, Integer productId) {
+        log.debug("User {} removing product {} from watchlist", userId, productId);
         watchListItemService.deleteWatchListItem(userId, productId);
     }
 
+    @Transactional
     public SellerUpgradeRequest createSellerUpgradeRequest(User user) {
-
+        log.info("User {} requesting seller upgrade", user.getId());
         SellerUpgradeRequest sellerUpgradeRequest = SellerUpgradeRequest.builder()
                 .user(user)
                 .status(ApproveStatus.PENDING)
@@ -54,19 +63,27 @@ public class UserService {
         return sellerUpgradeRequestRepository.save(sellerUpgradeRequest);
     }
 
+    @Transactional(readOnly = true)
     public List<OrderRating> getOrderRatings(User user) {
+        log.debug("Getting ratings for user: {}", user.getId());
         return orderRatingRepository.getOrderRatingByToUser(user);
     }
 
+    @Transactional(readOnly = true)
     public List<Product> getAuctionProducts(User user) {
+        log.debug("Getting auction products for user: {}", user.getId());
         return productService.getAuctionProductsByUser(user.getId());
     }
 
+    @Transactional(readOnly = true)
     public List<Product> getWonProducts(User user) {
+        log.debug("Getting won products for user: {}", user.getId());
         return productService.getWonProducts(user);
     }
 
+    @Transactional
     public OrderRating rateUser(User user, RatingRequest ratingRequest) {
+        log.info("User {} rating order {}", user.getId(), ratingRequest.getOrderId());
         Order order = orderService.getOrderById(ratingRequest.getOrderId());
 
         OrderRating orderRating = orderRatingRepository
@@ -92,7 +109,9 @@ public class UserService {
         return orderRatingRepository.save(orderRating);
     }
 
+    @Transactional(readOnly = true)
     public List<WatchListItemDto> getWatchList(User user) {
+        log.debug("Getting watchlist for user: {}", user.getId());
         return watchListItemService.getWatchList(user);
     }
 }

@@ -43,7 +43,7 @@ springdoc:
 # Example: JWT_SECRET=your-super-secret-key-that-is-at-least-32-characters-long-for-security
 jwt:
   secret: ${JWT_SECRET:default-secret-key-must-be-at-least-32-characters-long-for-jwt-security-please-change-this}
-  access-token-expiration: 900000  # 15 minutes in milliseconds
+  access-token-expiration: 3600000  # 1 hour in milliseconds (increased from 15 minutes)
   refresh-token-expiration: 604800000  # 7 days in milliseconds
 
 # OAuth2 Configuration (for social login)
@@ -74,3 +74,14 @@ oauth2:
     port: 5672
     username: guest
     password: guest
+
+# SendGrid Email Configuration
+sendgrid:
+  api-key: ${SENDGRID_API_KEY:}
+  from-email: ${SENDGRID_FROM_EMAIL:noreply@auctionality.com}
+  from-name: ${SENDGRID_FROM_NAME:Auctionality}
+
+# Frontend URL for email links
+app:
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}

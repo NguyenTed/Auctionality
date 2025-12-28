@@ -9,8 +9,11 @@ import com.team2.auctionality.service.ProductService;
 import com.team2.auctionality.service.SystemAuctionRuleService;
 import com.team2.auctionality.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -19,6 +22,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AutoBidEngine {
 
     private final AutoBidConfigRepository autoBidConfigRepository;
@@ -30,7 +34,7 @@ public class AutoBidEngine {
 
     @Transactional
     public AutoBidResult recalculate(Integer productId) {
-
+        log.debug("Recalculating auto-bid for product: {}", productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
@@ -94,6 +98,7 @@ public class AutoBidEngine {
                 productService.save(product);
             }
         });
+
 
         return new AutoBidResult(true, bid);
     }

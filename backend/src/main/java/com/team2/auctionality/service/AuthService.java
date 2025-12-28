@@ -1,11 +1,14 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.*;
+import com.team2.auctionality.email.EmailService;
 import com.team2.auctionality.exception.*;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.*;
 import com.team2.auctionality.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
@@ -35,6 +39,10 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsServiceImpl userDetailsService;
     private final PermissionService permissionService;
+    private final EmailService emailService;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
     // Generate 6-digit OTP
     private String generateOTP() {
@@ -44,6 +52,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        log.info("Registering new user with email: {}", request.getEmail());
         // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException(request.getEmail());
@@ -88,8 +97,8 @@ public class AuthService {
         verificationToken.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         emailVerificationTokenRepository.save(verificationToken);
 
-        // TODO: Send verification email with OTP
-        // emailService.sendVerificationEmail(user.getEmail(), otp);
+        // Send verification email with OTP
+        emailService.sendVerificationEmail(user.getEmail(), otp, user.getProfile().getFullName());
 
         // Generate tokens
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -104,6 +113,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        log.info("Login attempt for email: {}", request.getEmail());
         // Authenticate user
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -215,8 +225,8 @@ public class AuthService {
         verificationToken.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         emailVerificationTokenRepository.save(verificationToken);
 
-        // TODO: Send verification email with OTP
-        // emailService.sendVerificationEmail(user.getEmail(), otp);
+        // Send verification email with OTP
+        emailService.sendVerificationEmail(user.getEmail(), otp, user.getProfile().getFullName());
     }
 
     @Transactional
@@ -232,8 +242,9 @@ public class AuthService {
         resetToken.setExpiresAt(LocalDateTime.now().plusHours(1));
         passwordResetTokenRepository.save(resetToken);
 
-        // TODO: Send password reset email with token
-        // emailService.sendPasswordResetEmail(user.getEmail(), token);
+        // Send password reset email with token
+        String resetUrl = frontendBaseUrl + "/reset-password?token=" + token;
+        emailService.sendPasswordResetEmail(user.getEmail(), token, resetUrl, user.getProfile().getFullName());
     }
 
     @Transactional
@@ -270,7 +281,9 @@ public class AuthService {
         }
     }
 
+    @Transactional(readOnly = true)
     public User getUserByEmail(String email) {
+        log.debug("Getting user by email: {}", email);
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }

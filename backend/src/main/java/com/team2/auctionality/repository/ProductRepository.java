@@ -6,6 +6,7 @@ import com.team2.auctionality.dto.ProductTopMostBidDto;
 import com.team2.auctionality.model.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,73 +17,50 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
 
-    @Query(
-            value = """
-            SELECT * 
-            FROM product 
-            WHERE end_time > NOW() 
-            ORDER BY end_time ASC
-        """,
-            nativeQuery = true
-    )
+    @EntityGraph(attributePaths = {"images", "category"})
+    @Override
+    java.util.Optional<Product> findById(Integer id);
+
+    // Note: Removed @EntityGraph from paginated queries to avoid Hibernate warning
+    // Images and category will be batch fetched using @BatchSize on Product entity
+    @Override
+    org.springframework.data.domain.Page<Product> findAll(org.springframework.data.domain.Pageable pageable);
+
+    @EntityGraph(attributePaths = {"images", "category"})
+    @Query("""
+        SELECT p FROM Product p
+        WHERE p.endTime > CURRENT_TIMESTAMP
+        ORDER BY p.endTime ASC
+        """)
     List<Product> findTop5EndingSoon(Pageable pageable);
 
+    // Same pattern as findTop5EndingSoon - only fetch images and category
+    // Bid count is calculated using SIZE() in ORDER BY (doesn't require fetching bids)
+    @EntityGraph(attributePaths = {"images", "category"})
     @Query("""
-    SELECT new com.team2.auctionality.dto.ProductTopMostBidDto(
-        p.id,
-        p.title,
-        p.status,
-        p.startPrice,
-        p.currentPrice,
-        p.buyNowPrice,
-        p.bidIncrement,
-        p.startTime,
-        p.endTime,
-        p.autoExtensionEnabled,
-        p.seller.id,
-        c,
-        COUNT(b)
-    )
-    FROM Product p
-    LEFT JOIN p.bids b
-    LEFT JOIN p.category c
-    GROUP BY 
-        p.id, p.title, p.status,
-        p.startPrice, p.currentPrice, p.buyNowPrice,
-        p.bidIncrement, p.startTime, p.endTime, p.autoExtensionEnabled,
-        p.seller.id,
-        c.id, c.name, c.slug
-    ORDER BY COUNT(b) DESC
-    """)
-    List<ProductTopMostBidDto> findTop5MostBid(Pageable pageable);
+        SELECT p FROM Product p
+        ORDER BY SIZE(p.bids) DESC
+        """)
+    List<Product> findTop5MostBid(Pageable pageable);
 
-    @Query(
-            value = """
-            SELECT * 
-            FROM product
-            ORDER BY current_price DESC
-        """,
-            nativeQuery = true
-    )
+    @EntityGraph(attributePaths = {"images", "category"})
+    @Query("""
+        SELECT p FROM Product p
+        ORDER BY p.currentPrice DESC
+        """)
     List<Product> findTop5HighestPrice(Pageable pageable);
 
 
-    @Query(
-            value = """
-            SELECT * 
-            FROM product
-            WHERE category_id = :categoryId
-        """,
-            countQuery = """
-            SELECT COUNT(*) 
-            FROM product
-            WHERE category_id = :categoryId
-        """,
-            nativeQuery = true
-    )
-
+    // Removed @EntityGraph to avoid Hibernate warning with pagination
+    // Images and category will be batch fetched using @BatchSize on Product entity
+    @Query("""
+        SELECT p FROM Product p
+        WHERE p.category.id = :categoryId
+        """)
     Page<Product> findByCategory(@Param("categoryId") Integer categoryId, Pageable pageable);
 
+    // Removed @EntityGraph to avoid Hibernate warning with pagination
+    // Images and category will be batch fetched using @BatchSize on Product entity
     @Query(
         """
         SELECT p FROM Product p

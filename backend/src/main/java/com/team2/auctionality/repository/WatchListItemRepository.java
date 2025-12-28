@@ -1,6 +1,5 @@
 package com.team2.auctionality.repository;
 
-import com.team2.auctionality.dto.WatchListItemDto;
 import com.team2.auctionality.model.Product;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.model.WatchListItem;
@@ -19,5 +18,5 @@ public interface WatchListItemRepository extends JpaRepository<WatchListItem, In
     @Transactional
     int deleteByUserIdAndProductId(Integer userId, Integer productId);
 
-    List<WatchListItemDto> getWatchListItemByUser(User user);
+    List<WatchListItem> findByUser(User user);
 }

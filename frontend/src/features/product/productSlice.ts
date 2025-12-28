@@ -13,6 +13,8 @@ interface ProductState {
   products: Product[];
   currentProduct: Product | null;
   topProducts: Product[];
+  topProductsEndingSoon: Product[];
+  topProductsMostBid: Product[];
   pagination: PagedResponse<Product>["pagination"] | null;
   isLoading: boolean;
   error: string | null;
@@ -23,6 +25,8 @@ const initialState: ProductState = {
   products: [],
   currentProduct: null,
   topProducts: [],
+  topProductsEndingSoon: [],
+  topProductsMostBid: [],
   pagination: null,
   isLoading: false,
   error: null,
@@ -224,7 +228,16 @@ const productSlice = createSlice({
       })
       .addCase(fetchTopProductsAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.topProducts = action.payload.products;
+        // Store products in appropriate state based on topType
+        if (action.payload.topType === "ENDING_SOON") {
+          state.topProductsEndingSoon = action.payload.products;
+        } else if (action.payload.topType === "MOST_BID") {
+          state.topProductsMostBid = action.payload.products;
+        }
+        // Keep topProducts for backward compatibility (use ENDING_SOON as default)
+        state.topProducts = action.payload.topType === "ENDING_SOON" 
+          ? action.payload.products 
+          : state.topProducts;
         state.error = null;
       })
       .addCase(fetchTopProductsAsync.rejected, (state, action) => {
@@ -297,6 +310,8 @@ export const { setSearchParams, clearCurrentProduct, clearError } = productSlice
 export const selectProducts = (state: RootState) => state.product.products;
 export const selectCurrentProduct = (state: RootState) => state.product.currentProduct;
 export const selectTopProducts = (state: RootState) => state.product.topProducts;
+export const selectTopProductsEndingSoon = (state: RootState) => state.product.topProductsEndingSoon;
+export const selectTopProductsMostBid = (state: RootState) => state.product.topProductsMostBid;
 export const selectProductPagination = (state: RootState) => state.product.pagination;
 export const selectProductLoading = (state: RootState) => state.product.isLoading;
 export const selectProductError = (state: RootState) => state.product.error;

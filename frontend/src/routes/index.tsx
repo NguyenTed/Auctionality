@@ -12,10 +12,6 @@ import SignUpPage from "../pages/auth/SignUpPage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 
-// import ProductCreate from "../pages/products/ProductCreate";
-// import ProductEdit from "../pages/products/ProductEdit";
-// import NotFound from "../pages/NotFound";
-
 function AppRouterContent() {
   const dispatch = useAppDispatch();
 

@@ -16,10 +16,6 @@ public class RabbitConfig {
     public static final String BID_EXCHANGE = "bid.exchange";
     public static final String BID_HISTORY_ROUTING_KEY = "bid.history";
 
-    public static final String PRODUCT_QUEUE = "product.queue";
-    public static final String PRODUCT_EXCHANGE = "product.exchange";
-    public static final String PRODUCT_ROUTING_KEY = "product.routing.key";
-
     @Bean
     public MessageConverter jsonConverter() {
         return new Jackson2JsonMessageConverter();
@@ -48,24 +44,6 @@ public class RabbitConfig {
                 .bind(bidHistoryQueue())
                 .to(bidExchange())
                 .with(BID_HISTORY_ROUTING_KEY);
-    }
-
-    @Bean
-    public Queue productQueue() {
-        return QueueBuilder.durable(PRODUCT_QUEUE).build();
-    }
-
-    @Bean
-    public DirectExchange productExchange() {
-        return new DirectExchange(PRODUCT_EXCHANGE);
-    }
-
-    @Bean
-    public Binding productBinding() {
-        return BindingBuilder
-                .bind(productQueue())
-                .to(productExchange())
-                .with(PRODUCT_ROUTING_KEY);
     }
 }
 

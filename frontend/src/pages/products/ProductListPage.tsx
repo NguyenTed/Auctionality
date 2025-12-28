@@ -3,7 +3,7 @@
  * Displays products with filters, sorting, and pagination
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
@@ -17,6 +17,8 @@ import { selectIsAuthenticated } from "../../features/auth/authSlice";
 import {
   fetchWatchlistAsync,
   selectWatchlistProductIds,
+  selectWatchlistItems,
+  selectWatchlistLoading,
 } from "../../features/watchlist/watchlistSlice";
 import ProductGrid from "../../components/ProductGrid";
 import FilterIcon from "@mui/icons-material/FilterList";
@@ -31,12 +33,19 @@ export default function ProductListPage() {
   const categories = useAppSelector(selectCategories);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const watchlistProductIds = useAppSelector(selectWatchlistProductIds);
+  const watchlistItems = useAppSelector(selectWatchlistItems);
+  const watchlistLoading = useAppSelector(selectWatchlistLoading);
+  
+  // Use ref to track if we've already initiated fetch (prevents infinite loops)
+  const hasFetchedWatchlist = useRef(false);
 
+  // Only fetch watchlist once if authenticated and not already loaded
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !hasFetchedWatchlist.current && watchlistItems.length === 0 && !watchlistLoading) {
+      hasFetchedWatchlist.current = true;
       dispatch(fetchWatchlistAsync());
     }
-  }, [isAuthenticated, dispatch]);
+  }, [isAuthenticated, dispatch, watchlistItems.length, watchlistLoading]);
 
   // Initialize from URL params only once
   const initialKeyword = searchParams.get("keyword") || "";
@@ -203,7 +212,7 @@ export default function ProductListPage() {
         <ProductGrid
           products={products}
           isLoading={isLoading}
-          watchlistIds={new Set(watchlistProductIds)}
+          watchlistIds={watchlistProductIds}
         />
 
         {/* Pagination */}

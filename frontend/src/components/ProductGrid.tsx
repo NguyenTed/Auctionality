@@ -8,9 +8,7 @@ import { selectIsAuthenticated } from "../features/auth/authSlice";
 import {
   addToWatchlistAsync,
   removeFromWatchlistAsync,
-  fetchWatchlistAsync,
 } from "../features/watchlist/watchlistSlice";
-import { useEffect } from "react";
 import ProductCard from "./ProductCard";
 import type { Product } from "../interfaces/Product";
 
@@ -18,7 +16,7 @@ interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
   onToggleWatchlist?: (productId: number) => void;
-  watchlistIds?: Set<number>;
+  watchlistIds?: number[];
 }
 
 export default function ProductGrid({
@@ -31,16 +29,10 @@ export default function ProductGrid({
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const watchlistProductIds = useAppSelector((state) => state.watchlist.productIds);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(fetchWatchlistAsync());
-    }
-  }, [isAuthenticated, dispatch]);
-
   const handleToggleWatchlist = async (productId: number) => {
     if (!isAuthenticated) return;
 
-    const isInWatchlist = watchlistProductIds.has(productId);
+    const isInWatchlist = watchlistProductIds.includes(productId);
     if (isInWatchlist) {
       await dispatch(removeFromWatchlistAsync(productId));
     } else {
@@ -50,9 +42,9 @@ export default function ProductGrid({
 
   const getIsInWatchlist = (productId: number) => {
     if (watchlistIds) {
-      return watchlistIds.has(productId);
+      return watchlistIds.includes(productId);
     }
-    return watchlistProductIds.has(productId);
+    return watchlistProductIds.includes(productId);
   };
   if (isLoading) {
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -16,6 +16,7 @@ import {
 import {
   fetchCategoriesAsync,
   selectCategories,
+  selectCategoryLoading,
 } from "../features/category/categorySlice";
 
 const Header = () => {
@@ -24,13 +25,21 @@ const Header = () => {
   const user = useAppSelector(selectUser);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const categories = useAppSelector(selectCategories);
+  const categoryLoading = useAppSelector(selectCategoryLoading);
 
   const [open, setOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Use ref to track if we've already initiated fetch (prevents infinite loops)
+  const hasFetchedCategories = useRef(false);
 
+  // Only fetch categories once on mount if not already loaded
   useEffect(() => {
-    dispatch(fetchCategoriesAsync());
-  }, [dispatch]);
+    if (!hasFetchedCategories.current && categories.length === 0 && !categoryLoading) {
+      hasFetchedCategories.current = true;
+      dispatch(fetchCategoriesAsync());
+    }
+  }, [dispatch, categories.length, categoryLoading]);
 
   // Close user menu when clicking outside
   useEffect(() => {

@@ -3,7 +3,7 @@
  * Displays user profile, watchlist, bids, and won products
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { selectUser, selectIsAuthenticated } from "../../features/auth/authSlice";
@@ -39,6 +39,10 @@ export default function ProfilePage() {
   const [wonProducts, setWonProducts] = useState<Product[]>([]);
   const [ratings, setRatings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Use refs to track if we've already initiated fetches (prevents infinite loops)
+  const hasFetchedWatchlist = useRef(false);
+  const hasLoadedUserData = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -46,9 +50,18 @@ export default function ProfilePage() {
       return;
     }
 
-    dispatch(fetchWatchlistAsync());
-    loadUserData();
-  }, [isAuthenticated, navigate, dispatch]);
+    // Only fetch watchlist once if not already loaded
+    if (!hasFetchedWatchlist.current && watchlistItems.length === 0 && !watchlistLoading) {
+      hasFetchedWatchlist.current = true;
+      dispatch(fetchWatchlistAsync());
+    }
+    
+    // Only load user data once
+    if (!hasLoadedUserData.current) {
+      hasLoadedUserData.current = true;
+      loadUserData();
+    }
+  }, [isAuthenticated, navigate, dispatch, watchlistItems.length, watchlistLoading]);
 
   const loadUserData = async () => {
     if (!isAuthenticated) return;
@@ -159,7 +172,7 @@ export default function ProfilePage() {
                 {watchlistLoading ? (
                   <ProductGrid products={[]} isLoading={true} />
                 ) : watchlistProducts.length > 0 ? (
-                  <ProductGrid products={watchlistProducts} watchlistIds={new Set(watchlistProductIds)} />
+                  <ProductGrid products={watchlistProducts} watchlistIds={watchlistProductIds} />
                 ) : (
                   <div className="text-center py-12">
                     <FavoriteIcon className="mx-auto text-gray-300 mb-4" style={{ fontSize: 64 }} />
@@ -181,7 +194,7 @@ export default function ProfilePage() {
                 {loading ? (
                   <ProductGrid products={[]} isLoading={true} />
                 ) : bidsProducts.length > 0 ? (
-                  <ProductGrid products={bidsProducts} watchlistIds={new Set(watchlistProductIds)} />
+                  <ProductGrid products={bidsProducts} watchlistIds={watchlistProductIds} />
                 ) : (
                   <div className="text-center py-12">
                     <GavelIcon className="mx-auto text-gray-300 mb-4" style={{ fontSize: 64 }} />
@@ -203,7 +216,7 @@ export default function ProfilePage() {
                 {loading ? (
                   <ProductGrid products={[]} isLoading={true} />
                 ) : wonProducts.length > 0 ? (
-                  <ProductGrid products={wonProducts} watchlistIds={new Set(watchlistProductIds)} />
+                  <ProductGrid products={wonProducts} watchlistIds={watchlistProductIds} />
                 ) : (
                   <div className="text-center py-12">
                     <EmojiEventsIcon className="mx-auto text-gray-300 mb-4" style={{ fontSize: 64 }} />

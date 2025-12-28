@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Health check endpoints
+                        .requestMatchers("/api/health/**").permitAll()
                         // Public read-only endpoints for products (GET only)
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         // Public read-only endpoints for categories (GET only)
@@ -78,6 +80,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowCredentials(true); // Important: Allow cookies
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000")); // Frontend URLs
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

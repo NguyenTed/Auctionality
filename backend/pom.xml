@@ -123,6 +123,22 @@
 			<groupId>org.springframework.amqp</groupId>
 			<artifactId>spring-rabbit-stream</artifactId>
 		</dependency>
+		<!-- Spring Cache -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<!-- SendGrid Email Service -->
+		<dependency>
+			<groupId>com.sendgrid</groupId>
+			<artifactId>sendgrid-java</artifactId>
+			<version>4.10.1</version>
+		</dependency>
+		<!-- Thymeleaf for Email Templates -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

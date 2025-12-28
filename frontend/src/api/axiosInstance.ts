@@ -14,6 +14,7 @@ export const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
   timeout: 10000,
+  withCredentials: true, // Important: send cookies with requests
 });
 
 // Token refresh state
@@ -35,12 +36,17 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
 };
 
 // Request interceptor - automatically attach token to requests
+// Note: With httpOnly cookies, tokens are sent automatically by the browser
+// We still try to read from localStorage as fallback for backward compatibility
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Try localStorage first (fallback), but prefer cookies
     const token = localStorage.getItem("accessToken");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Cookies are sent automatically by browser, no need to set header
+    // But we keep Authorization header for compatibility
     return config;
   },
   (error) => Promise.reject(error)
@@ -84,23 +90,34 @@ axiosInstance.interceptors.response.use(
       }
 
       try {
-        // Call refresh token endpoint directly using raw axios to avoid circular dependency
+        // Call refresh token endpoint - cookies are sent automatically
+        // Backend will set new cookies in response
         const response = await axios.post(
           `${BASE_URL}/auth/refresh`,
-          { refreshToken }
+          {},
+          {
+            withCredentials: true, // Important: send cookies
+          }
         );
+        
+        // Backend returns tokens in response body (for backward compatibility)
+        // But also sets httpOnly cookies
         const { accessToken, refreshToken: newRefreshToken } = response.data;
 
-        // Update tokens
-        localStorage.setItem("accessToken", accessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
+        // Update localStorage as fallback (for backward compatibility)
+        if (accessToken) {
+          localStorage.setItem("accessToken", accessToken);
+        }
+        if (newRefreshToken) {
+          localStorage.setItem("refreshToken", newRefreshToken);
+        }
 
         // Dispatch custom event to notify Redux store of token refresh
         window.dispatchEvent(new CustomEvent("tokenRefreshed", {
           detail: { accessToken, refreshToken: newRefreshToken },
         }));
 
-        if (originalRequest.headers) {
+        if (originalRequest.headers && accessToken) {
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         }
 

@@ -2,26 +2,33 @@ package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.WatchListItemDto;
 import com.team2.auctionality.exception.WatchListAlreadyExistsException;
+import com.team2.auctionality.mapper.WatchListItemMapper;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.model.WatchListItem;
 import com.team2.auctionality.repository.WatchListItemRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WatchListItemService {
 
     private final WatchListItemRepository watchListItemRepository;
 
+    @Transactional
     public WatchListItem createWatchListItem(WatchListItem watchListItem) {
-
-        Optional<WatchListItem> existing = watchListItemRepository.findByUserAndProduct(watchListItem.getUser(), watchListItem.getProduct());
+        Optional<WatchListItem> existing = watchListItemRepository.findByUserAndProduct(
+                watchListItem.getUser(),
+                watchListItem.getProduct()
+        );
 
         if (existing.isPresent()) {
             throw new WatchListAlreadyExistsException("WatchListItem already exists");
@@ -44,7 +51,11 @@ public class WatchListItemService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<WatchListItemDto> getWatchList(User user) {
-        return watchListItemRepository.getWatchListItemByUser(user);
+        List<WatchListItem> watchListItems = watchListItemRepository.findByUser(user);
+        return watchListItems.stream()
+                .map(WatchListItemMapper::toDto)
+                .collect(Collectors.toList());
     }
 }
