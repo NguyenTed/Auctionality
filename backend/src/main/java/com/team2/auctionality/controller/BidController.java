@@ -1,12 +1,9 @@
 package com.team2.auctionality.controller;
 
 import com.team2.auctionality.config.CurrentUser;
-import com.team2.auctionality.dto.BidHistoryDto;
-import com.team2.auctionality.dto.BidResponse;
-import com.team2.auctionality.dto.PlaceBidRequest;
-import com.team2.auctionality.dto.RejectBidderRequest;
-import com.team2.auctionality.dto.RejectedBidderDto;
+import com.team2.auctionality.dto.*;
 import com.team2.auctionality.mapper.RejectedBidderMapper;
+import com.team2.auctionality.model.AutoBidConfig;
 import com.team2.auctionality.model.RejectedBidder;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.BidService;
@@ -58,18 +55,23 @@ public class BidController {
     }
 
     @PostMapping("/products/{productId}")
-    @Operation(summary = "Place a bid on a product")
-    public ResponseEntity<BidResponse> placeBid(
+    @Operation(summary = "Place bid")
+    public ResponseEntity<ApiResponse<AutoBidConfig>> placeBid(
             @PathVariable Integer productId,
-            @Valid @RequestBody PlaceBidRequest bidRequest,
+            @RequestBody PlaceBidRequest bidRequest,
             @CurrentUser User user
     ) {
-        log.info("User {} placing bid {} on product {}", user.getId(), bidRequest.getAmount(), productId);
-        BidResponse bidResponse = bidService.placeBid(user, productId, bidRequest);
-        URI location = URI.create("/api/products/" + productId + "/bids/history");
+
+        AutoBidConfig bidConfig = bidService.placeBid(user, productId, bidRequest);
+
+        URI location = URI.create("/api/bids/products/" + productId);
+
         return ResponseEntity
                 .created(location)
-                .body(bidResponse);
+                .body(new ApiResponse<>(
+                        "Bid placed successfully",
+                        bidConfig
+                ));
     }
 
     @DeleteMapping("/products/{productId}/bidders/{bidderId}")

@@ -90,4 +90,4 @@ vnpay:
   url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
   tmn-code: YS32FM63
   secret-key: FIEOC3ALLMHIMMVYTFNQ9XQ3VIQIGF2M
-  return-url:  http://localhost:5173/vnpay-return
+  return-url:  http://localhost:8081/api/payments/vnpay-return

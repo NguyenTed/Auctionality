@@ -8,6 +8,7 @@ import com.team2.auctionality.dto.ShippingAddressRequest;
 import com.team2.auctionality.mapper.OrderMapper;
 import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.model.User;
+import com.team2.auctionality.service.OrderDeliveryService;
 import com.team2.auctionality.service.OrderService;
 import com.team2.auctionality.service.ShipmentService;
 import com.team2.auctionality.service.ShippingAddressService;
@@ -29,6 +30,7 @@ public class OrderController {
     private final OrderService orderService;
     private final ShippingAddressService shippingAddressService;
     private final ShipmentService shipmentService;
+    private final OrderDeliveryService orderDeliveryService;
 
     @GetMapping
     @Operation(summary = "Get orders for seller/buyer")
@@ -66,5 +68,13 @@ public class OrderController {
         log.info("User {} shipping order {}", user.getId(), orderId);
         shipmentService.ship(orderId, user);
         return ResponseEntity.ok(new ApiResponse<>("Order shipped successfully", null));
+    }
+
+    @PostMapping("/{orderId}/deliver")
+    public void deliver(
+            @PathVariable Integer orderId,
+            @CurrentUser User user
+    ) {
+        orderDeliveryService.deliver(orderId, user);
     }
 }

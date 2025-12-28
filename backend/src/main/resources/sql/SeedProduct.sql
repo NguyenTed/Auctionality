@@ -1,15 +1,15 @@
 INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time)
 VALUES
-    (1, 17, 'Ancient Chinese Liao Dynasty Rare Terracotta Tablet Tsa-Tsa With Three Buddhas (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (2, 17, 'Chupícuaro, Guanajuato, México Terracotta Bowl. 400 BC – 100 AD. 10 cm diameter. Spanish Export License.  (No Reserve Price)', 'active', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
-    (3, 17, 'European Padlock with original key - 4.5 cm  (No reserve price)', 'active', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
-    (1, 17, 'Viking Era Silver decorated Amulet', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Luristan Bronze, Interesting Pendant  (No reserve price)', 'active', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Medieval Bronze, Rare & Interesting Islam Seal Ring (No reserve price)', 'active', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Ancient Egyptian Wood, Gold Sculpture of the God Min. New Kingdom, 1550-1070 BC. 12.5 cm height.', 'active', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Ancient Roman Roman glassware - Relief-decorated pitcher - intact - with export license', 'active', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Ancient Roman Gold Ring', 'active', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Ancient Roman Gold Earrings', 'active', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '7 days');
+    (1, 17, 'Ancient Chinese Liao Dynasty Rare Terracotta Tablet Tsa-Tsa With Three Buddhas (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (2, 17, 'Chupícuaro, Guanajuato, México Terracotta Bowl. 400 BC – 100 AD. 10 cm diameter. Spanish Export License.  (No Reserve Price)', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
+    (3, 17, 'European Padlock with original key - 4.5 cm  (No reserve price)', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
+    (1, 17, 'Viking Era Silver decorated Amulet', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Luristan Bronze, Interesting Pendant  (No reserve price)', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Medieval Bronze, Rare & Interesting Islam Seal Ring (No reserve price)', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Egyptian Wood, Gold Sculpture of the God Min. New Kingdom, 1550-1070 BC. 12.5 cm height.', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Roman Roman glassware - Relief-decorated pitcher - intact - with export license', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Roman Gold Ring', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Roman Gold Earrings', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '7 days');
 
 INSERT INTO product_image (product_id, url, is_thumbnail)
 VALUES

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Date;
@@ -61,31 +62,28 @@ public class AutoBidEngine {
             newPrice = Math.min(second.getMaxPrice() + product.getBidIncrement(), winnerConfig.getMaxPrice());
 
         }
-
+        Bid bid = null;
         // price not changed -> nothing to do
         if (product.getCurrentPrice() != null &&
-                product.getCurrentPrice().compareTo(newPrice) == 0) {
-            return new AutoBidResult(false, null);
+                product.getCurrentPrice().compareTo(newPrice) != 0) {
+            // update product
+            product.setCurrentPrice(newPrice);
+            productRepository.save(product);
+
+            // generate bid history
+            bid = Bid.builder()
+                    .product(product)
+                    .bidder(userService.getUserById(winnerConfig.getBidderId()))
+                    .amount(newPrice)
+                    .isAutoBid(true)
+                    .createdAt(new Date())
+                    .build();
+
+            bidRepository.save(bid);
         }
 
-        // update product
-        product.setCurrentPrice(newPrice);
-        productRepository.save(product);
-
-        // generate bid history
-        Bid bid = Bid.builder()
-                .product(product)
-                .bidder(userService.getUserById(winnerConfig.getBidderId()))
-                .amount(newPrice)
-                .isAutoBid(true)
-                .createdAt(new Date())
-                .build();
-
-        bidRepository.save(bid);
-
         if (product.getBuyNowPrice() != null &&
-                newPrice.compareTo(product.getBuyNowPrice()) >= 0) {
-
+                bidders.getFirst().getMaxPrice().compareTo(product.getBuyNowPrice()) >= 0) {
             // End auction
             product.setEndTime(LocalDateTime.now());
             product.setStatus(ProductStatus.ENDED);
@@ -95,18 +93,17 @@ public class AutoBidEngine {
             Order order = orderService.createOrderForBuyNow(
                     product,
                     winnerConfig.getBidderId(),
-                    newPrice
+                    bidders.getFirst().getMaxPrice()
             );
 
 
             return new AutoBidResult(true, bid);
         }
 
-
         // If product's endTime <= timeThreshold --> plus extension minutes.
         systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
 
-            long minutesToEnd = java.time.Duration
+            long minutesToEnd = Duration
                     .between(LocalDateTime.now(), product.getEndTime())
                     .toMinutes();
 

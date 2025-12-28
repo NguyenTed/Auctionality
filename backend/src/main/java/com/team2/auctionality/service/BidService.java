@@ -66,19 +66,17 @@ public class BidService {
     }
 
     @Transactional(noRollbackFor = BidPendingApprovalException.class)
-    public BidResponse placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
-        log.info("User {} placing bid {} on product {}", bidder.getId(), bidRequest.getAmount(), productId);
+    public AutoBidConfig placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
 
         // 1. Check if bidder is in RejectedBidder
         if (rejectedBidderRepository.existsByProductIdAndBidderId(productId, bidder.getId())) {
-            log.warn("Bidder {} is rejected from product {}", bidder.getId(), productId);
             throw new BidNotAllowedException("You are not allowed to bid on this product");
         }
 
         UserProfile bidderProfile = bidder.getProfile();
         Product product = productService.getProductById(productId);
         Float ratingPercent = bidderProfile.getRatingPercent();
-        final LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
 
         // 2. Check if product is ended
@@ -132,85 +130,50 @@ public class BidService {
             }
             // update max price
             config.setMaxPrice(bidRequest.getAmount());
+
         }
+        AutoBidResult result = autoBidEngine.recalculate(product.getId());
 
-        // 5. Recalculate auto-bid engine (this may create a bid if auto-bid triggers)
-        AutoBidResult autoBidResult = autoBidEngine.recalculate(product.getId());
-        
-        // Refresh product to get updated price
-        product = productService.getProductById(productId);
-        
-        // 6. Save the manual bid (if auto-bid didn't create one, or if this is a higher manual bid)
-        Bid savedBid;
-        if (autoBidResult.isPriceChanged() && autoBidResult.getGeneratedBid() != null) {
-            // Auto-bid was triggered, use that bid
-            savedBid = autoBidResult.getGeneratedBid();
-        } else {
-            // Save manual bid
-            savedBid = Bid.builder()
-                    .product(product)
-                    .bidder(bidder)
-                    .amount(bidRequest.getAmount())
-                    .isAutoBid(false)
-                    .createdAt(new Date())
-                    .build();
-            savedBid = bidRepository.save(savedBid);
-        }
-
-        // 7. Check if product's endTime <= timeThreshold --> plus extension minutes
-        final Product finalProduct = product; // Make final for lambda
-        systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
-            long minutesToEnd = java.time.Duration
-                    .between(now, finalProduct.getEndTime())
-                    .toMinutes();
-
-            if (minutesToEnd <= rule.getTimeThresholdMinutes()) {
-                finalProduct.setEndTime(
-                        finalProduct.getEndTime().plusMinutes(rule.getExtensionMinutes())
-                );
-                productService.save(finalProduct);
-            }
-        });
-
-        // 8. Publish events and send email notifications after transaction commits
-        final Integer finalProductId = productId; // Make final for lambda
-        final Bid finalSavedBid = savedBid; // Make final for lambda
-        final Product finalProductForEmail = product; // Make final for lambda
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        // Refresh product to get latest state
-                        List<BidHistoryDto> histories = getBidHistory(finalProductId);
-                        bidEventPublisher.publishBidHistory(finalProductId, histories);
+                        List<BidHistoryDto> histories = getBidHistory(productId);
+                        ProductDto productDto = ProductMapper.toDto(product);
 
+                        bidEventPublisher.publishBidHistory(productId, histories);
                         // Send email notifications
-                        sendBidNotifications(finalProductForEmail, finalSavedBid);
+//                        sendBidNotifications(finalProductForEmail, finalSavedBid);
                     }
                 }
         );
 
-        // 9. Build response
-        AutoBidConfigDto configDto = null;
-        if (config != null) {
-            configDto = AutoBidConfigDto.builder()
-                    .id(config.getId())
-                    .productId(config.getProductId())
-                    .bidderId(config.getBidderId())
-                    .maxPrice(config.getMaxPrice())
-                    .createdAt(config.getCreatedAt())
-                    .build();
-        }
+        // 6. Save bid
+//        Bid bid = Bid.builder()
+//                .product(product)
+//                .bidder(bidder)
+//                .amount(bidRequest.getAmount())
+//                .isAutoBid(true)
+//                .build();
+//
+//        Bid savedBid = bidRepository.save(bid);
+//
+//        // 7. If product's endTime <= timeThreshold --> plus extension minutes.
+//        systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
+//
+//            long minutesToEnd = java.time.Duration
+//                    .between(now, product.getEndTime())
+//                    .toMinutes();
+//
+//            if (minutesToEnd <= rule.getTimeThresholdMinutes()) {
+//                product.setEndTime(
+//                        product.getEndTime().plusMinutes(rule.getExtensionMinutes())
+//                );
+//                productService.save(product);
+//            }
+//        });
 
-        return BidResponse.builder()
-                .id(savedBid.getId())
-                .productId(productId)
-                .bidderId(bidder.getId())
-                .amount(savedBid.getAmount())
-                .isAutoBid(savedBid.getIsAutoBid())
-                .createdAt(savedBid.getCreatedAt())
-                .autoBidConfig(configDto)
-                .build();
+        return config;
     }
 
     @Transactional

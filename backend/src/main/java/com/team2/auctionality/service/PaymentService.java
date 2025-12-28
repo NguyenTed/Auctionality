@@ -51,7 +51,7 @@ public class PaymentService {
         long amount = Math.round(price * 1000);
         String bankCode = req.getParameter("bankCode");
 
-        String vnp_TxnRef = payment.getId().toString();
+        String vnp_TxnRef = PaymentConfig.getRandomNumber(8);
         String vnp_IpAddr = "127.0.0.1";
 
         Map<String, String> vnp_Params = new HashMap<>();
@@ -69,7 +69,9 @@ public class PaymentService {
         vnp_Params.put("vnp_OrderType", orderType);
 
         vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
+        String vnp_ReturnUrlWithPayment =
+                vnp_ReturnUrl + "?paymentId=" + payment.getId();
+        vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrlWithPayment);
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -177,6 +179,7 @@ public class PaymentService {
         // 4. Build raw data to verify (SORT + NO ENCODE)
         String rawData = params.entrySet()
                 .stream()
+                .filter(e -> e.getKey().startsWith("vnp_"))
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining("&"));
@@ -188,11 +191,17 @@ public class PaymentService {
         }
 
         // 6. Business logic
-        Integer paymentId = Integer.valueOf(params.get("vnp_TxnRef"));
         String responseCode = params.get("vnp_ResponseCode");
 
+        String paymentIdStr = request.getParameter("paymentId");
+        if (paymentIdStr == null) {
+            throw new IllegalArgumentException("Missing paymentId in returnUrl");
+        }
+
+        Integer paymentId = Integer.valueOf(paymentIdStr);
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found."));
+
         if (payment.getStatus() == PaymentStatus.PAID) {
             return; // idempotent
         }
