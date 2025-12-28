@@ -6,6 +6,7 @@ import GuestLayout from "../layouts/GuestLayout";
 import HomePage from "../pages/common/HomePage";
 import ProductListPage from "../pages/products/ProductListPage";
 import ProductDetailPage from "../pages/products/ProductDetailPage";
+import ProfilePage from "../pages/user/ProfilePage";
 import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
@@ -52,6 +53,7 @@ function AppRouterContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />

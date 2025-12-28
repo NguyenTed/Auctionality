@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #ff6200; /* Catawiki orange */
+  --primary: #0168FF;
 }
 
 .text-primary {
@@ -25,9 +25,14 @@
 }
 
 .hover\:text-primary\/80:hover {
-  color: rgb(255 98 0 / 0.8);
+  color: rgb(1 104 255 / 0.8);
 }
 
 .hover\:bg-primary\/90:hover {
-  background-color: rgb(255 98 0 / 0.9);
+  background-color: rgb(1 104 255 / 0.9);
+}
+
+/* Pointer cursor for all clickable elements */
+button, a, [role="button"], .cursor-pointer {
+  cursor: pointer;
 }

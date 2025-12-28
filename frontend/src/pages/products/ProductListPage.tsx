@@ -13,6 +13,11 @@ import {
   selectProductLoading,
 } from "../../features/product/productSlice";
 import { selectCategories } from "../../features/category/categorySlice";
+import { selectIsAuthenticated } from "../../features/auth/authSlice";
+import {
+  fetchWatchlistAsync,
+  selectWatchlistProductIds,
+} from "../../features/watchlist/watchlistSlice";
 import ProductGrid from "../../components/ProductGrid";
 import FilterIcon from "@mui/icons-material/FilterList";
 import SortIcon from "@mui/icons-material/Sort";
@@ -24,24 +29,53 @@ export default function ProductListPage() {
   const pagination = useAppSelector(selectProductPagination);
   const isLoading = useAppSelector(selectProductLoading);
   const categories = useAppSelector(selectCategories);
-
-  const [keyword, setKeyword] = useState(searchParams.get("keyword") || "");
-  const [categoryId, setCategoryId] = useState<number | null>(
-    searchParams.get("categoryId") ? parseInt(searchParams.get("categoryId")!) : null
-  );
-  const [sort, setSort] = useState(searchParams.get("sort") || "endTimeDesc");
-  const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
-  const [showFilters, setShowFilters] = useState(false);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const watchlistProductIds = useAppSelector(selectWatchlistProductIds);
 
   useEffect(() => {
-    const params: Record<string, string> = {};
-    if (keyword) params.keyword = keyword;
-    if (categoryId) params.categoryId = categoryId.toString();
-    if (sort) params.sort = sort;
-    if (page > 1) params.page = page.toString();
+    if (isAuthenticated) {
+      dispatch(fetchWatchlistAsync());
+    }
+  }, [isAuthenticated, dispatch]);
 
-    setSearchParamsUrl(params, { replace: true });
+  // Initialize from URL params only once
+  const initialKeyword = searchParams.get("keyword") || "";
+  const initialCategoryId = searchParams.get("categoryId")
+    ? parseInt(searchParams.get("categoryId")!)
+    : null;
+  const initialSort = searchParams.get("sort") || "endTimeDesc";
+  const initialPage = parseInt(searchParams.get("page") || "1");
 
+  const [keyword, setKeyword] = useState(initialKeyword);
+  const [categoryId, setCategoryId] = useState<number | null>(initialCategoryId);
+  const [sort, setSort] = useState(initialSort);
+  const [page, setPage] = useState(initialPage);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Sync with URL params when they change externally (e.g., from header search)
+  useEffect(() => {
+    const urlKeyword = searchParams.get("keyword") || "";
+    const urlCategoryId = searchParams.get("categoryId")
+      ? parseInt(searchParams.get("categoryId")!)
+      : null;
+    const urlSort = searchParams.get("sort") || "endTimeDesc";
+    const urlPage = parseInt(searchParams.get("page") || "1");
+
+    if (
+      urlKeyword !== keyword ||
+      urlCategoryId !== categoryId ||
+      urlSort !== sort ||
+      urlPage !== page
+    ) {
+      setKeyword(urlKeyword);
+      setCategoryId(urlCategoryId);
+      setSort(urlSort);
+      setPage(urlPage);
+    }
+  }, [searchParams]);
+
+  // Fetch products when filters change
+  useEffect(() => {
     dispatch(
       searchProductsAsync({
         keyword: keyword || undefined,
@@ -51,21 +85,35 @@ export default function ProductListPage() {
         sort,
       })
     );
-  }, [keyword, categoryId, sort, page, dispatch, setSearchParamsUrl]);
+  }, [keyword, categoryId, sort, page, dispatch]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
+  const updateURL = (newKeyword: string, newCategoryId: number | null, newSort: string, newPage: number) => {
+    const params: Record<string, string> = {};
+    if (newKeyword) params.keyword = newKeyword;
+    if (newCategoryId) params.categoryId = newCategoryId.toString();
+    if (newSort && newSort !== "endTimeDesc") params.sort = newSort;
+    if (newPage > 1) params.page = newPage.toString();
+
+    setSearchParamsUrl(params, { replace: true });
   };
 
   const handleCategoryChange = (catId: number | null) => {
+    const newPage = 1;
     setCategoryId(catId);
-    setPage(1);
+    setPage(newPage);
+    updateURL(keyword, catId, sort, newPage);
   };
 
   const handleSortChange = (newSort: string) => {
+    const newPage = 1;
     setSort(newSort);
-    setPage(1);
+    setPage(newPage);
+    updateURL(keyword, categoryId, newSort, newPage);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateURL(keyword, categoryId, sort, newPage);
   };
 
   return (
@@ -74,25 +122,6 @@ export default function ProductListPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">All Auctions</h1>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="mb-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Search for title, category..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-              <button
-                type="submit"
-                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                Search
-              </button>
-            </div>
-          </form>
 
           {/* Filters and Sort */}
           <div className="flex flex-wrap items-center gap-4">
@@ -171,13 +200,17 @@ export default function ProductListPage() {
         </div>
 
         {/* Product Grid */}
-        <ProductGrid products={products} isLoading={isLoading} />
+        <ProductGrid
+          products={products}
+          isLoading={isLoading}
+          watchlistIds={new Set(watchlistProductIds)}
+        />
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
           <div className="mt-8 flex justify-center items-center gap-2">
             <button
-              onClick={() => setPage(page - 1)}
+              onClick={() => handlePageChange(page - 1)}
               disabled={!pagination.hasPrevious || isLoading}
               className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
@@ -187,7 +220,7 @@ export default function ProductListPage() {
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
-              onClick={() => setPage(page + 1)}
+              onClick={() => handlePageChange(page + 1)}
               disabled={!pagination.hasNext || isLoading}
               className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >

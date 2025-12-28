@@ -12,6 +12,12 @@ import {
   selectProductLoading,
 } from "../../features/product/productSlice";
 import { selectIsAuthenticated } from "../../features/auth/authSlice";
+import {
+  addToWatchlistAsync,
+  removeFromWatchlistAsync,
+  selectIsInWatchlist,
+  fetchWatchlistAsync,
+} from "../../features/watchlist/watchlistSlice";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -23,15 +29,20 @@ export default function ProductDetailPage() {
   const product = useAppSelector(selectCurrentProduct);
   const isLoading = useAppSelector(selectProductLoading);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isInWatchlist = useAppSelector(
+    product ? selectIsInWatchlist(product.id) : () => false
+  );
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [bidAmount, setBidAmount] = useState("");
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchProductByIdAsync(parseInt(id)));
+      if (isAuthenticated) {
+        dispatch(fetchWatchlistAsync());
+      }
     }
-  }, [id, dispatch]);
+  }, [id, dispatch, isAuthenticated]);
 
   const formatPrice = (price: number | null | undefined) => {
     if (!price) return "€0";
@@ -72,13 +83,18 @@ export default function ProductDetailPage() {
     console.log("Place bid:", bidAmount);
   };
 
-  const handleToggleWatchlist = () => {
+  const handleToggleWatchlist = async () => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
-    // TODO: Implement watchlist toggle
-    setIsInWatchlist(!isInWatchlist);
+    if (!product) return;
+
+    if (isInWatchlist) {
+      await dispatch(removeFromWatchlistAsync(product.id));
+    } else {
+      await dispatch(addToWatchlistAsync(product.id));
+    }
   };
 
   if (isLoading) {
