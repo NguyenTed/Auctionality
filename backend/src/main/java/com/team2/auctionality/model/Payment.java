@@ -29,6 +29,9 @@ public class Payment {
     @Column(name = "gateway")
     private PaymentGateway gateway;
 
+    @Column(name = "amount")
+    private Float amount;
+
     @Column(name = "currency")
     private String currency;
 

@@ -79,5 +79,5 @@ rabbitmq:
 vnpay:
   url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
   tmn-code: YS32FM63
-  secret-key: P5S429BEYLZBPUPP0TV87KU8I4EBQRT9
-  return-url:  https://512f9e3961dc.ngrok-free.app/api/payments/vnpay-return
+  secret-key: FIEOC3ALLMHIMMVYTFNQ9XQ3VIQIGF2M
+  return-url:  http://localhost:8081/api/payments/vnpay-return

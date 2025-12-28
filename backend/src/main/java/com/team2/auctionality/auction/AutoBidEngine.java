@@ -82,7 +82,7 @@ public class AutoBidEngine {
         bidRepository.save(bid);
 
         if (product.getBuyNowPrice() != null &&
-                newPrice.compareTo(product.getBuyNowPrice()) == 0) {
+                newPrice.compareTo(product.getBuyNowPrice()) >= 0) {
 
             // End auction
             product.setEndTime(LocalDateTime.now());
