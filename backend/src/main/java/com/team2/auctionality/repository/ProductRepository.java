@@ -70,25 +70,26 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     @Query(
             value = """
-            SELECT * 
-            FROM product
-            WHERE category_id = :categoryId
-        """,
-            countQuery = """
-            SELECT COUNT(*) 
-            FROM product
-            WHERE category_id = :categoryId
-        """,
+                SELECT p.* 
+                FROM product p
+                LEFT JOIN category c ON p.category_id = c.id
+                WHERE p.category_id = :categoryId OR c.parent_id = :categoryId
+            """,
+                    countQuery = """
+                SELECT COUNT(*) 
+                FROM product p
+                LEFT JOIN category c ON p.category_id = c.id
+                WHERE p.category_id = :categoryId OR c.parent_id = :categoryId
+            """,
             nativeQuery = true
     )
-
     Page<Product> findByCategory(@Param("categoryId") Integer categoryId, Pageable pageable);
 
     @Query(
         """
         SELECT p FROM Product p
         WHERE 
-            (:categoryId IS NULL OR p.category.id = :categoryId)
+            (:categoryId IS NULL OR p.category.id = :categoryId OR p.category.parent.id = :categoryId)
             AND (
                 :keyword IS NULL 
                 OR LOWER(FUNCTION('unaccent', p.title)) LIKE LOWER(CONCAT('%', FUNCTION('unaccent', CAST(:keyword AS string)), '%'))
