@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -53,10 +54,21 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     // Removed @EntityGraph to avoid Hibernate warning with pagination
     // Images and category will be batch fetched using @BatchSize on Product entity
-    @Query("""
-        SELECT p FROM Product p
-        WHERE p.category.id = :categoryId
-        """)
+    @Query(
+            value = """
+                SELECT p.* 
+                FROM product p
+                LEFT JOIN category c ON p.category_id = c.id
+                WHERE p.category_id = :categoryId OR c.parent_id = :categoryId
+            """,
+            countQuery = """
+                SELECT COUNT(*) 
+                FROM product p
+                LEFT JOIN category c ON p.category_id = c.id
+                WHERE p.category_id = :categoryId OR c.parent_id = :categoryId
+            """,
+            nativeQuery = true
+    )
     Page<Product> findByCategory(@Param("categoryId") Integer categoryId, Pageable pageable);
 
     // Removed @EntityGraph to avoid Hibernate warning with pagination
@@ -65,7 +77,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
         """
         SELECT p FROM Product p
         WHERE 
-            (:categoryId IS NULL OR p.category.id = :categoryId)
+            (:categoryId IS NULL OR p.category.id = :categoryId OR p.category.parent.id = :categoryId)
             AND (
                 :keyword IS NULL 
                 OR LOWER(FUNCTION('unaccent', p.title)) LIKE LOWER(CONCAT('%', FUNCTION('unaccent', CAST(:keyword AS string)), '%'))
@@ -93,5 +105,18 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
         WHERE o.buyer_id = :userId
         """, nativeQuery = true)
     List<Product> findWonProductsByUserId(@Param("userId") Integer userId);
+
+    @Query("""
+    SELECT p
+    FROM Product p
+    WHERE p.endTime <= :now
+      AND p.status = 'active'
+      AND NOT EXISTS (
+          SELECT o
+          FROM Order o
+          WHERE o.product.id = p.id
+      )
+""")
+    List<Product> findExpiredAndNotOrdered(LocalDateTime now);
 }
 

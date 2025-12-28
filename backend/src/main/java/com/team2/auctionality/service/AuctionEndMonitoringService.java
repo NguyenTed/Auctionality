@@ -4,6 +4,7 @@ import com.team2.auctionality.email.EmailService;
 import com.team2.auctionality.email.dto.AuctionEndedEmailRequest;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.model.Bid;
+import com.team2.auctionality.model.Order;
 import com.team2.auctionality.model.Product;
 import com.team2.auctionality.repository.BidRepository;
 import com.team2.auctionality.repository.ProductRepository;
@@ -20,7 +21,7 @@ import java.util.Optional;
 
 /**
  * Service to monitor and handle ended auctions
- * Sends email notifications when auctions end
+ * Consolidates auction finalization (order creation) and email notifications
  */
 @Service
 @RequiredArgsConstructor
@@ -30,25 +31,24 @@ public class AuctionEndMonitoringService {
     private final ProductRepository productRepository;
     private final BidRepository bidRepository;
     private final EmailService emailService;
+    private final OrderService orderService;
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
 
     /**
      * Check for ended auctions every minute
-     * Only processes auctions that haven't been notified yet (status is still ACTIVE)
+     * Processes auctions that have ended but haven't been finalized yet
+     * Handles both order creation and email notifications
      */
     @Scheduled(fixedRate = 60000) // Run every minute
     @Transactional
-    public void checkEndedAuctions() {
+    public void finalizeEndedAuctions() {
         LocalDateTime now = LocalDateTime.now();
         log.debug("Checking for ended auctions at {}", now);
 
-        // Find all active products that have ended
-        List<Product> endedProducts = productRepository.findAll().stream()
-                .filter(p -> p.getStatus() == ProductStatus.active)
-                .filter(p -> p.getEndTime().isBefore(now) || p.getEndTime().isEqual(now))
-                .toList();
+        // Find all active products that have ended and don't have orders yet
+        List<Product> endedProducts = productRepository.findExpiredAndNotOrdered(now);
 
         if (endedProducts.isEmpty()) {
             return;
@@ -67,18 +67,19 @@ public class AuctionEndMonitoringService {
 
     /**
      * Process a single ended auction
+     * Handles order creation and email notifications
      */
     private void processEndedAuction(Product product) {
         log.info("Processing ended auction: {} - {}", product.getId(), product.getTitle());
 
         // Update product status to expired
-        product.setStatus(ProductStatus.expired);
+        product.setStatus(ProductStatus.ENDED);
         productRepository.save(product);
 
         String productUrl = frontendBaseUrl + "/products/" + product.getId();
 
         // Find the winning bid (highest bid)
-        Optional<Bid> winnerBidOpt = bidRepository.findTopBidByProductId(product.getId());
+        Optional<Bid> winnerBidOpt = bidRepository.findHighestBid(product.getId());
 
         if (winnerBidOpt.isEmpty()) {
             // No bids - notify seller only
@@ -89,13 +90,21 @@ public class AuctionEndMonitoringService {
                     productUrl
             );
         } else {
-            // Has winner - notify seller and winner
+            // Has winner - create order and send notifications
             Bid winnerBid = winnerBidOpt.get();
             String winnerName = winnerBid.getBidder().getProfile().getFullName();
             Float finalPrice = winnerBid.getAmount();
 
             log.info("Auction {} ended with winner: {} (€{})", 
                     product.getId(), winnerName, finalPrice);
+
+            // Create order for the winner
+            Order order = orderService.createOrderForBuyNow(
+                    product,
+                    winnerBid.getBidder().getId(),
+                    finalPrice
+            );
+            log.info("Created order {} for product {}", order.getId(), product.getId());
 
             // Notify seller
             emailService.sendAuctionEndedWithWinnerNotification(

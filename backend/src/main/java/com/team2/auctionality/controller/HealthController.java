@@ -15,7 +15,6 @@ import java.util.Map;
 @RequestMapping("/api/health")
 @Tag(name = "Health", description = "Health check and system status API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 @Slf4j
 public class HealthController {
 

@@ -1,19 +1,16 @@
 package com.team2.auctionality.auction;
 
 import com.team2.auctionality.dto.AutoBidResult;
+import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.AutoBidConfigRepository;
 import com.team2.auctionality.repository.BidRepository;
 import com.team2.auctionality.repository.ProductRepository;
-import com.team2.auctionality.service.ProductService;
-import com.team2.auctionality.service.SystemAuctionRuleService;
-import com.team2.auctionality.service.UserService;
+import com.team2.auctionality.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -31,6 +28,8 @@ public class AutoBidEngine {
     private final UserService userService;
     private final SystemAuctionRuleService systemAuctionRuleService;
     private final ProductService productService;
+    private final OrderService orderService;
+    private final PaymentService paymentService;
 
     @Transactional
     public AutoBidResult recalculate(Integer productId) {
@@ -83,6 +82,26 @@ public class AutoBidEngine {
                 .build();
 
         bidRepository.save(bid);
+
+        if (product.getBuyNowPrice() != null &&
+                newPrice.compareTo(product.getBuyNowPrice()) >= 0) {
+
+            // End auction
+            product.setEndTime(LocalDateTime.now());
+            product.setStatus(ProductStatus.ENDED);
+            productRepository.save(product);
+
+            // Create order
+            Order order = orderService.createOrderForBuyNow(
+                    product,
+                    winnerConfig.getBidderId(),
+                    newPrice
+            );
+
+
+            return new AutoBidResult(true, bid);
+        }
+
 
         // If product's endTime <= timeThreshold --> plus extension minutes.
         systemAuctionRuleService.getActiveRule().ifPresent(rule -> {

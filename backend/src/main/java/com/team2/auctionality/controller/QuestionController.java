@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/api/questions")
 @Tag(name = "Question", description = "Question API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 @Slf4j
 public class QuestionController {
 

@@ -73,8 +73,8 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDto> getProductsByCategory(Integer categoryId, int page, int size) {
-        return productRepository.findByCategory(categoryId, PageRequest.of(page, size))
+    public Page<ProductDto> getProductsByCategory(Integer categoryId, Pageable pageable) {
+        return productRepository.findByCategory(categoryId, pageable)
                 .map(ProductMapper::toDto);
     }
 
@@ -82,13 +82,16 @@ public class ProductService {
     public Page<ProductDto> searchProducts(
             String keyword,
             Integer categoryId,
-            int page,
-            int size,
+            Pageable pageable,
             String sort
     ) {
-        Pageable pageable = PageRequest.of(page, size, getSort(sort));
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                getSort(sort)
+        );
 
-        Page<Product> products = productRepository.searchProducts(keyword, categoryId, pageable);
+        Page<Product> products = productRepository.searchProducts(keyword, categoryId, sortedPageable);
 
         return products.map(ProductMapper::toDto);
     }
@@ -104,8 +107,7 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDto> getAllProducts(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public Page<ProductDto> getAllProducts(Pageable pageable) {
         return productRepository
                 .findAll(pageable)
                 .map(ProductMapper::toDto);
@@ -114,7 +116,7 @@ public class ProductService {
     public ProductDto createProduct(User seller, CreateProductDto productDto) {
         Product product = Product.builder()
                 .title(productDto.getTitle())
-                .status(ProductStatus.active)
+                .status(ProductStatus.ACTIVE)
                 .startPrice(productDto.getStartPrice())
                 .currentPrice(0f)
                 .buyNowPrice(productDto.getBuyNowPrice())
@@ -131,7 +133,17 @@ public class ProductService {
 
     }
 
-    public void deleteProductById(Integer id) {
+    @Transactional
+    public void deleteProductById(Integer id, Integer userId) {
+        Product product = getProductById(id);
+        
+        // Ownership validation
+        if (!product.getSeller().getId().equals(userId)) {
+            throw new com.team2.auctionality.exception.BidNotAllowedException(
+                    "You can only delete your own products"
+            );
+        }
+        
         productRepository.deleteById(id);
     }
 

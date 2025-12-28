@@ -9,6 +9,7 @@ import com.team2.auctionality.mapper.RejectedBidderMapper;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
+import com.team2.auctionality.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,7 +25,6 @@ import java.util.List;
 @RequestMapping("/api/products")
 @Tag(name = "Product", description = "Product API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 @Slf4j
 public class ProductController {
 
@@ -38,9 +38,12 @@ public class ProductController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        page = Math.max(1, page);
-        size = Math.max(1, Math.min(100, size)); // Max page size 100
-        return PaginationMapper.from(productService.getProductsByCategory(categoryId, page - 1, size));
+        return PaginationMapper.from(
+                productService.getProductsByCategory(
+                        categoryId, 
+                        PaginationUtils.createPageable(page, size)
+                )
+        );
     }
 
     @GetMapping("/top")
@@ -64,9 +67,14 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "endTimeDesc") String sort
     ) {
-        page = Math.max(1, page);
-        size = Math.max(1, Math.min(100, size)); // Max page size 100
-        return PaginationMapper.from(productService.searchProducts(keyword, categoryId, page - 1, size, sort));
+        return PaginationMapper.from(
+                productService.searchProducts(
+                        keyword, 
+                        categoryId, 
+                        PaginationUtils.createPageable(page, size),
+                        sort
+                )
+        );
     }
 
     @GetMapping
@@ -75,9 +83,9 @@ public class ProductController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        page = Math.max(1, page);
-        size = Math.max(1, Math.min(100, size)); // Max page size 100
-        return PaginationMapper.from(productService.getAllProducts(page - 1, size));
+        return PaginationMapper.from(
+                productService.getAllProducts(PaginationUtils.createPageable(page, size))
+        );
     }
 
     @GetMapping("/{id}")
@@ -125,6 +133,11 @@ public class ProductController {
                 .ok(productExtraDescriptions);
     }
 
+//    @PutMapping("/{id}")
+//    public ProductDto editProductById(@PathVariable Integer id, @RequestBody CreateProductDto productDto) {
+//        return productService.editProductById(id, productDto);
+//    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete product by id")
     public ResponseEntity<Void> deleteProductById(
@@ -132,25 +145,7 @@ public class ProductController {
             @CurrentUser User user
     ) {
         log.info("User {} deleting product {}", user.getId(), id);
-        productService.deleteProductById(id);
+        productService.deleteProductById(id, user.getId());
         return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{productId}/bidders/{bidderId}")
-    @Operation(summary = "Reject a bidder from product")
-    public ResponseEntity<RejectedBidderDto> rejectBidder(
-            @PathVariable Integer productId,
-            @PathVariable Integer bidderId,
-            @RequestBody(required = false) RejectBidderRequest request,
-            @CurrentUser User user
-    ) {
-        log.info("User {} rejecting bidder {} from product {}", user.getId(), bidderId, productId);
-        RejectedBidder rejectedBidder = bidService.rejectBidder(
-                productId,
-                bidderId,
-                request != null ? request.getReason() : null
-        );
-
-        return ResponseEntity.ok(RejectedBidderMapper.toDto(rejectedBidder));
     }
 }

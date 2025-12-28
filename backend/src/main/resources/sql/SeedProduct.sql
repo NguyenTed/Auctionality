@@ -1,39 +1,15 @@
 INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time)
 VALUES
-    (1, 1, 'Ancient Chinese Liao Dynasty Rare Terracotta Tablet Tsa-Tsa With Three Buddhas (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (2, 1, 'Chupícuaro, Guanajuato, México Terracotta Bowl. 400 BC – 100 AD. 10 cm diameter. Spanish Export License.  (No Reserve Price)', 'active', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
-    (3, 1, 'European Padlock with original key - 4.5 cm  (No reserve price)', 'active', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
-    (1, 1, 'Viking Era Silver decorated Amulet', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 1, 'Luristan Bronze, Interesting Pendant  (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 1, 'Medieval, Crusaders Era Bronze Ring', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 1, 'Viking Era Bronze, Antique ring with runic symbols on the bezel - 16 mm - 9th/11th century AD Ring  (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 1, 'Ancient Egyptian to Roman Glass over 100 ancient beads  (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 1, 'Medieval, Crusaders Era Bronze, Top Cross Pendant  (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 1, 'Viking Era Ancient Omega amulet / pendant in bronze, Viking period, 900-1100 AD Amulet  (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days');
-
-
-
-    (4, 2, 'Nike Air Max 270 Sneakers', 'active', 50, 50, 120, 2, NOW(), NOW() + INTERVAL '4 days'),
-    (5, 2, 'Adidas Ultraboost Running Shoes', 'active', 60, 60, 130, 2, NOW(), NOW() + INTERVAL '4 days'),
-    (6, 2, 'Men Premium Leather Wallet', 'active', 15, 15, 40, 1, NOW(), NOW() + INTERVAL '3 days'),
-
-    (7, 3, 'Dyson V11 Vacuum Cleaner', 'active', 200, 200, 450, 10, NOW(), NOW() + INTERVAL '5 days'),
-    (8, 3, 'IKEA Wooden Coffee Table', 'active', 30, 30, 80, 2, NOW(), NOW() + INTERVAL '6 days'),
-    (9, 3, 'Philips Air Fryer XXL', 'active', 70, 70, 150, 3, NOW(), NOW() + INTERVAL '4 days'),
-
-    (10, 4, 'Wilson Professional Tennis Racket', 'active', 40, 40, 110, 2, NOW(), NOW() + INTERVAL '3 days'),
-    (10, 4, 'Camping Tent 4-Person Waterproof', 'active', 45, 45, 120, 2, NOW(), NOW() + INTERVAL '6 days'),
-    (10, 4, 'Garmin Forerunner 245 GPS Watch', 'active', 80, 80, 200, 5, NOW(), NOW() + INTERVAL '4 days'),
-
-    (10, 5, 'Vintage Pokémon Card Charizard 1999', 'active', 300, 300, 1200, 20, NOW(), NOW() + INTERVAL '10 days'),
-    (10, 5, 'Star Wars Action Figure Limited Edition', 'active', 100, 100, 300, 5, NOW(), NOW() + INTERVAL '7 days'),
-    (10, 5, 'Antique Silver Pocket Watch (1920s)', 'active', 120, 120, 400, 5, NOW(), NOW() + INTERVAL '8 days'),
-
-    (1, 1, 'GoPro Hero 12 Black Action Camera', 'active', 180, 180, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
-    (2, 3, 'Premium Ceramic Vase Handmade', 'active', 20, 20, 55, 2, NOW(), NOW() + INTERVAL '4 days'),
-    (3, 4, 'Professional Mountain Bike Helmet', 'active', 25, 25, 70, 2, NOW(), NOW() + INTERVAL '4 days'),
-    (4, 2, 'Women Luxury Silk Scarf', 'active', 10, 10, 45, 1, NOW(), NOW() + INTERVAL '3 days'),
-    (5, 5, 'Rare Coin Collection Set (1960–1980)', 'active', 80, 80, 220, 3, NOW(), NOW() + INTERVAL '6 days');
+    (1, 17, 'Ancient Chinese Liao Dynasty Rare Terracotta Tablet Tsa-Tsa With Three Buddhas (No reserve price)', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (2, 17, 'Chupícuaro, Guanajuato, México Terracotta Bowl. 400 BC – 100 AD. 10 cm diameter. Spanish Export License.  (No Reserve Price)', 'active', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
+    (3, 17, 'European Padlock with original key - 4.5 cm  (No reserve price)', 'active', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
+    (1, 17, 'Viking Era Silver decorated Amulet', 'active', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Luristan Bronze, Interesting Pendant  (No reserve price)', 'active', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Medieval Bronze, Rare & Interesting Islam Seal Ring (No reserve price)', 'active', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Egyptian Wood, Gold Sculpture of the God Min. New Kingdom, 1550-1070 BC. 12.5 cm height.', 'active', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Roman Roman glassware - Relief-decorated pitcher - intact - with export license', 'active', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Roman Gold Ring', 'active', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '7 days'),
+    (1, 17, 'Ancient Roman Gold Earrings', 'active', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '7 days');
 
 INSERT INTO product_image (product_id, url, is_thumbnail)
 VALUES
@@ -75,3 +51,58 @@ VALUES
     (5,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/7/7/7/d/77de03ed-3f1e-4dc4-a8ab-371de943981e.jpg@webp', false),
     (5,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/7/e/7/4/e74d3a7e-5dd2-4ba1-ae76-749268d2a620.jpg@webp', false),
     (5,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/7/1/f/2/1f2afc91-0652-497e-b8ac-93c5aabd3fe7.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (6,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/5/7/0/5704e98a-7d4e-48bb-90b8-5e93983e7196.jpg@webp', true),
+    (6,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/d/d/a/ddac27d9-7a01-4bcf-9957-58e0bfbddb73.jpg@webp', false),
+    (6,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/5/0/d/50d4584a-c476-421b-acb7-7d64123ace92.jpg@webp', false),
+    (6,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/5/e/f/5ef98c6e-1c9f-4734-b95f-c17066a66c1b.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (7,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/7/18/b/e/4/be426c1f-d95d-4e02-8177-c1b643e64912.jpg@webp', true),
+    (7,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/7/18/e/c/b/ecb6f396-53ef-4a3a-b04c-960a4d6dfae8.jpg@webp', false),
+    (7,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/7/18/9/0/b/90b986b1-17b5-48d6-b9e7-9d0101b119d9.jpg@webp', false),
+    (7,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/7/18/8/8/7/887a2309-cdb1-41e6-be28-53b36b535014.jpg@webp', false),
+    (7,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/7/18/5/6/3/5632cb04-3050-4d67-886b-2286f986edc8.jpg@webp', false),
+    (7,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2024/7/18/a/7/e/a7e4e05c-60a8-4c00-aab4-a5707b8f2425.jpg', false),
+    (7,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2024/7/18/8/4/4/844de92a-4b5e-4b63-b878-9c01a5b55bc8.jpg', false);
+
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (8,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/9/6/7/4/5/745a0a9e-22aa-4323-8fcc-219d41b41521.jpg@webp', true),
+    (8,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/9/6/7/6/4/7647162a-7000-4a7a-90cf-5cab358c9c0f.jpg@webp', false),
+    (8,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/9/6/e/b/8/eb8c582f-4160-4032-861e-a73fdfde6183.jpg@webp', false),
+    (8,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/9/6/f/0/b/f0bf027a-51a8-4512-ac9b-de11771d0dd4.jpg@webp', false),
+    (8,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/9/6/6/5/9/659eba9f-f0c9-4f38-bbbb-00bd92772f8f.jpg@webp', false),
+    (8,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2025/9/6/e/0/8/e08af320-d940-4a72-8c70-237fedd8972d.jpg', false),
+    (8,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2025/9/6/1/4/7/147a4cd0-6fae-4dbf-b276-4e161890fa56.jpg', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (9,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/2/0/6/2065a7fe-c2ed-40a0-8db2-b23911b8d3ff.jpg@webp', true),
+    (9,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/3/a/e/3ae5ca66-fa0c-428d-b94c-1c9d76a6787a.jpg@webp', false),
+    (9,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/c/8/3/c83d8832-8f63-4594-99ae-2f163ed250b8.jpg@webp', false),
+    (9,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/2/a/d/2ada171c-a7f0-4d52-adde-2b8232afd6b6.jpg@webp', false),
+    (9,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/7/a/0/7a0dfb5d-c718-4457-bf8c-30c57758d268.jpg@webp', false),
+    (9,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2025/7/2/0/9/2/092a8ff1-940a-4106-969c-9bc3818c134b.jpg', false),
+    (9,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2025/7/2/b/e/8/be8a7248-ef1c-41ed-9196-a24eb2247ae4.jpg', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (10,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/6/7/9/6793aefe-cf4d-4d9d-a1a3-69ae3c602f87.jpg@webp', true),
+    (10,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/7/9/2/7920e8fa-24ca-4383-a5ea-2b36b9a1fad3.jpg@webp', false),
+    (10,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/f/5/9/f59bca83-9eca-4a73-9665-6b0979365ca6.jpg@webp', false),
+    (10,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/5/1/0/510f8983-76a6-46e1-918f-61238a47420a.jpg@webp', false),
+    (10,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/a/8/4/a844585b-aa30-4c18-b49e-efaaad4e0cc5.jpg@webp', false),
+    (10,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2025/12/17/7/d/3/7d3a6791-fda6-4b44-b47b-2328575b8008.jpg', false);
+
+INSERT INTO product_extra_description(product_id, content, created_at)
+SELECT
+    gs AS product_id,
+    repeat('Lorem ipsum ', 10) || substr(md5(random()::text), 1, 20) AS content,
+    NOW() AS created_at
+FROM generate_series(1, 10) AS gs;
+

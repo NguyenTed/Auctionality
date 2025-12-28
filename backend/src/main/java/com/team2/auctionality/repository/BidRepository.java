@@ -38,4 +38,16 @@ public interface BidRepository extends JpaRepository<Bid,Integer> {
     ORDER BY b.amount DESC, b.createdAt ASC
     """)
     Optional<Bid> findTopBidByProductId(Integer productId);
+
+    @Query(
+            value = """
+        SELECT *
+        FROM bid b
+        WHERE b.product_id = :productId
+        ORDER BY b.amount DESC, b.created_at ASC
+        LIMIT 1
+    """,
+            nativeQuery = true
+    )
+    Optional<Bid> findHighestBid(@Param("productId") Integer productId);
 }

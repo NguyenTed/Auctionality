@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/users")
 @Tag(name = "User", description = "User API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 @Slf4j
 public class UserController {
 

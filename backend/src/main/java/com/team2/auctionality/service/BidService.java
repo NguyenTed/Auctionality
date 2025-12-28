@@ -89,26 +89,26 @@ public class BidService {
         ProductService.checkIsAmountAvailable(bidRequest.getAmount(), product.getBidIncrement(), product.getCurrentPrice());
 
         // 3. Operate if user rating percent is <= 80 --> create approval
-        if (ratingPercent <= 80) {
-            if (bidderProfile.getRatingNegativeCount() == 0 && bidderProfile.getRatingPositiveCount() == 0) {
-                if (bidderApprovalRepository.findByProductIdAndBidderId(productId, bidder.getId()).isPresent()) {
-                    throw new BidPendingApprovalException("Your bid requires seller approval request has already been sent");
-                }
-                BidderApproval bidderApproval = BidderApproval.builder()
-                        .amount(bidRequest.getAmount())
-                        .productId(productId)
-                        .bidderId(bidder.getId())
-                        .status(ApproveStatus.PENDING)
-                        .createdAt(new Date())
-                        .build();
-                bidderApprovalRepository.save(bidderApproval);
-                throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
-            } else {
-                throw new BidNotAllowedException(
-                        "Your rating does not meet the requirement to place bids"
-                );
-            }
-        }
+//        if (ratingPercent <= 80) {
+//            if (bidderProfile.getRatingNegativeCount() == 0 && bidderProfile.getRatingPositiveCount() == 0) {
+//                if (bidderApprovalRepository.findByProductIdAndBidderId(productId, bidder.getId()).isPresent()) {
+//                    throw new BidPendingApprovalException("Your bid requires seller approval request has already been sent");
+//                }
+//                BidderApproval bidderApproval = BidderApproval.builder()
+//                        .amount(bidRequest.getAmount())
+//                        .productId(productId)
+//                        .bidderId(bidder.getId())
+//                        .status(ApproveStatus.PENDING)
+//                        .createdAt(new Date())
+//                        .build();
+//                bidderApprovalRepository.save(bidderApproval);
+//                throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
+//            } else {
+//                throw new BidNotAllowedException(
+//                        "Your rating does not meet the requirement to place bids"
+//                );
+//            }
+//        }
 
         // 4. Operate if placed bid is configured auto
         AutoBidConfig config = autoBidConfigRepository

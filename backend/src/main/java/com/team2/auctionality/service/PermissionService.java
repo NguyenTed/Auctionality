@@ -1,5 +1,6 @@
 package com.team2.auctionality.service;
 
+import com.team2.auctionality.exception.UserNotFoundException;
 import com.team2.auctionality.model.Permission;
 import com.team2.auctionality.model.Role;
 import com.team2.auctionality.model.User;
@@ -45,7 +46,7 @@ public class PermissionService {
     @Transactional(readOnly = true)
     public Set<String> getPermissionsForUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
         return getPermissionsForUser(user);
     }
 
@@ -58,7 +59,7 @@ public class PermissionService {
     @Transactional(readOnly = true)
     public Set<String> getPermissionsForRole(String roleName) {
         Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                .orElseThrow(() -> new com.team2.auctionality.exception.AuthException("Role not found: " + roleName));
         return role.getPermissions().stream()
                 .map(Permission::getName)
                 .collect(Collectors.toSet());

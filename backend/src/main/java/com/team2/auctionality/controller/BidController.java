@@ -4,6 +4,10 @@ import com.team2.auctionality.config.CurrentUser;
 import com.team2.auctionality.dto.BidHistoryDto;
 import com.team2.auctionality.dto.BidResponse;
 import com.team2.auctionality.dto.PlaceBidRequest;
+import com.team2.auctionality.dto.RejectBidderRequest;
+import com.team2.auctionality.dto.RejectedBidderDto;
+import com.team2.auctionality.mapper.RejectedBidderMapper;
+import com.team2.auctionality.model.RejectedBidder;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.BidService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +26,6 @@ import java.util.List;
 @RequestMapping("/api/bids")
 @Tag(name = "Bid", description = "Bid API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 @Slf4j
 public class BidController {
 
@@ -63,10 +66,28 @@ public class BidController {
     ) {
         log.info("User {} placing bid {} on product {}", user.getId(), bidRequest.getAmount(), productId);
         BidResponse bidResponse = bidService.placeBid(user, productId, bidRequest);
-        URI location = URI.create("/api/bids/products/" + productId + "/history");
+        URI location = URI.create("/api/products/" + productId + "/bids/history");
         return ResponseEntity
                 .created(location)
                 .body(bidResponse);
+    }
+
+    @DeleteMapping("/products/{productId}/bidders/{bidderId}")
+    @Operation(summary = "Reject a bidder from a product")
+    public ResponseEntity<RejectedBidderDto> rejectBidder(
+            @PathVariable Integer productId,
+            @PathVariable Integer bidderId,
+            @RequestBody(required = false) RejectBidderRequest request,
+            @CurrentUser User user
+    ) {
+        log.info("User {} rejecting bidder {} from product {}", user.getId(), bidderId, productId);
+        RejectedBidder rejectedBidder = bidService.rejectBidder(
+                productId,
+                bidderId,
+                request != null ? request.getReason() : null
+        );
+
+        return ResponseEntity.ok(RejectedBidderMapper.toDto(rejectedBidder));
     }
 }
 
