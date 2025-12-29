@@ -22,6 +22,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -313,5 +315,9 @@ public class BidService {
         rejectedBidderRepository
                 .findByProductIdAndBidderId(productId, bidderId)
                 .ifPresent(rejectedBidderRepository::delete);
+    }
+
+    public Page<BidderApproval> getBidderApprovals(Integer productId, Pageable pageable) {
+        return bidderApprovalRepository.getBidderApprovalByProductId(productId, pageable);
     }
 }

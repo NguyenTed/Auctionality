@@ -2,11 +2,14 @@ package com.team2.auctionality.controller;
 
 import com.team2.auctionality.config.CurrentUser;
 import com.team2.auctionality.dto.*;
+import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.RejectedBidderMapper;
 import com.team2.auctionality.model.AutoBidConfig;
+import com.team2.auctionality.model.BidderApproval;
 import com.team2.auctionality.model.RejectedBidder;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.BidService;
+import com.team2.auctionality.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.awt.print.Pageable;
 import java.net.URI;
 import java.util.List;
 
@@ -113,6 +117,19 @@ public class BidController {
                         "Approve bidder " + bidderId + " from product " + productId + " successfully",
                         null
                 ));
+    }
+
+    @GetMapping("/products/{productId}/biddera-approvals")
+    @Operation(summary = "Get bidder approvals")
+    public ResponseEntity<PagedResponse<BidderApproval>> getBidderApprovals(
+            @PathVariable Integer productId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @CurrentUser User user
+    ) {
+        PagedResponse response = PaginationMapper.from(bidService.getBidderApprovals(productId, PaginationUtils.createPageable(page, size) ));
+
+        return ResponseEntity.ok(response);
     }
 }
 
