@@ -70,6 +70,7 @@ public class BidService {
 
         // 1. Check if bidder is in RejectedBidder
         if (rejectedBidderRepository.existsByProductIdAndBidderId(productId, bidder.getId())) {
+            log.warn("User " + bidder.getId() + " is rejected.");
             throw new BidNotAllowedException("You are not allowed to bid on this product");
         }
 
@@ -87,26 +88,32 @@ public class BidService {
         ProductService.checkIsAmountAvailable(bidRequest.getAmount(), product.getBidIncrement(), product.getCurrentPrice());
 
         // 3. Operate if user rating percent is <= 80 --> create approval
-//        if (ratingPercent <= 80) {
-//            if (bidderProfile.getRatingNegativeCount() == 0 && bidderProfile.getRatingPositiveCount() == 0) {
-//                if (bidderApprovalRepository.findByProductIdAndBidderId(productId, bidder.getId()).isPresent()) {
-//                    throw new BidPendingApprovalException("Your bid requires seller approval request has already been sent");
-//                }
-//                BidderApproval bidderApproval = BidderApproval.builder()
-//                        .amount(bidRequest.getAmount())
-//                        .productId(productId)
-//                        .bidderId(bidder.getId())
-//                        .status(ApproveStatus.PENDING)
-//                        .createdAt(new Date())
-//                        .build();
-//                bidderApprovalRepository.save(bidderApproval);
-//                throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
-//            } else {
-//                throw new BidNotAllowedException(
-//                        "Your rating does not meet the requirement to place bids"
-//                );
-//            }
-//        }
+        if (ratingPercent <= 80) {
+            if (bidderProfile.getRatingNegativeCount() == 0 && bidderProfile.getRatingPositiveCount() == 0) {
+                BidderApproval existedApproval = bidderApprovalRepository.findByProductIdAndBidderId(productId, bidder.getId()).orElse(null);
+                if (existedApproval != null) {
+                    // If pending -> throw exception, if APPROVED --> continue
+                    if (existedApproval.getStatus() == ApproveStatus.PENDING) {
+                        throw new BidPendingApprovalException("Your bid requires seller approval request has already been sent");
+                    }
+                } else {
+                    BidderApproval bidderApproval = BidderApproval.builder()
+                            .amount(bidRequest.getAmount())
+                            .productId(productId)
+                            .bidderId(bidder.getId())
+                            .status(ApproveStatus.PENDING)
+                            .createdAt(new Date())
+                            .build();
+                    bidderApprovalRepository.save(bidderApproval);
+                    log.debug("Created bidder approval for user " + bidder.getId() + " .");
+                    throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
+                }
+            } else {
+                throw new BidNotAllowedException(
+                        "Your rating does not meet the requirement to place bids"
+                );
+            }
+        }
 
         // 4. Operate if placed bid is configured auto
         AutoBidConfig config = autoBidConfigRepository
@@ -285,5 +292,26 @@ public class BidService {
                         );
                     }
                 });
+    }
+
+    @Transactional
+    public void approveBidder(Integer productId, Integer bidderId) {
+        log.info("Approving bidder {} from product {}", bidderId, productId);
+        Product product = productService.getProductById(productId);
+        User bidder = userRepository.findById(bidderId)
+                .orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
+
+        // Approve bidder
+        bidderApprovalRepository
+                .findByProductIdAndBidderId(productId, bidderId)
+                .ifPresent(approval -> {
+                    approval.setStatus(ApproveStatus.APPROVED);
+                    bidderApprovalRepository.save(approval);
+                });
+
+        // Remove rejected record if exists
+        rejectedBidderRepository
+                .findByProductIdAndBidderId(productId, bidderId)
+                .ifPresent(rejectedBidderRepository::delete);
     }
 }

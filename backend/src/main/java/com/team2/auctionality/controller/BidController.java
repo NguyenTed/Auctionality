@@ -91,5 +91,28 @@ public class BidController {
 
         return ResponseEntity.ok(RejectedBidderMapper.toDto(rejectedBidder));
     }
+
+    @PostMapping("/products/{productId}/bidders/{bidderId}")
+    @Operation(summary = "Approve bidder")
+    public ResponseEntity<Object> approveBidder(
+            @PathVariable Integer productId,
+            @PathVariable Integer bidderId,
+            @CurrentUser User user
+    ) {
+        log.info("User {} approving bidder {} from product {}", user.getId(), bidderId, productId);
+        bidService.approveBidder(
+                productId,
+                bidderId
+        );
+
+        URI location = URI.create("/api/bids/products/" + productId + "bidders/" + bidderId);
+
+        return ResponseEntity
+                .created(location)
+                .body(new ApiResponse<>(
+                        "Approve bidder " + bidderId + " from product " + productId + " successfully",
+                        null
+                ));
+    }
 }
 
