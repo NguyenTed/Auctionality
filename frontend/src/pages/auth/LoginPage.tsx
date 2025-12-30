@@ -13,6 +13,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LoginIcon from "@mui/icons-material/Login";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
+import GoogleIcon from "@mui/icons-material/Google";
 
 function LoginPageContent() {
   const navigate = useNavigate();
@@ -196,6 +197,25 @@ function LoginPageContent() {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Login Button */}
+          <a
+            href={`${import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "http://localhost:8081"}/oauth2/authorization/google`}
+            className="w-full px-6 py-3 bg-white border-2 border-gray-300 rounded-xl font-semibold text-gray-700 shadow-md hover:shadow-lg hover:border-gray-400 transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-3"
+          >
+            <GoogleIcon className="text-red-500" />
+            <span>Sign in with Google</span>
+          </a>
 
           {/* Sign Up Link */}
           <div className="mt-6 text-center">

@@ -334,7 +334,7 @@ public class AuthService {
 
     // Helper method to build auth response
     // Permissions are resolved server-side via PermissionService to keep JWT token size small
-    private AuthResponse buildAuthResponse(String accessToken, String refreshToken, User user) {
+    public AuthResponse buildAuthResponse(String accessToken, String refreshToken, User user) {
         Set<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());

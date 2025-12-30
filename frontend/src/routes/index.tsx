@@ -12,6 +12,7 @@ import SignUpPage from "../pages/auth/SignUpPage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
+import OAuth2CallbackPage from "../pages/auth/OAuth2CallbackPage";
 import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminCategoriesPage from "../pages/admin/AdminCategoriesPage";
@@ -99,6 +100,7 @@ function AppRouterContent() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/auth/oauth2/callback" element={<OAuth2CallbackPage />} />
       </Route>
 
       {/* Admin routes */}
