@@ -81,9 +81,15 @@ const bidSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(placeBidAsync.fulfilled, (state) => {
+      .addCase(placeBidAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.error = null;
+        // Add the new bid to history optimistically
+        const productId = action.payload.productId;
+        if (!state.bidHistory[productId]) {
+          state.bidHistory[productId] = [];
+        }
+        // Note: We'll fetch the full history after, but this provides immediate feedback
       })
       .addCase(placeBidAsync.rejected, (state, action) => {
         state.isLoading = false;

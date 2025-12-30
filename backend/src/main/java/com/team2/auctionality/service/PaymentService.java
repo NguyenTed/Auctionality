@@ -10,6 +10,7 @@ import com.team2.auctionality.model.Payment;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.repository.OrderRepository;
 import com.team2.auctionality.repository.PaymentRepository;
+import com.team2.auctionality.util.PaymentConstants;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -44,40 +45,35 @@ public class PaymentService {
     private final OrderRepository orderRepository;
 
     private String generatePaymentUrl(Payment payment, Float price, HttpServletRequest req) throws UnsupportedEncodingException {
-
-        String vnp_Version = "2.1.0";
-        String vnp_Command = "pay";
-        String orderType = "other";
         long amount = Math.round(price * 1000);
         String bankCode = req.getParameter("bankCode");
-
         String vnp_TxnRef = payment.getId().toString();
         String vnp_IpAddr = "127.0.0.1";
 
         Map<String, String> vnp_Params = new HashMap<>();
-        vnp_Params.put("vnp_Version", vnp_Version);
-        vnp_Params.put("vnp_Command", vnp_Command);
+        vnp_Params.put("vnp_Version", PaymentConstants.VNPAY_VERSION);
+        vnp_Params.put("vnp_Command", PaymentConstants.VNPAY_COMMAND);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
         vnp_Params.put("vnp_Amount", String.valueOf(amount));
-        vnp_Params.put("vnp_CurrCode", "VND");
+        vnp_Params.put("vnp_CurrCode", PaymentConstants.VNPAY_CURRENCY);
 
         if (bankCode != null && !bankCode.isEmpty()) {
             vnp_Params.put("vnp_BankCode", bankCode);
         }
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang:" + vnp_TxnRef);
-        vnp_Params.put("vnp_OrderType", orderType);
+        vnp_Params.put("vnp_OrderType", PaymentConstants.VNPAY_ORDER_TYPE);
 
-        vnp_Params.put("vnp_Locale", "vn");
+        vnp_Params.put("vnp_Locale", PaymentConstants.VNPAY_LOCALE);
         vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrl);
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone(PaymentConstants.VNPAY_TIMEZONE));
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
         String vnp_CreateDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 
-        cld.add(Calendar.MINUTE, 15);
+        cld.add(Calendar.MINUTE, PaymentConstants.VNPAY_EXPIRY_MINUTES);
         String vnp_ExpireDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
@@ -196,7 +192,7 @@ public class PaymentService {
         if (payment.getStatus() == PaymentStatus.PAID) {
             return; // idempotent
         }
-        if ("00".equals(responseCode)) {
+        if (PaymentConstants.VNPAY_SUCCESS_RESPONSE_CODE.equals(responseCode)) {
             // Update Payment
             payment.setStatus(PaymentStatus.PAID);
             payment.setPaidAt(new Date());

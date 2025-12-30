@@ -11,7 +11,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,25 +33,42 @@ public class OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("Order " + id + " not found"));
     }
 
+    @Transactional(readOnly = true)
     public Order getOrderByProductId(Integer productId) {
         Product product = productService.getProductById(productId);
-        return (Order) orderRepository.findByProduct(product).orElseThrow(
-                () -> new EntityNotFoundException("Order with product " + productId + " not found"));
+        return orderRepository.findByProduct(product)
+                .orElseThrow(() -> new EntityNotFoundException("Order with product " + productId + " not found"));
     }
 
     @Transactional
     public Order createOrderForBuyNow(Product product, Integer buyerId, Float price) {
+        // Validate buyer exists
+        User buyer = userRepository.findById(buyerId)
+                .orElseThrow(() -> new EntityNotFoundException("Buyer not found with ID: " + buyerId));
+        
+        // Validate product has seller
+        if (product.getSeller() == null) {
+            throw new IllegalArgumentException("Product must have a seller");
+        }
+        
+        // Validate price
+        if (price == null || price <= 0) {
+            throw new IllegalArgumentException("Order price must be greater than 0");
+        }
 
         Order order = Order.builder()
                 .product(product)
-                .buyer(userRepository.findById(buyerId).orElse(null))
+                .buyer(buyer)
                 .seller(product.getSeller())
                 .finalPrice(price)
                 .status(OrderStatus.PENDING)
                 .createdAt(new Date())
                 .build();
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        log.info("Created order {} for product {} with buyer {} and price {}", 
+                savedOrder.getId(), product.getId(), buyerId, price);
+        return savedOrder;
     }
 
     public Page<Order> getOrders(User user, Boolean isSeller, Pageable pageable) {

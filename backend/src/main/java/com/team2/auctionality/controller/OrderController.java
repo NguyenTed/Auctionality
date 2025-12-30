@@ -29,6 +29,7 @@ public class OrderController {
     private final OrderService orderService;
     private final ShippingAddressService shippingAddressService;
     private final ShipmentService shipmentService;
+    private final OrderMapper orderMapper;
 
     @GetMapping
     @Operation(summary = "Get orders for seller/buyer")
@@ -41,7 +42,7 @@ public class OrderController {
         log.debug("User {} getting orders (isSeller: {})", user.getId(), isSeller);
         Page<OrderDto> orders = orderService
                                     .getOrders(user, isSeller, PaginationUtils.createPageable(page, size))
-                                    .map(OrderMapper::toDto);
+                                    .map(orderMapper::toDto);
         return PaginationMapper.from(orders);
     }
 

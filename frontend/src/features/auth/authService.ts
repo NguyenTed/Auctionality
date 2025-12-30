@@ -14,6 +14,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   fullName: string;
+  recaptchaToken: string;
 }
 
 export interface AuthResponse {
@@ -45,6 +46,7 @@ export interface User {
   status: string;
   ratingPercent?: number;
   createdAt: string;
+  roles?: string[];
 }
 
 export const authService = {

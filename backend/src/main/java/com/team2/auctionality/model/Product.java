@@ -47,6 +47,19 @@ public class Product {
     @Column(name = "auto_extension_enabled")
     private Boolean autoExtensionEnabled;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
     // ==== RELATIONS ====
 
     @ManyToOne(fetch = FetchType.LAZY)

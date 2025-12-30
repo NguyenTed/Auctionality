@@ -86,6 +86,13 @@ app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
 
+# Google reCAPTCHA Configuration
+recaptcha:
+  secret-key: ${RECAPTCHA_SECRET_KEY:}
+  site-key: ${RECAPTCHA_SITE_KEY:}
+  verify-url: https://www.google.com/recaptcha/api/siteverify
+  enabled: ${RECAPTCHA_ENABLED:true}
+
 vnpay:
   url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
   tmn-code: YS32FM63

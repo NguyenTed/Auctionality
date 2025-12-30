@@ -89,5 +89,48 @@ public class BidController {
 
         return ResponseEntity.ok(RejectedBidderMapper.toDto(rejectedBidder));
     }
+
+    @GetMapping("/products/{productId}/bidder-approvals")
+    @Operation(summary = "Get pending bidder approval requests for a product (seller only)")
+    public ResponseEntity<List<com.team2.auctionality.dto.BidderApprovalDto>> getPendingBidderApprovals(
+            @PathVariable Integer productId,
+            @CurrentUser User user
+    ) {
+        // Service layer verifies seller ownership
+        List<com.team2.auctionality.dto.BidderApprovalDto> approvals = bidService.getPendingBidderApprovals(user.getId())
+                .stream()
+                .filter(approval -> approval.getProductId().equals(productId))
+                .toList();
+        return ResponseEntity.ok(approvals);
+    }
+
+    @GetMapping("/bidder-approvals/pending")
+    @Operation(summary = "Get all pending bidder approval requests for seller's products")
+    public ResponseEntity<List<com.team2.auctionality.dto.BidderApprovalDto>> getAllPendingBidderApprovals(
+            @CurrentUser User user
+    ) {
+        List<com.team2.auctionality.dto.BidderApprovalDto> approvals = bidService.getPendingBidderApprovals(user.getId());
+        return ResponseEntity.ok(approvals);
+    }
+
+    @PostMapping("/bidder-approvals/{approvalId}/approve")
+    @Operation(summary = "Approve a bidder approval request (seller only)")
+    public ResponseEntity<Void> approveBidderApproval(
+            @PathVariable Integer approvalId,
+            @CurrentUser User user
+    ) {
+        bidService.approveBidderApproval(approvalId, user.getId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/bidder-approvals/{approvalId}/reject")
+    @Operation(summary = "Reject a bidder approval request (seller only)")
+    public ResponseEntity<Void> rejectBidderApproval(
+            @PathVariable Integer approvalId,
+            @CurrentUser User user
+    ) {
+        bidService.rejectBidderApproval(approvalId, user.getId());
+        return ResponseEntity.ok().build();
+    }
 }
 

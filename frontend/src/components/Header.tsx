@@ -5,6 +5,8 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import SearchIcon from "@mui/icons-material/Search";
 import LogoutIcon from "@mui/icons-material/Logout";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import StoreIcon from "@mui/icons-material/Store";
 
 import logo from "../assets/imgs/catawikiLogo.png";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -189,6 +191,36 @@ const Header = () => {
                   >
                     Profile
                   </Link>
+                  {/* Admin Dashboard Link */}
+                  {user.roles && (
+                    Array.isArray(user.roles) ? user.roles : Array.from(user.roles || [])
+                  ).some(
+                    (role) => role === "ADMIN" || role === "ROLE_ADMIN"
+                  ) && (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setShowUserMenu(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <DashboardIcon fontSize="small" />
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  {/* Seller Panel Link */}
+                  {user.roles && (
+                    Array.isArray(user.roles) ? user.roles : Array.from(user.roles || [])
+                  ).some(
+                    (role) => role === "SELLER" || role === "ROLE_SELLER"
+                  ) && (
+                    <Link
+                      to="/seller/listings"
+                      onClick={() => setShowUserMenu(false)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <StoreIcon fontSize="small" />
+                      Seller Panel
+                    </Link>
+                  )}
                   <button
                     onClick={async () => {
                       await dispatch(logoutAsync());

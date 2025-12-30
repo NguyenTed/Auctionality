@@ -30,6 +30,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final BidService bidService;
+    private final ProductMapper productMapper;
 
     @GetMapping("/category/{categoryId}")
     @Operation(summary = "Get products by category")
@@ -91,8 +92,19 @@ public class ProductController {
     @GetMapping("/{id}")
     @Operation(summary = "Get product by id")
     public ResponseEntity<ProductDto> getProductById(@PathVariable Integer id) {
-        ProductDto product = ProductMapper.toDto(productService.getProductById(id));
+        ProductDto product = productMapper.toDto(productService.getProductById(id));
         return ResponseEntity.ok(product);
+    }
+
+    @GetMapping("/{id}/related")
+    @Operation(summary = "Get related products (5 products from same category)")
+    public ResponseEntity<List<ProductDto>> getRelatedProducts(@PathVariable Integer id) {
+        Product product = productService.getProductById(id);
+        if (product.getCategory() == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<ProductDto> relatedProducts = productService.getRelatedProducts(id, product.getCategory().getId());
+        return ResponseEntity.ok(relatedProducts);
     }
 
     @PostMapping
@@ -133,11 +145,6 @@ public class ProductController {
                 .ok(productExtraDescriptions);
     }
 
-//    @PutMapping("/{id}")
-//    public ProductDto editProductById(@PathVariable Integer id, @RequestBody CreateProductDto productDto) {
-//        return productService.editProductById(id, productDto);
-//    }
-
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete product by id")
     public ResponseEntity<Void> deleteProductById(
@@ -147,5 +154,20 @@ public class ProductController {
         log.info("User {} deleting product {}", user.getId(), id);
         productService.deleteProductById(id, user.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/seller/my-products")
+    @Operation(summary = "Get current seller's products")
+    public PagedResponse<ProductDto> getMyProducts(
+            @CurrentUser User user,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return PaginationMapper.from(
+                productService.getProductsBySeller(
+                        user.getId(),
+                        PaginationUtils.createPageable(page, size)
+                )
+        );
     }
 }

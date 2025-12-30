@@ -92,7 +92,16 @@ public class AuctionEndMonitoringService {
         } else {
             // Has winner - create order and send notifications
             Bid winnerBid = winnerBidOpt.get();
-            String winnerName = winnerBid.getBidder().getProfile().getFullName();
+            
+            if (winnerBid.getBidder() == null) {
+                log.error("Winner bid {} has null bidder for product {}", 
+                        winnerBid.getId(), product.getId());
+                return;
+            }
+            
+            String winnerName = winnerBid.getBidder().getProfile() != null
+                    ? winnerBid.getBidder().getProfile().getFullName()
+                    : winnerBid.getBidder().getEmail();
             Float finalPrice = winnerBid.getAmount();
 
             log.info("Auction {} ended with winner: {} (€{})", 

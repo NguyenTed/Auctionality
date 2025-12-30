@@ -40,6 +40,7 @@ public class AuthService {
     private final UserDetailsServiceImpl userDetailsService;
     private final PermissionService permissionService;
     private final EmailService emailService;
+    private final RecaptchaService recaptchaService;
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
@@ -53,6 +54,12 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         log.info("Registering new user with email: {}", request.getEmail());
+        
+        // Validate reCAPTCHA token
+        if (!recaptchaService.verifyToken(request.getRecaptchaToken())) {
+            throw new AuthException("reCAPTCHA verification failed. Please try again.");
+        }
+        
         // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException(request.getEmail());
@@ -289,6 +296,10 @@ public class AuthService {
     }
 
     public UserDto getCurrentUser(User user) {
+        Set<String> roles = user.getRoles().stream()
+                .map(role -> role.getName())
+                .collect(Collectors.toSet());
+        
         return UserDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -299,6 +310,7 @@ public class AuthService {
                 .status(user.getStatus())
                 .ratingPercent(user.getProfile() != null ? user.getProfile().getRatingPercent() : null)
                 .createdAt(user.getCreatedAt())
+                .roles(roles)
                 .build();
     }
 

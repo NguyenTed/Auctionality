@@ -23,15 +23,19 @@ public class BidMapper {
         String[] parts = fullName.trim().split("\\s+");
 
         if (parts.length == 1) {
-            return parts[0];
+            // Mask single-word names: show last 4 characters with asterisks
+            String name = parts[0];
+            if (name.length() <= 4) {
+                return "****" + name;
+            }
+            return "****" + name.substring(name.length() - 4);
         }
 
+        // For multiple words: mask all but the last word
         StringBuilder masked = new StringBuilder();
-
         for (int i = 0; i < parts.length - 1; i++) {
             masked.append("**** ");
         }
-
         masked.append(parts[parts.length - 1]);
 
         return masked.toString();

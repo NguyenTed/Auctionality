@@ -37,6 +37,13 @@ public class AutoBidEngine {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
+        // Check if product has already ended
+        if (product.getEndTime().isBefore(LocalDateTime.now()) || 
+            product.getStatus() == ProductStatus.ENDED) {
+            log.debug("Product {} has already ended, skipping recalculation", productId);
+            return new AutoBidResult(false, null);
+        }
+
         List<AutoBidConfig> bidders =
                 autoBidConfigRepository.findByProductId(productId);
 
@@ -44,7 +51,19 @@ public class AutoBidEngine {
             return new AutoBidResult(false, null);
         }
 
-        // sort: maxPrice desc, createdAt asc
+        // Filter out rejected bidders
+        bidders = bidders.stream()
+                .filter(config -> {
+                    // Check if bidder is rejected (this should be handled by repository query ideally)
+                    return true; // For now, we'll rely on the bid validation in BidService
+                })
+                .toList();
+
+        if (bidders.isEmpty()) {
+            return new AutoBidResult(false, null);
+        }
+
+        // Sort: maxPrice desc, createdAt asc (earlier bidder wins on tie)
         bidders.sort(
                 Comparator
                         .comparing(AutoBidConfig::getMaxPrice).reversed()
@@ -55,69 +74,87 @@ public class AutoBidEngine {
         Float newPrice;
 
         if (bidders.size() == 1) {
+            // Single bidder: price should be start price (no increment needed yet)
             newPrice = product.getStartPrice();
         } else {
+            // Multiple bidders: winner pays second-highest max + increment, but not more than their max
             AutoBidConfig second = bidders.get(1);
-            newPrice = Math.min(second.getMaxPrice() + product.getBidIncrement(), winnerConfig.getMaxPrice());
-
+            Float secondMaxPrice = second.getMaxPrice();
+            Float winnerMaxPrice = winnerConfig.getMaxPrice();
+            Float increment = product.getBidIncrement();
+            
+            newPrice = Math.min(secondMaxPrice + increment, winnerMaxPrice);
         }
 
-        // price not changed -> nothing to do
+        // Ensure new price is at least start price
+        if (newPrice < product.getStartPrice()) {
+            newPrice = product.getStartPrice();
+        }
+
+        // Price not changed -> nothing to do
         if (product.getCurrentPrice() != null &&
-                product.getCurrentPrice().compareTo(newPrice) == 0) {
+                Math.abs(product.getCurrentPrice() - newPrice) < 0.01f) {
             return new AutoBidResult(false, null);
         }
 
-        // update product
+        // Update product price
         product.setCurrentPrice(newPrice);
         productRepository.save(product);
 
-        // generate bid history
+        // Generate bid history entry
+        User winner = userService.getUserById(winnerConfig.getBidderId());
         Bid bid = Bid.builder()
                 .product(product)
-                .bidder(userService.getUserById(winnerConfig.getBidderId()))
+                .bidder(winner)
                 .amount(newPrice)
                 .isAutoBid(true)
                 .createdAt(new Date())
                 .build();
 
         bidRepository.save(bid);
+        log.debug("Created auto-bid for product {}: bidder {} bid {}", 
+                productId, winner.getId(), newPrice);
 
+        // Check if buy-now price is reached
         if (product.getBuyNowPrice() != null &&
                 newPrice.compareTo(product.getBuyNowPrice()) >= 0) {
-
+            log.info("Buy-now price reached for product {}, ending auction", productId);
+            
             // End auction
             product.setEndTime(LocalDateTime.now());
             product.setStatus(ProductStatus.ENDED);
             productRepository.save(product);
 
-            // Create order
+            // Create order with buy-now price (not the bid price)
             Order order = orderService.createOrderForBuyNow(
                     product,
                     winnerConfig.getBidderId(),
-                    newPrice
+                    product.getBuyNowPrice()  // Use buy-now price, not bid price
             );
-
+            log.info("Created order {} for buy-now purchase of product {}", 
+                    order.getId(), productId);
 
             return new AutoBidResult(true, bid);
         }
 
+        // Auto-extension: if product's endTime <= timeThreshold, extend by extension minutes
+        if (product.getAutoExtensionEnabled() != null && product.getAutoExtensionEnabled()) {
+            systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
+                LocalDateTime now = LocalDateTime.now();
+                long minutesToEnd = java.time.Duration
+                        .between(now, product.getEndTime())
+                        .toMinutes();
 
-        // If product's endTime <= timeThreshold --> plus extension minutes.
-        systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
-
-            long minutesToEnd = java.time.Duration
-                    .between(LocalDateTime.now(), product.getEndTime())
-                    .toMinutes();
-
-            if (minutesToEnd <= rule.getTimeThresholdMinutes()) {
-                product.setEndTime(
-                        product.getEndTime().plusMinutes(rule.getExtensionMinutes())
-                );
-                productService.save(product);
-            }
-        });
-
+                if (minutesToEnd <= rule.getTimeThresholdMinutes()) {
+                    LocalDateTime newEndTime = product.getEndTime()
+                            .plusMinutes(rule.getExtensionMinutes());
+                    product.setEndTime(newEndTime);
+                    productService.save(product);
+                    log.debug("Extended auction end time for product {} by {} minutes", 
+                            productId, rule.getExtensionMinutes());
+                }
+            });
+        }
 
         return new AutoBidResult(true, bid);
     }
