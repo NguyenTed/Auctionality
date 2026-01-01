@@ -86,17 +86,25 @@ public class AdminController {
 
     @DeleteMapping("/products/{id}")
     @Operation(summary = "Remove a product (admin)")
-    public ResponseEntity<Void> removeProduct(@PathVariable Integer id) {
-        log.info("Admin removing product: {}", id);
-        adminService.removeProduct(id);
+    public ResponseEntity<Void> removeProduct(
+            @PathVariable Integer id,
+            @CurrentUser User admin
+    ) {
+        log.info("Admin {} removing product: {}", admin.getId(), id);
+        adminService.removeProduct(id, admin);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/products/{id}/take-down")
     @Operation(summary = "Take down a product (suspend)")
-    public ResponseEntity<Void> takeDownProduct(@PathVariable Integer id) {
-        log.info("Admin taking down product: {}", id);
-        adminService.takeDownProduct(id);
+    public ResponseEntity<Void> takeDownProduct(
+            @PathVariable Integer id,
+            @RequestBody(required = false) Map<String, String> request,
+            @CurrentUser User admin
+    ) {
+        String reason = request != null ? request.get("reason") : null;
+        log.info("Admin {} taking down product: {}", admin.getId(), id);
+        adminService.takeDownProduct(id, admin, reason);
         return ResponseEntity.ok().build();
     }
 

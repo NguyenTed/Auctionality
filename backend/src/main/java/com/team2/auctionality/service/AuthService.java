@@ -41,6 +41,7 @@ public class AuthService {
     private final PermissionService permissionService;
     private final EmailService emailService;
     private final RecaptchaService recaptchaService;
+    private final AuditLogService auditLogService;
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
@@ -115,6 +116,9 @@ public class AuthService {
         // Save refresh token
         saveRefreshToken(user, refreshToken);
 
+        // Log registration action
+        auditLogService.logUserAction(user, "REGISTER");
+
         return buildAuthResponse(accessToken, refreshToken, user);
     }
 
@@ -142,6 +146,9 @@ public class AuthService {
         if (!user.getStatus().equals("active")) {
             throw new AuthException("Account is not active");
         }
+
+        // Log login action
+        auditLogService.logUserAction(user, "LOGIN");
 
         // Generate tokens
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());

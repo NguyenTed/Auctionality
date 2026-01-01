@@ -40,6 +40,7 @@ public class AdminService {
     private final BidRepository bidRepository;
     private final ProductMapper productMapper;
     private final RoleRepository roleRepository;
+    private final ProductModerationService productModerationService;
 
     // ========== Category Management ==========
 
@@ -113,20 +114,27 @@ public class AdminService {
     // ========== Product Management ==========
 
     @Transactional
-    public void removeProduct(Integer productId) {
-        log.info("Admin removing product: {}", productId);
+    public void removeProduct(Integer productId, User admin) {
+        log.info("Admin {} removing product: {}", admin.getId(), productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+        
+        // Log moderation action before deletion
+        productModerationService.logModerationAction(product, admin, "REMOVE", "Product removed by admin");
+        
         productRepository.deleteById(productId);
     }
 
     @Transactional
-    public void takeDownProduct(Integer productId) {
-        log.info("Admin taking down product: {}", productId);
+    public void takeDownProduct(Integer productId, User admin, String reason) {
+        log.info("Admin {} taking down product: {}", admin.getId(), productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
         product.setStatus(ProductStatus.REMOVED);
         productRepository.save(product);
+        
+        // Log moderation action
+        productModerationService.logModerationAction(product, admin, "TAKE_DOWN", reason);
     }
 
     @Transactional(readOnly = true)

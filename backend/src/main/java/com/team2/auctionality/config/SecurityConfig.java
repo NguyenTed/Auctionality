@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         // Health check endpoints
                         .requestMatchers("/api/health/**").permitAll()
+                        // Actuator endpoints (monitoring)
+                        .requestMatchers("/actuator/**").permitAll()
                         // Public read-only endpoints for products (GET only)
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         // Public read-only endpoints for categories (GET only)
