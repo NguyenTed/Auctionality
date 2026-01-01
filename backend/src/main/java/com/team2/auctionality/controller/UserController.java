@@ -109,7 +109,7 @@ public class UserController {
         List<Product> products = userService.getAuctionProducts(user);
         List<ProductDto> productDtos = products.stream()
                 .filter(Objects::nonNull)
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(productDtos);
     }
@@ -121,7 +121,7 @@ public class UserController {
         List<Product> products = userService.getWonProducts(user);
         List<ProductDto> productDtos = products.stream()
                 .filter(Objects::nonNull)
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(productDtos);
     }

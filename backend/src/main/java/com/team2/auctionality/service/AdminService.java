@@ -140,7 +140,7 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Page<ProductDto> getAllProductsForAdmin(Pageable pageable) {
         return productRepository.findAll(pageable)
-                .map(productMapper::toDto);
+                .map(ProductMapper::toDto);
     }
 
     // ========== User Management ==========

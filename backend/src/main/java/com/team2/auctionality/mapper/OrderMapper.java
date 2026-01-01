@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
 public class OrderMapper {
     private final BidRepository bidRepository;
 
-    public OrderDto toDto(Order order) {
+    public static OrderDto toDto(Order order) {
         return OrderDto.builder()
                 .id(order.getId())
-                .product(ProductMapper.toDto(order.getProduct(), bidRepository))
+                .product(ProductMapper.toDto(order.getProduct()))
                 .buyer(UserMapper.toDto(order.getBuyer()))
                 .seller(UserMapper.toDto(order.getSeller()))
                 .finalPrice(order.getFinalPrice())

@@ -15,7 +15,7 @@ public class WatchListItemMapper {
         return WatchListItemDto.builder()
                 .id(watchListItem.getId())
                 .user(UserMapper.toDto(watchListItem.getUser()))
-                .product(ProductMapper.toDto(watchListItem.getProduct(), bidRepository))
+                .product(ProductMapper.toDto(watchListItem.getProduct()))
                 .createdAt(watchListItem.getCreatedAt())
                 .build();
     }

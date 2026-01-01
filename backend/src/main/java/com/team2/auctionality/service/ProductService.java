@@ -2,6 +2,7 @@ package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductStatus;
+import com.team2.auctionality.exception.InvalidBidPriceException;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.*;
@@ -35,7 +36,7 @@ public class ProductService {
     public List<ProductDto> getTop5EndingSoon() {
         return productRepository.findTop5EndingSoon(PageRequest.of(0, 5))
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
     }
 
@@ -70,14 +71,14 @@ public class ProductService {
     public List<ProductDto> getTop5HighestPrice() {
         return productRepository.findTop5HighestPrice(PageRequest.of(0, 5))
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsByCategory(Integer categoryId, Pageable pageable) {
         return productRepository.findByCategory(categoryId, pageable)
-                .map(productMapper::toDto);
+                .map(ProductMapper::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -95,7 +96,7 @@ public class ProductService {
 
         Page<Product> products = productRepository.searchProducts(keyword, categoryId, sortedPageable);
 
-        return products.map(productMapper::toDto);
+        return products.map(ProductMapper::toDto);
     }
 
     private Sort getSort(String sortKey) {
@@ -112,7 +113,7 @@ public class ProductService {
     public Page<ProductDto> getAllProducts(Pageable pageable) {
         return productRepository
                 .findAll(pageable)
-                .map(productMapper::toDto);
+                .map(ProductMapper::toDto);
     }
 
     @Transactional
@@ -222,13 +223,22 @@ public class ProductService {
     public List<ProductDto> getRelatedProducts(Integer productId, Integer categoryId) {
         return productRepository.findRelatedProducts(categoryId, productId, PageRequest.of(0, 5))
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsBySeller(Integer sellerId, Pageable pageable) {
         return productRepository.findBySellerId(sellerId, pageable)
-                .map(productMapper::toDto);
+                .map(ProductMapper::toDto);
+    }
+
+    public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {
+        if (amount <= currentPrice) throw new InvalidBidPriceException("Bid amount more than " + currentPrice + ".");
+        if ((amount - currentPrice) % step != 0) {
+            throw new InvalidBidPriceException(
+                    "Bid price must increase by step of " + step
+            );
+        }
     }
 }
