@@ -90,10 +90,10 @@ recaptcha:
   enabled: ${RECAPTCHA_ENABLED:true}
 
 vnpay:
-  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  tmn-code: YS32FM63
-  secret-key: FIEOC3ALLMHIMMVYTFNQ9XQ3VIQIGF2M
-  return-url:  http://localhost:5173/vnpay-return
+  url: ${VNPAY_URL}
+  tmn-code: ${VNPAY_TMN_CODE}
+  secret-key: ${VNPAY_SECRET_KEY}
+  return-url:  ${VNPAY_RETURN_URL}
 
 # Spring Boot Actuator Configuration
 management:

@@ -64,7 +64,7 @@ public class BidService {
 
     @Transactional(noRollbackFor = BidPendingApprovalException.class)
     public AutoBidConfig placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
-
+        System.out.println("aaaaaaaa");
         // 1. Check if bidder is in RejectedBidder
         if (rejectedBidderRepository.existsByProductIdAndBidderId(productId, bidder.getId())) {
             log.warn("User " + bidder.getId() + " is rejected.");
@@ -91,7 +91,9 @@ public class BidService {
                 if (existedApproval != null) {
                     // If pending -> throw exception, if APPROVED --> continue
                     if (existedApproval.getStatus() == ApproveStatus.PENDING) {
-                        throw new BidPendingApprovalException("Your bid requires seller approval request has already been sent");
+                        System.out.println(existedApproval);
+                        System.out.println("Bid approval request has already been sent");
+                        throw new BidPendingApprovalException("Your bid approval request has already been sent");
                     }
                 } else {
                     BidderApproval bidderApproval = BidderApproval.builder()
@@ -102,8 +104,8 @@ public class BidService {
                             .createdAt(new Date())
                             .build();
                     bidderApprovalRepository.save(bidderApproval);
-                    log.debug("Created bidder approval for user " + bidder.getId() + " .");
-                    throw new BidPendingApprovalException("Your bid requires seller approval before being placed");
+                    System.out.println("Created bidder approval for user " + bidder.getId() + " .");
+                    throw new BidPendingApprovalException("Your bid approval before being placed");
                 }
             } else {
                 throw new BidNotAllowedException(
