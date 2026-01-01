@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 /**
  * ProtectedRoute component
  * Handles route protection based on authentication status
- * 
+ *
  * @param requireAuth - If true, redirects to login if not authenticated
  * @param requireGuest - If true, redirects to home if already authenticated
  */

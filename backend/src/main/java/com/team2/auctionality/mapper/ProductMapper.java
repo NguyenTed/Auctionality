@@ -1,12 +1,17 @@
 package com.team2.auctionality.mapper;
 
 import com.team2.auctionality.dto.CategoryDto;
+import com.team2.auctionality.dto.HighestBidderInfoDto;
 import com.team2.auctionality.dto.ProductDto;
+import com.team2.auctionality.dto.SellerInfoDto;
 import com.team2.auctionality.model.Category;
 import com.team2.auctionality.model.Product;
 import com.team2.auctionality.model.ProductImage;
+import com.team2.auctionality.repository.BidRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -33,4 +38,3 @@ public class ProductMapper {
                 .build();
     }
 }
-

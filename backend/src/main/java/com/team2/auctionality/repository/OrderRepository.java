@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -24,4 +25,15 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             (:isSeller = false AND o.buyer = :user)
     """)
     Page<Order> findOrders(User user, Boolean isSeller, Pageable pageable);
+
+    /**
+     * Count orders where user is either buyer or seller
+     */
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.buyer.id = :userId OR o.seller.id = :userId")
+    long countByBuyerIdOrSellerId(@Param("userId") Integer userId);
+
+    /**
+     * Count orders for a specific product
+     */
+    long countByProductId(Integer productId);
 }

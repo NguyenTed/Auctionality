@@ -14,6 +14,16 @@ public interface BidRepository extends JpaRepository<Bid,Integer> {
 
     Optional<Bid> findTopByProductIdOrderByAmountDescCreatedAtAsc(Integer productId);
 
+    /**
+     * Count bids by bidder ID
+     */
+    long countByBidderId(Integer bidderId);
+
+    /**
+     * Count bids by product ID
+     */
+    long countByProductId(Integer productId);
+
     @Query(
             value = """
         SELECT b.*

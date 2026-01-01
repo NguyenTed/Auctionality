@@ -1,6 +1,7 @@
 /**
  * ProductDetailPage Component
  * Displays product details with bidding interface - Catawiki-inspired design
+ * Modern, classy, and optimized for great UX
  */
 
 import { useEffect, useState, useRef } from "react";
@@ -8,8 +9,11 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
   fetchProductByIdAsync,
+  fetchRelatedProductsAsync,
   selectCurrentProduct,
+  selectRelatedProducts,
   selectProductLoading,
+  updateProductBid,
 } from "../../features/product/productSlice";
 import { selectIsAuthenticated } from "../../features/auth/authSlice";
 import {
@@ -17,55 +21,77 @@ import {
   removeFromWatchlistAsync,
   selectIsInWatchlist,
   fetchWatchlistAsync,
-  selectWatchlistItems,
   selectWatchlistLoading,
 } from "../../features/watchlist/watchlistSlice";
 import {
   placeBidAsync,
   fetchBidHistoryAsync,
   selectBidHistory,
+  selectBidLoading,
 } from "../../features/bid/bidSlice";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import GavelIcon from "@mui/icons-material/Gavel";
 import InfoIcon from "@mui/icons-material/Info";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PersonIcon from "@mui/icons-material/Person";
+import StarIcon from "@mui/icons-material/Star";
+import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
+import CountdownClock from "../../components/CountdownClock";
+import ProductCard from "../../components/ProductCard";
+import { useToast } from "../../hooks/useToast";
+import ToastContainer from "../../components/Toast";
+import DOMPurify from "dompurify";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const product = useAppSelector(selectCurrentProduct);
+  const relatedProducts = useAppSelector(selectRelatedProducts);
   const isLoading = useAppSelector(selectProductLoading);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const watchlistItems = useAppSelector(selectWatchlistItems);
   const watchlistLoading = useAppSelector(selectWatchlistLoading);
+  const bidLoading = useAppSelector(selectBidLoading);
   const isInWatchlist = useAppSelector(
     product ? selectIsInWatchlist(product.id) : () => false
   );
   const bidHistory = useAppSelector(
     product ? selectBidHistory(product.id) : () => []
   );
+  const { toasts, success, error, info, removeToast } = useToast();
+
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [bidAmount, setBidAmount] = useState("");
+  const [isPlacingBid, setIsPlacingBid] = useState(false);
   
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
 
+  // Fetch product, bid history, and related products when id changes
   useEffect(() => {
     if (id) {
       const productId = parseInt(id);
       dispatch(fetchProductByIdAsync(productId));
       dispatch(fetchBidHistoryAsync(productId));
-      // Only fetch watchlist once if authenticated and not already loaded
-      if (isAuthenticated && !hasFetchedWatchlist.current && watchlistItems.length === 0 && !watchlistLoading) {
-        hasFetchedWatchlist.current = true;
-        dispatch(fetchWatchlistAsync());
-      }
     }
-  }, [id, dispatch, isAuthenticated, watchlistItems.length, watchlistLoading]);
+  }, [id, dispatch]);
+
+  // Fetch related products when product is loaded
+  useEffect(() => {
+    if (product?.category?.id) {
+      dispatch(fetchRelatedProductsAsync(product.id));
+    }
+  }, [product?.id, product?.category?.id, dispatch]);
+
+  // Fetch watchlist once on mount if authenticated (separate effect to avoid re-running)
+  useEffect(() => {
+    if (isAuthenticated && !hasFetchedWatchlist.current) {
+      hasFetchedWatchlist.current = true;
+      dispatch(fetchWatchlistAsync());
+    }
+  }, [isAuthenticated, dispatch]);
 
   const formatPrice = (price: number | null | undefined) => {
     if (!price) return "€0";
@@ -77,28 +103,9 @@ export default function ProductDetailPage() {
     }).format(price);
   };
 
-  const formatRemainingTime = (endTime: string | null | undefined) => {
-    if (!endTime) return "Ended";
-    const now = Date.now();
-    const diffMs = new Date(endTime).getTime() - now;
-
-    if (diffMs <= 0) return "Ended";
-
-    const minutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (days >= 1) {
-      return `${days} day${days > 1 ? "s" : ""}, ${hours % 24} hour${hours % 24 !== 1 ? "s" : ""}`;
-    }
-    if (hours >= 1) {
-      return `${hours} hour${hours > 1 ? "s" : ""}, ${minutes % 60} minute${minutes % 60 !== 1 ? "s" : ""}`;
-    }
-    return `${minutes} minute${minutes > 1 ? "s" : ""}`;
-  };
-
   const handlePlaceBid = async () => {
     if (!isAuthenticated) {
+      error("Please log in to place a bid");
       navigate("/login");
       return;
     }
@@ -108,39 +115,78 @@ export default function ProductDetailPage() {
     const minBid = (product.currentPrice || product.startPrice || 0) + (product.bidIncrement || 0);
     
     if (amount < minBid) {
-      alert(`Minimum bid is ${minBid.toFixed(2)}`);
+      error(`Minimum bid is ${formatPrice(minBid)}`);
       return;
     }
 
+    setIsPlacingBid(true);
     try {
-      await dispatch(placeBidAsync({ productId: product.id, amount }));
-      setBidAmount("");
-      // Refresh product and bid history
-      dispatch(fetchProductByIdAsync(product.id));
-      dispatch(fetchBidHistoryAsync(product.id));
-      alert("Bid placed successfully!");
-    } catch (error) {
-      console.error("Failed to place bid:", error);
+      const result = await dispatch(placeBidAsync({ productId: product.id, amount }));
+      
+      if (placeBidAsync.fulfilled.match(result)) {
+        // Optimistically update product state
+        dispatch(updateProductBid({
+          productId: product.id,
+          newPrice: amount,
+          bidCount: (product.bidCount || 0) + 1,
+        }));
+        
+        // Refresh bid history in background (non-blocking)
+        dispatch(fetchBidHistoryAsync(product.id));
+        
+        setBidAmount("");
+        success(`Bid of ${formatPrice(amount)} placed successfully!`);
+      } else {
+        const errorMessage = result.payload as string || "Failed to place bid";
+        error(errorMessage);
+      }
+    } catch (err) {
+      error("An unexpected error occurred. Please try again.");
+      console.error("Failed to place bid:", err);
+    } finally {
+      setIsPlacingBid(false);
     }
   };
 
-  const handleToggleWatchlist = async () => {
+  const handleToggleWatchlist = async (e?: React.MouseEvent) => {
+    // Prevent any default behavior or event propagation
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!isAuthenticated) {
+      error("Please log in to add items to your watchlist");
       navigate("/login");
       return;
     }
     if (!product) return;
 
-    if (isInWatchlist) {
-      await dispatch(removeFromWatchlistAsync(product.id));
-    } else {
-      await dispatch(addToWatchlistAsync(product.id));
+    try {
+      if (isInWatchlist) {
+        const result = await dispatch(removeFromWatchlistAsync(product.id));
+        if (removeFromWatchlistAsync.fulfilled.match(result)) {
+          success("Removed from watchlist");
+        } else {
+          error(result.payload as string || "Failed to remove from watchlist");
+        }
+      } else {
+        const result = await dispatch(addToWatchlistAsync(product.id));
+        if (addToWatchlistAsync.fulfilled.match(result)) {
+          success("Added to watchlist");
+        } else {
+          error(result.payload as string || "Failed to add to watchlist");
+        }
+      }
+    } catch (err) {
+      error("An unexpected error occurred");
+      console.error("Failed to toggle watchlist:", err);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           <p className="mt-4 text-gray-600">Loading product...</p>
@@ -151,10 +197,10 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <p className="text-xl text-gray-600 mb-4">Product not found</p>
-          <Link to="/products" className="text-primary hover:text-primary/80">
+          <Link to="/products" className="text-primary hover:text-primary/80 font-medium">
             Back to products
           </Link>
         </div>
@@ -165,16 +211,19 @@ export default function ProductDetailPage() {
   const images = product.images || [];
   const mainImage = images[selectedImageIndex]?.url || "https://via.placeholder.com/600x600?text=No+Image";
   const nextBidAmount = (product.currentPrice || product.startPrice || 0) + (product.bidIncrement || 0);
+  const isActive = product.status === "ACTIVE";
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Breadcrumb Navigation */}
         <nav className="mb-6">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-1 hover:text-gray-900 transition-colors cursor-pointer"
             >
               <ArrowBackIcon fontSize="small" />
               <span>Back</span>
@@ -184,7 +233,7 @@ export default function ProductDetailPage() {
               <>
                 <Link
                   to={`/products?categoryId=${product.category.id}`}
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-primary transition-colors cursor-pointer"
                 >
                   {product.category.name}
                 </Link>
@@ -208,11 +257,15 @@ export default function ProductDetailPage() {
                 />
                 {/* Watchlist Button - Floating */}
                 <button
+                  type="button"
                   onClick={handleToggleWatchlist}
-                  className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 z-10"
+                  className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 z-10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                  disabled={watchlistLoading}
                 >
-                  {isInWatchlist ? (
+                  {watchlistLoading ? (
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : isInWatchlist ? (
                     <FavoriteIcon className="text-red-500" />
                   ) : (
                     <FavoriteBorderIcon className="text-gray-600" />
@@ -228,7 +281,7 @@ export default function ProductDetailPage() {
                       <button
                         key={img.id}
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
                           selectedImageIndex === index
                             ? "border-primary shadow-md scale-105"
                             : "border-gray-200 hover:border-gray-300"
@@ -253,10 +306,109 @@ export default function ProductDetailPage() {
                 <h2 className="text-2xl font-bold text-gray-900">Description</h2>
               </div>
               <div className="prose max-w-none">
-                <p className="text-gray-700 leading-relaxed text-lg">
-                  {product.title} - More details coming soon. This is a placeholder description.
-                </p>
+                {product.description ? (
+                  <div 
+                    className="text-gray-700 leading-relaxed text-lg"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
+                  />
+                ) : (
+                  <p className="text-gray-500 italic">No description available for this product.</p>
+                )}
               </div>
+            </div>
+
+            {/* Seller Info Section */}
+            {product.sellerInfo && (
+              <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <PersonIcon className="text-primary" />
+                  <h2 className="text-xl font-bold text-gray-900">Seller Information</h2>
+                </div>
+                <div className="flex items-center gap-4">
+                  {product.sellerInfo.avatarUrl ? (
+                    <img
+                      src={product.sellerInfo.avatarUrl}
+                      alt={product.sellerInfo.fullName || "Seller"}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                      <PersonIcon className="text-gray-400 text-3xl" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">{product.sellerInfo.fullName || "Unknown Seller"}</p>
+                    {product.sellerInfo.ratingPercent !== null && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <StarIcon className="text-yellow-400 text-sm" />
+                        <span className="text-sm font-medium text-gray-700">
+                          {product.sellerInfo.ratingPercent.toFixed(1)}% positive
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Highest Bidder Info Section */}
+            {product.highestBidderInfo && (
+              <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <GavelIcon className="text-primary" />
+                  <h2 className="text-xl font-bold text-gray-900">Current Highest Bidder</h2>
+                </div>
+                <div className="flex items-center gap-4">
+                  {product.highestBidderInfo.avatarUrl ? (
+                    <img
+                      src={product.highestBidderInfo.avatarUrl}
+                      alt={product.highestBidderInfo.fullName || "Bidder"}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                      <PersonIcon className="text-gray-400 text-2xl" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">{product.highestBidderInfo.fullName || "Unknown Bidder"}</p>
+                    {product.highestBidderInfo.ratingPercent !== null && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <StarIcon className="text-yellow-400 text-sm" />
+                        <span className="text-sm font-medium text-gray-700">
+                          {product.highestBidderInfo.ratingPercent.toFixed(1)}% positive
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Related Products Section */}
+            {relatedProducts.length > 0 && (
+              <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <InfoIcon className="text-primary" />
+                  <h2 className="text-2xl font-bold text-gray-900">Related Products</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {relatedProducts.map((relatedProduct) => (
+                    <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Q&A Section - Placeholder for future implementation */}
+            <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <QuestionAnswerIcon className="text-primary" />
+                <h2 className="text-2xl font-bold text-gray-900">Questions & Answers</h2>
+              </div>
+              <p className="text-gray-500 text-center py-8">
+                Q&A feature coming soon. Ask questions about this product!
+              </p>
             </div>
           </div>
 
@@ -271,7 +423,7 @@ export default function ProductDetailPage() {
                 {product.category && (
                   <Link
                     to={`/products?categoryId=${product.category.id}`}
-                    className="inline-block text-sm text-primary hover:text-primary/80 font-medium mb-4"
+                    className="inline-block text-sm text-primary hover:text-primary/80 font-medium mb-4 cursor-pointer"
                   >
                     {product.category.name}
                   </Link>
@@ -280,7 +432,7 @@ export default function ProductDetailPage() {
 
               {/* Auction Status Card */}
               <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl shadow-sm p-6 border border-primary/20">
-                {product.status === "ACTIVE" ? (
+                {isActive ? (
                   <>
                     {/* Current Bid */}
                     <div className="mb-6">
@@ -295,15 +447,9 @@ export default function ProductDetailPage() {
                       )}
                     </div>
 
-                    {/* Time Remaining */}
+                    {/* Countdown Clock */}
                     <div className="bg-white/60 rounded-lg p-4 mb-6">
-                      <div className="flex items-center gap-2 mb-2">
-                        <AccessTimeIcon className="text-orange-600" fontSize="small" />
-                        <p className="text-sm font-semibold text-gray-700">Time Remaining</p>
-                      </div>
-                      <p className="text-2xl font-bold text-orange-600">
-                        {formatRemainingTime(product.endTime)}
-                      </p>
+                      <CountdownClock endTime={product.endTime} />
                     </div>
 
                     {/* Buy Now Price */}
@@ -335,14 +481,15 @@ export default function ProductDetailPage() {
                               min={nextBidAmount}
                               step={product.bidIncrement || 1}
                               className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-lg font-semibold"
+                              disabled={isPlacingBid || bidLoading}
                             />
                           </div>
                           <button
                             onClick={handlePlaceBid}
-                            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md"
-                            disabled={!bidAmount || Number(bidAmount) < nextBidAmount}
+                            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md cursor-pointer"
+                            disabled={!bidAmount || Number(bidAmount) < nextBidAmount || isPlacingBid || bidLoading}
                           >
-                            Bid
+                            {isPlacingBid || bidLoading ? "Placing..." : "Bid"}
                           </button>
                         </div>
                         <p className="text-xs text-gray-500 mt-2">
@@ -354,13 +501,14 @@ export default function ProductDetailPage() {
                         <button
                           onClick={() => {
                             if (!isAuthenticated) {
+                              error("Please log in to buy now");
                               navigate("/login");
                               return;
                             }
                             // TODO: Implement buy now functionality
-                            alert("Buy Now feature coming soon!");
+                            info("Buy Now feature coming soon!");
                           }}
-                          className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                          className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <CheckCircleIcon />
                           Buy Now for {formatPrice(product.buyNowPrice)}
@@ -463,4 +611,3 @@ export default function ProductDetailPage() {
     </div>
   );
 }
-

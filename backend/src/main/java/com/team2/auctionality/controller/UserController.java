@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserService userService;
+    private final WatchListItemMapper watchListItemMapper;
+    private final ProductMapper productMapper;
 
     @GetMapping("/watchlist")
     @Operation(summary = "Get user's watchlist")
@@ -42,7 +44,7 @@ public class UserController {
             @CurrentUser User user
     ) {
         log.info("User {} adding product {} to watchlist", user.getId(), productId);
-        WatchListItemDto watchListItemDto = WatchListItemMapper.toDto(userService.addWatchList(user, productId));
+        WatchListItemDto watchListItemDto = watchListItemMapper.toDto(userService.addWatchList(user, productId));
         URI location = URI.create("/api/users/watchlist/" + productId);
         return ResponseEntity
                 .created(location)

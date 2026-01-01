@@ -1,12 +1,7 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.auction.AutoBidEngine;
-import com.team2.auctionality.dto.AutoBidConfigDto;
-import com.team2.auctionality.dto.AutoBidResult;
-import com.team2.auctionality.dto.BidHistoryDto;
-import com.team2.auctionality.dto.BidResponse;
-import com.team2.auctionality.dto.PlaceBidRequest;
-import com.team2.auctionality.dto.ProductDto;
+import com.team2.auctionality.dto.*;
 import com.team2.auctionality.email.EmailService;
 import com.team2.auctionality.email.dto.BidNotificationEmailRequest;
 import com.team2.auctionality.enums.ApproveStatus;
@@ -244,6 +239,81 @@ public class BidService {
         return rejectedBidder;
     }
 
+    @Transactional(readOnly = true)
+    public List<com.team2.auctionality.dto.BidderApprovalDto> getPendingBidderApprovals(Integer sellerId) {
+        log.debug("Getting pending bidder approvals for seller: {}", sellerId);
+        return bidderApprovalRepository.findPendingBySellerId(sellerId)
+                .stream()
+                .map(approval -> {
+                    Product product = productService.getProductById(approval.getProductId());
+                    User bidder = userRepository.findById(approval.getBidderId())
+                            .orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
+                    UserProfile bidderProfile = bidder.getProfile();
+
+                    return com.team2.auctionality.dto.BidderApprovalDto.builder()
+                            .id(approval.getId())
+                            .productId(approval.getProductId())
+                            .productTitle(product.getTitle())
+                            .bidderId(approval.getBidderId())
+                            .bidderName(bidderProfile != null ? bidderProfile.getFullName() : "Unknown")
+                            .bidderEmail(bidder.getEmail())
+                            .bidderRating(bidderProfile != null ? bidderProfile.getRatingPercent() : 0.0f)
+                            .amount(approval.getAmount())
+                            .status(approval.getStatus())
+                            .createdAt(approval.getCreatedAt())
+                            .build();
+                })
+                .toList();
+    }
+
+    @Transactional
+    public void approveBidderApproval(Integer approvalId, Integer sellerId) {
+        log.info("Seller {} approving bidder approval request: {}", sellerId, approvalId);
+        BidderApproval approval = bidderApprovalRepository.findById(approvalId)
+                .orElseThrow(() -> new EntityNotFoundException("Bidder approval request not found"));
+
+        Product product = productService.getProductById(approval.getProductId());
+        if (!product.getSeller().getId().equals(sellerId)) {
+            throw new BidNotAllowedException("You are not authorized to approve this request");
+        }
+
+        if (approval.getStatus() != ApproveStatus.PENDING) {
+            throw new IllegalArgumentException("Request is not pending");
+        }
+
+        approval.setStatus(ApproveStatus.APPROVED);
+        bidderApprovalRepository.save(approval);
+
+        // Now trigger the auto-bid with the approved amount
+        User bidder = userRepository.findById(approval.getBidderId())
+                .orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
+
+        PlaceBidRequest bidRequest = new PlaceBidRequest();
+        bidRequest.setAmount(approval.getAmount());
+
+        // Place the bid (this will now pass the rating check since it's approved)
+        placeBid(bidder, approval.getProductId(), bidRequest);
+    }
+
+    @Transactional
+    public void rejectBidderApproval(Integer approvalId, Integer sellerId) {
+        log.info("Seller {} rejecting bidder approval request: {}", sellerId, approvalId);
+        BidderApproval approval = bidderApprovalRepository.findById(approvalId)
+                .orElseThrow(() -> new EntityNotFoundException("Bidder approval request not found"));
+
+        Product product = productService.getProductById(approval.getProductId());
+        if (!product.getSeller().getId().equals(sellerId)) {
+            throw new BidNotAllowedException("You are not authorized to reject this request");
+        }
+
+        if (approval.getStatus() != ApproveStatus.PENDING) {
+            throw new IllegalArgumentException("Request is not pending");
+        }
+
+        approval.setStatus(ApproveStatus.REJECTED);
+        bidderApprovalRepository.save(approval);
+    }
+
     /**
      * Send bid notifications to seller, new highest bidder, and previous highest bidder
      */
@@ -294,30 +364,5 @@ public class BidService {
                         );
                     }
                 });
-    }
-
-    @Transactional
-    public void approveBidder(Integer productId, Integer bidderId) {
-        log.info("Approving bidder {} from product {}", bidderId, productId);
-        Product product = productService.getProductById(productId);
-        User bidder = userRepository.findById(bidderId)
-                .orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
-
-        // Approve bidder
-        bidderApprovalRepository
-                .findByProductIdAndBidderId(productId, bidderId)
-                .ifPresent(approval -> {
-                    approval.setStatus(ApproveStatus.APPROVED);
-                    bidderApprovalRepository.save(approval);
-                });
-
-        // Remove rejected record if exists
-        rejectedBidderRepository
-                .findByProductIdAndBidderId(productId, bidderId)
-                .ifPresent(rejectedBidderRepository::delete);
-    }
-
-    public Page<BidderApproval> getBidderApprovals(Integer productId, Pageable pageable) {
-        return bidderApprovalRepository.getBidderApprovalByProductId(productId, pageable);
     }
 }

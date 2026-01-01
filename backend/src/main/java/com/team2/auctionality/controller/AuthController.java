@@ -183,5 +183,13 @@ public class AuthController {
         User user = authService.getUserByEmail(email);
         return ResponseEntity.ok(authService.getCurrentUser(user));
     }
+
+    @GetMapping("/oauth2/authorization/google")
+    @Operation(summary = "Initiate Google OAuth2 login")
+    public ResponseEntity<Map<String, String>> initiateGoogleLogin() {
+        // This endpoint is handled by Spring Security OAuth2
+        // The actual redirect happens automatically
+        return ResponseEntity.ok(Map.of("message", "Redirecting to Google..."));
+    }
 }
 

@@ -136,7 +136,7 @@ export const getCurrentUserAsync = createAppAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const user = await authService.getCurrentUser();
-      // Update localStorage
+      // Update localStorage with user including roles
       localStorage.setItem("user", JSON.stringify(user));
       return user;
     } catch (error: unknown) {
@@ -154,11 +154,25 @@ export const initializeAuthAsync = createAppAsyncThunk(
       const refreshToken = localStorage.getItem("refreshToken");
 
       if (storedUser && accessToken && refreshToken) {
-        // Verify token is still valid
+        // Verify token is still valid and get fresh user data with roles
         try {
           const currentUser = await authService.getCurrentUser();
+          // Get roles from fresh user data (getCurrentUser now returns roles)
+          // Convert Set to Array if needed (JSON serialization converts Set to object)
+          const roles = currentUser.roles || [];
+          let rolesArray: string[] = [];
+          if (Array.isArray(roles)) {
+            rolesArray = roles;
+          } else if (typeof roles === 'object' && roles !== null) {
+            // Handle Set or plain object (from JSON serialization)
+            rolesArray = Object.values(roles).filter((v): v is string => typeof v === 'string');
+          }
+          // Ensure roles are always stored as array in localStorage
+          const userWithRoles = { ...currentUser, roles: rolesArray };
+          localStorage.setItem("user", JSON.stringify(userWithRoles));
           return {
-            user: currentUser,
+            user: userWithRoles,
+            roles: rolesArray,
             accessToken,
             refreshToken,
           };
@@ -222,11 +236,22 @@ const authSlice = createSlice({
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        // Convert roles to array if needed (backend might send Set or object)
+        const roles = action.payload.roles || [];
+        let rolesArray: string[] = [];
+        if (Array.isArray(roles)) {
+          rolesArray = roles;
+        } else if (typeof roles === 'object' && roles !== null) {
+          // Handle Set or plain object (from JSON serialization)
+          rolesArray = Object.values(roles).filter((v): v is string => typeof v === 'string');
+        }
+        state.user = { ...action.payload.user, roles: rolesArray };
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
         state.error = null;
+        // Update localStorage with user including roles
+        localStorage.setItem("user", JSON.stringify(state.user));
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -242,11 +267,22 @@ const authSlice = createSlice({
       })
       .addCase(registerAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        // Convert roles to array if needed (backend might send Set or object)
+        const roles = action.payload.roles || [];
+        let rolesArray: string[] = [];
+        if (Array.isArray(roles)) {
+          rolesArray = roles;
+        } else if (typeof roles === 'object' && roles !== null) {
+          // Handle Set or plain object (from JSON serialization)
+          rolesArray = Object.values(roles).filter((v): v is string => typeof v === 'string');
+        }
+        state.user = { ...action.payload.user, roles: rolesArray };
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
         state.error = null;
+        // Update localStorage with user including roles
+        localStorage.setItem("user", JSON.stringify(state.user));
       })
       .addCase(registerAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -282,8 +318,21 @@ const authSlice = createSlice({
     // Get Current User
     builder
       .addCase(getCurrentUserAsync.fulfilled, (state, action) => {
-        state.user = action.payload;
+        // Convert roles to array if needed (backend sends Set which becomes object in JSON)
+        const roles = action.payload?.roles || [];
+        let rolesArray: string[] = [];
+        if (Array.isArray(roles)) {
+          rolesArray = roles;
+        } else if (typeof roles === 'object' && roles !== null) {
+          // Handle Set or plain object (from JSON serialization)
+          rolesArray = Object.values(roles).filter((v): v is string => typeof v === 'string');
+        }
+        state.user = { ...action.payload, roles: rolesArray };
         state.isAuthenticated = true;
+        // Update localStorage with fresh user data including roles as array
+        if (action.payload) {
+          localStorage.setItem("user", JSON.stringify(state.user));
+        }
       })
       .addCase(getCurrentUserAsync.rejected, (state) => {
         state.user = null;
@@ -298,10 +347,22 @@ const authSlice = createSlice({
       .addCase(initializeAuthAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload) {
-          state.user = action.payload.user;
+          // Ensure roles are properly set - use roles from payload or from user object
+          // Convert Set to Array if needed (JSON serialization converts Set to object)
+          const roles = action.payload.roles || action.payload.user?.roles || [];
+          let rolesArray: string[] = [];
+          if (Array.isArray(roles)) {
+            rolesArray = roles;
+          } else if (typeof roles === 'object' && roles !== null) {
+            // Handle Set or plain object (from JSON serialization)
+            rolesArray = Object.values(roles).filter((v): v is string => typeof v === 'string');
+          }
+          state.user = { ...action.payload.user, roles: rolesArray };
           state.accessToken = action.payload.accessToken;
           state.refreshToken = action.payload.refreshToken;
           state.isAuthenticated = true;
+          // Update localStorage with user including roles as array
+          localStorage.setItem("user", JSON.stringify(state.user));
         } else {
           state.isAuthenticated = false;
         }

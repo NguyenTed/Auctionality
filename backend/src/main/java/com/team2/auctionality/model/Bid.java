@@ -21,11 +21,11 @@ public class Bid {
     private Integer id;
 
     @JoinColumn(name = "product_id")
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     private Product product;
 
     @JoinColumn(name = "bidder_id")
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     private User bidder;
 
     @Column(name = "amount")

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class WatchListItemService {
 
     private final WatchListItemRepository watchListItemRepository;
+    private final WatchListItemMapper watchListItemMapper;
 
     @Transactional
     public WatchListItem createWatchListItem(WatchListItem watchListItem) {
@@ -55,7 +56,7 @@ public class WatchListItemService {
     public List<WatchListItemDto> getWatchList(User user) {
         List<WatchListItem> watchListItems = watchListItemRepository.findByUser(user);
         return watchListItems.stream()
-                .map(WatchListItemMapper::toDto)
+                .map(watchListItemMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

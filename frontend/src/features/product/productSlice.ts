@@ -12,6 +12,7 @@ import type PagedResponse from "../../interfaces/Pagination";
 interface ProductState {
   products: Product[];
   currentProduct: Product | null;
+  relatedProducts: Product[];
   topProducts: Product[];
   topProductsEndingSoon: Product[];
   topProductsMostBid: Product[];
@@ -24,6 +25,7 @@ interface ProductState {
 const initialState: ProductState = {
   products: [],
   currentProduct: null,
+  relatedProducts: [],
   topProducts: [],
   topProductsEndingSoon: [],
   topProductsMostBid: [],
@@ -153,6 +155,21 @@ export const deleteProductAsync = createAppAsyncThunk(
   }
 );
 
+export const fetchRelatedProductsAsync = createAppAsyncThunk(
+  "product/fetchRelatedProducts",
+  async (productId: number, { rejectWithValue }) => {
+    try {
+      const products = await productService.getRelatedProducts(productId);
+      return { products, productId };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      return rejectWithValue(
+        err.response?.data?.error || "Failed to fetch related products"
+      );
+    }
+  }
+);
+
 const productSlice = createSlice({
   name: "product",
   initialState,
@@ -165,6 +182,27 @@ const productSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null;
+    },
+    // Optimistic update for bid placement
+    updateProductBid: (state, action: PayloadAction<{ productId: number; newPrice: number; bidCount?: number }>) => {
+      if (state.currentProduct && state.currentProduct.id === action.payload.productId) {
+        state.currentProduct.currentPrice = action.payload.newPrice;
+        if (action.payload.bidCount !== undefined) {
+          state.currentProduct.bidCount = action.payload.bidCount;
+        } else if (state.currentProduct.bidCount !== undefined) {
+          state.currentProduct.bidCount += 1;
+        }
+      }
+      // Also update in products list if present
+      const productInList = state.products.find((p) => p.id === action.payload.productId);
+      if (productInList) {
+        productInList.currentPrice = action.payload.newPrice;
+        if (action.payload.bidCount !== undefined) {
+          productInList.bidCount = action.payload.bidCount;
+        } else if (productInList.bidCount !== undefined) {
+          productInList.bidCount += 1;
+        }
+      }
     },
   },
   extraReducers: (builder) => {
@@ -301,14 +339,31 @@ const productSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       });
+
+    // Fetch Related Products
+    builder
+      .addCase(fetchRelatedProductsAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchRelatedProductsAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.relatedProducts = action.payload.products;
+        state.error = null;
+      })
+      .addCase(fetchRelatedProductsAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 
-export const { setSearchParams, clearCurrentProduct, clearError } = productSlice.actions;
+export const { setSearchParams, clearCurrentProduct, clearError, updateProductBid } = productSlice.actions;
 
 // Selectors (memoized)
 export const selectProducts = (state: RootState) => state.product.products;
 export const selectCurrentProduct = (state: RootState) => state.product.currentProduct;
+export const selectRelatedProducts = (state: RootState) => state.product.relatedProducts;
 export const selectTopProducts = (state: RootState) => state.product.topProducts;
 export const selectTopProductsEndingSoon = (state: RootState) => state.product.topProductsEndingSoon;
 export const selectTopProductsMostBid = (state: RootState) => state.product.topProductsMostBid;

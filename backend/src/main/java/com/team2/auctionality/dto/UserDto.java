@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -21,5 +22,6 @@ public class UserDto {
     private String status;
     private Float ratingPercent;
     private LocalDateTime createdAt;
+    private Set<String> roles;
 }
 

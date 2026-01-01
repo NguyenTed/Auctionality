@@ -21,7 +21,7 @@ public class ProductImage {
     @Column(name = "is_thumbnail")
     private Boolean isThumbnail;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "product_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 }

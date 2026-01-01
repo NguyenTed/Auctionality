@@ -32,6 +32,24 @@ spring:
     init:
       mode: always
       platform: postgresql
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://www.googleapis.com/oauth2/v4/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
 
 springdoc:
   swagger-ui:
@@ -46,30 +64,8 @@ jwt:
   access-token-expiration: 3600000  # 1 hour in milliseconds (increased from 15 minutes)
   refresh-token-expiration: 604800000  # 7 days in milliseconds
 
-# OAuth2 Configuration (for social login)
-oauth2:
-  client:
-    registration:
-      google:
-        client-id: ${GOOGLE_CLIENT_ID:}
-        client-secret: ${GOOGLE_CLIENT_SECRET:}
-        scope:
-          - openid
-          - profile
-          - email
-      facebook:
-        client-id: ${FACEBOOK_CLIENT_ID:}
-        client-secret: ${FACEBOOK_CLIENT_SECRET:}
-        scope:
-          - email
-          - public_profile
-      github:
-        client-id: ${GITHUB_CLIENT_ID:}
-        client-secret: ${GITHUB_CLIENT_SECRET:}
-        scope:
-          - read:user
-          - user:email
-  rabbitmq:
+# RabbitMQ Configuration
+rabbitmq:
     host: localhost
     port: 5672
     username: guest
@@ -86,8 +82,33 @@ app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
 
+# Google reCAPTCHA Configuration
+recaptcha:
+  secret-key: ${RECAPTCHA_SECRET_KEY:}
+  site-key: ${RECAPTCHA_SITE_KEY:}
+  verify-url: https://www.google.com/recaptcha/api/siteverify
+  enabled: ${RECAPTCHA_ENABLED:true}
+
 vnpay:
-  url: ${VNPAY_URL}
-  tmn-code: ${VNPAY_TMN_CODE}
-  secret-key: ${VNPAY_SECRET_KEY}
-  return-url:  ${VNPAY_RETURN_URL}
+  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  tmn-code: YS32FM63
+  secret-key: FIEOC3ALLMHIMMVYTFNQ9XQ3VIQIGF2M
+  return-url:  http://localhost:5173/vnpay-return
+
+# Spring Boot Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true

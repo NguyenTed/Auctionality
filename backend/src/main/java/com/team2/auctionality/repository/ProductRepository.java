@@ -3,6 +3,7 @@ package com.team2.auctionality.repository;
 import com.team2.auctionality.dto.CreateProductDto;
 import com.team2.auctionality.dto.ProductDto;
 import com.team2.auctionality.dto.ProductTopMostBidDto;
+import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.model.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -118,5 +119,33 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
       )
 """)
     List<Product> findExpiredAndNotOrdered(LocalDateTime now);
+
+    @EntityGraph(attributePaths = {"images", "category", "seller"})
+    @Query("""
+        SELECT p FROM Product p
+        WHERE p.category.id = :categoryId
+          AND p.id != :excludeProductId
+          AND p.status = 'ACTIVE'
+        ORDER BY p.createdAt DESC
+    """)
+    List<Product> findRelatedProducts(@Param("categoryId") Integer categoryId, 
+                                      @Param("excludeProductId") Integer excludeProductId, 
+                                      Pageable pageable);
+
+    long countByCategoryId(Integer categoryId);
+    
+    long countByStatus(ProductStatus status);
+    
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.endTime BETWEEN :start AND :end")
+    long countByEndTimeBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // Find products by seller
+    @EntityGraph(attributePaths = {"images", "category"})
+    Page<Product> findBySellerId(Integer sellerId, Pageable pageable);
+
+    /**
+     * Count products by seller ID
+     */
+    long countBySellerId(Integer sellerId);
 }
 

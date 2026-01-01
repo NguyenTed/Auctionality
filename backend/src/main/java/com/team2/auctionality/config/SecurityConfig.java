@@ -1,5 +1,7 @@
 package com.team2.auctionality.config;
 
+import com.team2.auctionality.config.OAuth2FailureHandler;
+import com.team2.auctionality.config.OAuth2SuccessHandler;
 import com.team2.auctionality.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +34,8 @@ import java.util.List;
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -41,8 +45,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+                        // OAuth2 endpoints
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         // Health check endpoints
                         .requestMatchers("/api/health/**").permitAll()
+                        // Actuator endpoints (monitoring)
+                        .requestMatchers("/actuator/**").permitAll()
                         // Public read-only endpoints for products (GET only)
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         // Public read-only endpoints for categories (GET only)
@@ -50,6 +58,10 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payments/vnpay-return").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler(oAuth2FailureHandler)
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
