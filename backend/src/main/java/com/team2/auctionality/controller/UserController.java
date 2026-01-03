@@ -92,6 +92,22 @@ public class UserController {
         );
     }
 
+    @DeleteMapping("/{requestId}/reject")
+    @Operation(summary = "Reject upgrade request from bidder to seller")
+    public ResponseEntity<SellerUpgradeRequestDto> rejectSellerUpgradeRequest(
+            @PathVariable Integer requestId,
+            @CurrentUser User user
+    ) {
+        log.info("Reject request {} by admin {}", requestId, user.getId());
+
+        SellerUpgradeRequest request =
+                userService.rejectSellerUpgradeRequest(user, requestId);
+
+        return ResponseEntity.ok(
+                SellerUpgradeRequestMapper.toDto(request)
+        );
+    }
+
     @GetMapping("/rates")
     @Operation(summary = "Get user's ratings")
     public ResponseEntity<List<OrderRatingDto>> getRatings(@CurrentUser User user) {

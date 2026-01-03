@@ -12,11 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
@@ -248,6 +245,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RatingException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRating(RatingException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(SellerUpgradeBadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleExistSellerUpgradeRequest(SellerUpgradeBadRequestException ex) {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse(
                         ex.getMessage(),

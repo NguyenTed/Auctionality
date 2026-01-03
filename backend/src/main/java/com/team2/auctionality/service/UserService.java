@@ -3,6 +3,7 @@ package com.team2.auctionality.service;
 import com.team2.auctionality.dto.RatingRequest;
 import com.team2.auctionality.dto.WatchListItemDto;
 import com.team2.auctionality.enums.ApproveStatus;
+import com.team2.auctionality.exception.SellerUpgradeBadRequestException;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -55,12 +56,27 @@ public class UserService {
 
     @Transactional
     public SellerUpgradeRequest createSellerUpgradeRequest(User user) {
+
         log.info("User {} requesting seller upgrade", user.getId());
+
+        boolean existsPending =
+                sellerUpgradeRequestRepository.existsByUserAndStatus(
+                        user,
+                        ApproveStatus.PENDING
+                );
+
+        if (existsPending) {
+            throw new SellerUpgradeBadRequestException(
+                    "You already have a pending seller upgrade request"
+            );
+        }
+
         SellerUpgradeRequest sellerUpgradeRequest = SellerUpgradeRequest.builder()
                 .user(user)
                 .status(ApproveStatus.PENDING)
                 .requestedAt(new Date())
                 .build();
+
         return sellerUpgradeRequestRepository.save(sellerUpgradeRequest);
     }
 
@@ -71,8 +87,7 @@ public class UserService {
                         .orElseThrow(() -> new EntityNotFoundException("Request not found"));
 
         if (request.getStatus() != ApproveStatus.PENDING) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
+            throw new SellerUpgradeBadRequestException(
                     "Request already processed"
             );
         }
@@ -82,7 +97,7 @@ public class UserService {
         request.setProcessedByAdmin(admin);
 
         User user = request.getUser();
-        Role sellerRole = roleRepository.findById(3)
+        Role sellerRole = roleRepository.findByName("SELLER")
                 .orElseThrow(() -> new EntityNotFoundException("Seller role not found"));
 
         if (!user.getRoles().contains(sellerRole)) {
@@ -90,6 +105,25 @@ public class UserService {
         }
 
         userRepository.save(user);
+
+        return sellerUpgradeRequestRepository.save(request);
+    }
+
+    @Transactional
+    public SellerUpgradeRequest rejectSellerUpgradeRequest(User admin, Integer requestId) {
+        SellerUpgradeRequest request =
+                sellerUpgradeRequestRepository.findById(requestId)
+                        .orElseThrow(() -> new EntityNotFoundException("Request not found"));
+
+        if (request.getStatus() != ApproveStatus.PENDING) {
+            throw new SellerUpgradeBadRequestException(
+                    "Request already processed"
+            );
+        }
+
+        request.setStatus(ApproveStatus.REJECTED);
+        request.setProcessedAt(new Date());
+        request.setProcessedByAdmin(admin);
 
         return sellerUpgradeRequestRepository.save(request);
     }
@@ -145,4 +179,5 @@ public class UserService {
         log.debug("Getting watchlist for user: {}", user.getId());
         return watchListItemService.getWatchList(user);
     }
+
 }
