@@ -94,8 +94,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @Query(value = """
         SELECT DISTINCT p.*
         FROM product p
-        JOIN bid b ON b.product_id = p.id
-        WHERE b.bidder_id = :userId
+        JOIN auto_bid_config a ON a.product_id = p.id
+        WHERE a.bidder_id = :userId
         """, nativeQuery = true)
     List<Product> findProductsUserHasBidOn(@Param("userId") Integer userId);
 

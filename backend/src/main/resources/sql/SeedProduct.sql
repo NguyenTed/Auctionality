@@ -1,68 +1,97 @@
-INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time)
+INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time, create_at, description)
 VALUES
-    (1, 17, 'Ancient Chinese Liao Dynasty Rare Terracotta Tablet Tsa-Tsa With Three Buddhas (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (2, 17, 'Chupícuaro, Guanajuato, México Terracotta Bowl. 400 BC – 100 AD. 10 cm diameter. Spanish Export License.  (No Reserve Price)', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
-    (3, 17, 'European Padlock with original key - 4.5 cm  (No reserve price)', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
-    (1, 17, 'Viking Era Silver decorated Amulet', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Luristan Bronze, Interesting Pendant  (No reserve price)', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days'),
-    (1, 17, 'Medieval Bronze, Rare & Interesting Islam Seal Ring (No reserve price)', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (1, 17, 'Ancient Egyptian Wood, Gold Sculpture of the God Min. New Kingdom, 1550-1070 BC. 12.5 cm height.', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days'),
-    (1, 17, 'Ancient Roman Roman glassware - Relief-decorated pitcher - intact - with export license', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days'),
-    (1, 17, 'Ancient Roman Gold Ring', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days'),
-    (1, 17, 'Ancient Roman Gold Earrings', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (2, 17, 'Ancient Roman Terracotta Amphora, fragment - 20 cm (No reserve price)', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days'),
-    (3, 17, 'Gandhara Stone Statue - 5 cm (No reserve price)', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (3, 17, 'Early Greek Bronze Spearhead - Weapon of an Ancient Warrior! (No reserve price)', 'ACTIVE', 6000, 6000, 14000, 10, NOW(), NOW() + INTERVAL '12 days'),
-    (2, 17, 'Imposing and Visually Striking Spectacular pair of obelisks - mosaic of sodalite - Height: 110 cm - Width: 20 cm- 33 kg', 'ACTIVE', 7000, 7000, 16400, 10, NOW(), NOW() + INTERVAL '11 days'),
-    (1, 17, 'Ancient Egyptian Faience Shroud. Late Period, 664 - 332 BC. 40.5 cm length.', 'ACTIVE', 6200, 6200, 14600, 10, NOW(), NOW() + INTERVAL '6 days'),
-    (1, 17, 'Ancient Roman Bronze Lamp with theatre mask and chandelier. 1st - 2nd century AD. Height 130.17 cm.', 'ACTIVE', 8200, 8200, 11400, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 17, 'Ancient Egyptian Alabaster Pitcher. 17 cm H. New Kingdom, c. 1550 -1069 B.C.', 'ACTIVE', 3700, 3700, 10600, 10, NOW(), NOW() + INTERVAL '14 days'),
-    (1, 17, 'Ancient Egyptian Bronze, Gold Harpocrates God. 12,5 cm height. Late Period, 664 - 332 BC', 'ACTIVE', 4800, 4800, 16500, 10, NOW(), NOW() + INTERVAL '20 days'),
-    (1, 17, 'Ancient Egyptian Lapis lazuli Amulet goddess selkis selket. Late Period, 664 - 332 B.C. 2 cm height.', 'ACTIVE', 5100, 5100, 13200, 10, NOW(), NOW() + INTERVAL '3 days'),
-    (1, 17, 'Ancient Greek Ceramic Olla, Daunia, Sub-Geometric Period II, 550 - 400 b.C. 30,5 cm Height.', 'ACTIVE', 4200, 4200, 12800, 10, NOW(), NOW() + INTERVAL '1 days'),
-    (1, 17, 'Byzantine Terracotta Oil Lamp. 4th-7th century AD. 9.5 cm length. (No reserve price)', 'ACTIVE', 5100, 5100, 17000, 10, NOW(), NOW() + INTERVAL '4 days');
+    (1, 17, 'Ancient Chinese Liao Dynasty Rare Terracotta Tablet Tsa-Tsa With Three Buddhas (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 17, 'Chupícuaro, Guanajuato, México Terracotta Bowl. 400 BC – 100 AD. 10 cm diameter. Spanish Export License.  (No Reserve Price)', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 17, 'European Padlock with original key - 4.5 cm  (No reserve price)', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Viking Era Silver decorated Amulet', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Luristan Bronze, Interesting Pendant  (No reserve price)', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Medieval Bronze, Rare & Interesting Islam Seal Ring (No reserve price)', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Egyptian Wood, Gold Sculpture of the God Min. New Kingdom, 1550-1070 BC. 12.5 cm height.', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Roman Roman glassware - Relief-decorated pitcher - intact - with export license', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Roman Gold Ring', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Roman Gold Earrings', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 17, 'Ancient Roman Terracotta Amphora, fragment - 20 cm (No reserve price)', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 17, 'Gandhara Stone Statue - 5 cm (No reserve price)', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 17, 'Early Greek Bronze Spearhead - Weapon of an Ancient Warrior! (No reserve price)', 'ACTIVE', 6000, 6000, 14000, 10, NOW(), NOW() + INTERVAL '12 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 17, 'Imposing and Visually Striking Spectacular pair of obelisks - mosaic of sodalite - Height: 110 cm - Width: 20 cm- 33 kg', 'ACTIVE', 7000, 7000, 16400, 10, NOW(), NOW() + INTERVAL '11 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Egyptian Faience Shroud. Late Period, 664 - 332 BC. 40.5 cm length.', 'ACTIVE', 6200, 6200, 14600, 10, NOW(), NOW() + INTERVAL '6 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Roman Bronze Lamp with theatre mask and chandelier. 1st - 2nd century AD. Height 130.17 cm.', 'ACTIVE', 8200, 8200, 11400, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Egyptian Alabaster Pitcher. 17 cm H. New Kingdom, c. 1550 -1069 B.C.', 'ACTIVE', 3700, 3700, 10600, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Egyptian Bronze, Gold Harpocrates God. 12,5 cm height. Late Period, 664 - 332 BC', 'ACTIVE', 4800, 4800, 16500, 10, NOW(), NOW() + INTERVAL '20 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Egyptian Lapis lazuli Amulet goddess selkis selket. Late Period, 664 - 332 B.C. 2 cm height.', 'ACTIVE', 5100, 5100, 13200, 10, NOW(), NOW() + INTERVAL '3 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Ancient Greek Ceramic Olla, Daunia, Sub-Geometric Period II, 550 - 400 b.C. 30,5 cm Height.', 'ACTIVE', 4200, 4200, 12800, 10, NOW(), NOW() + INTERVAL '1 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 17, 'Byzantine Terracotta Oil Lamp. 4th-7th century AD. 9.5 cm length. (No reserve price)', 'ACTIVE', 5100, 5100, 17000, 10, NOW(), NOW() + INTERVAL '4 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.');
 
-INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time)
+INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time, created_at, description)
 VALUES
-    (1, 18, 'Burmese amber - Fossil cabochon - with a swarm of insect fossil inclusions (No Reserve Price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (2, 18, 'Spinosaur - Fossil tooth - 85 mm - 30 mm', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
-    (3, 18, 'Top quality - Nautile - Fossilised shell - 9.5 cm', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
-    (1, 18, 'Dinosaur - Fossil tooth - Abelisaurus - 18 mm - 8 mm (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 18, 'Mosasaur - Fossil teeth - 14 cm - 5 cm (No reserve price)', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days'),
-    (1, 18, 'Dinosaur - Fossil tooth - Spinosaurus aegyptiacus - 78 mm - 18 mm', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (1, 18, 'Trilobite - Fossilised animal - Crotalocephalus gibbus - 8 cm (No reserve price)', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days'),
-    (1, 18, 'Dinosaur - Fossil tooth - Spinosaurus aegyptiacus - 100 mm - 28 mm (No reserve price)', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days'),
-    (1, 18, 'Crab - Fossil skeleton - 100 mm - 100 mm (No Reserve Price)', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days'),
-    (1, 18, 'A row of nice paleoavian feather in Burmite - Amber - 17 mm - 12 mm', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (2, 18, 'Megalodon tooth 12,1 cm - Fossil tooth - Carcharocles megalodon', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days');
+    (1, 18, 'Burmese amber - Fossil cabochon - with a swarm of insect fossil inclusions (No Reserve Price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 18, 'Spinosaur - Fossil tooth - 85 mm - 30 mm', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 18, 'Top quality - Nautile - Fossilised shell - 9.5 cm', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 18, 'Dinosaur - Fossil tooth - Abelisaurus - 18 mm - 8 mm (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 18, 'Mosasaur - Fossil teeth - 14 cm - 5 cm (No reserve price)', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 18, 'Dinosaur - Fossil tooth - Spinosaurus aegyptiacus - 78 mm - 18 mm', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 18, 'Trilobite - Fossilised animal - Crotalocephalus gibbus - 8 cm (No reserve price)', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 18, 'Dinosaur - Fossil tooth - Spinosaurus aegyptiacus - 100 mm - 28 mm (No reserve price)', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 18, 'Crab - Fossil skeleton - 100 mm - 100 mm (No Reserve Price)', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 18, 'A row of nice paleoavian feather in Burmite - Amber - 17 mm - 12 mm', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 18, 'Megalodon tooth 12,1 cm - Fossil tooth - Carcharocles megalodon', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.');
 
-INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time)
+INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time, created_at, description)
 VALUES
-    (1, 21, 'Carme Espel (1926-2012), Attributed to - Dip in the Pool', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (2, 21, 'Joaquim Marsillach Codony (1905-1986) - NO RESERVE - Tarde en el claro', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
-    (3, 21, 'Javier Ramos León (1941-2016) - NO RESERVE - Un día en el parque', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
-    (1, 21, 'Lluís Solé (1935) - NO RESERVE - Reunión en la luz', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 21, 'Bartolo Gentiluomo (1973) - Afternoon in London', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days'),
-    (1, 21, 'Manuel Pinto (1953) - NO RESERVE - Eco de antiguas calles', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (1, 21, 'Josep Mas Pou (1928-1995) - NO RESERVE - Caminos de Piedra', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days'),
-    (1, 21, 'Pentti Vainio - Eternal Bloom Sonata', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days'),
-    (1, 21, 'Huub van Winkel (XX) - Koeien op weide', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days'),
-    (1, 21, 'École Européene (XX) - Les Secrets de la Médine', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (2, 21, 'Renata Wojak (XX) - Letnia łąka', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days');
+    (1, 21, 'Carme Espel (1926-2012), Attributed to - Dip in the Pool', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 21, 'Joaquim Marsillach Codony (1905-1986) - NO RESERVE - Tarde en el claro', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 21, 'Javier Ramos León (1941-2016) - NO RESERVE - Un día en el parque', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 21, 'Lluís Solé (1935) - NO RESERVE - Reunión en la luz', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 21, 'Bartolo Gentiluomo (1973) - Afternoon in London', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 21, 'Manuel Pinto (1953) - NO RESERVE - Eco de antiguas calles', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 21, 'Josep Mas Pou (1928-1995) - NO RESERVE - Caminos de Piedra', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 21, 'Pentti Vainio - Eternal Bloom Sonata', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 21, 'Huub van Winkel (XX) - Koeien op weide', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 21, 'École Européene (XX) - Les Secrets de la Médine', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 21, 'Renata Wojak (XX) - Letnia łąka', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.');
 
-INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time)
+INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time, created_at, description)
 VALUES
-    (1, 22, 'Santicri - Picture (No Reserve)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (2, 22, 'Freda People - Super Rare Basquiat XL', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days'),
-    (3, 22, 'James Rizzi (1950-2011) - Love on Sail', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days'),
-    (1, 22, 'Santicri - Icon Made Of Us, Donald Duck', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days'),
-    (1, 22, 'Timo Wedell - Thriller - XL - Basquiat Style', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days'),
-    (1, 22, 'Andrzej Gudański - Beautiful women XXL', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (1, 22, 'James Rizzi (1950-2011) - Fun with the rope, 1994', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days'),
-    (1, 22, 'Simeon Gonzales - Paisaje Urbano (NO RESERVE PRICE)', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days'),
-    (1, 22, 'Corso Leonello - Mosaico dellanima', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days'),
-    (1, 22, 'Santicri - Uncontained (NO RESERVE)', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days'),
-    (2, 22, 'Rudy barret - Emerald Silence - XL', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days');
+    (1, 22, 'Santicri - Picture (No Reserve)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 22, 'Freda People - Super Rare Basquiat XL', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 22, 'James Rizzi (1950-2011) - Love on Sail', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 22, 'Santicri - Icon Made Of Us, Donald Duck', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 22, 'Timo Wedell - Thriller - XL - Basquiat Style', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 22, 'Andrzej Gudański - Beautiful women XXL', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 22, 'James Rizzi (1950-2011) - Fun with the rope, 1994', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 22, 'Simeon Gonzales - Paisaje Urbano (NO RESERVE PRICE)', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 22, 'Corso Leonello - Mosaico dellanima', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 22, 'Santicri - Uncontained (NO RESERVE)', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 22, 'Rudy barret - Emerald Silence - XL', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.');
+
+INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time, created_at, description)
+VALUES
+    (1, 25, 'Bracelets - Kenga - Chad (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 25, 'cavaliers are - Chad (No reserve price)', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 25, 'Calabar - Nigeria (No reserve price)', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 25, 'Sculpted Dogon granary door - Dogon - Mali (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 25, 'The bracelets - Ashanti - Baoule - Ghana (No reserve price)', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 25, 'Boulala - Cameroon (No reserve price)', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 25, 'Ghana (No reserve price)', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 25, 'Yaure - Côte dIvoire', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 25, 'Mask - Bamoun - Cameroon (No reserve price)', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 25, 'Mask - Bambara - Burkina Faso (No reserve price)', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 25, 'Stool - Senufo - Wood', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.');
+
+INSERT INTO product (seller_id, category_id, title, status, start_price, current_price, buy_now_price, bid_increment, start_time, end_time, created_at, description)
+VALUES
+    (1, 26, 'Plate - Assiette à décor Imari dun vase fleuri - Porcelain', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 26, 'Zegel kist - Bronze - China - Late 20th century', 'ACTIVE', 150, 150, 350, 5, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (3, 26, 'Dish - Pattipan aux émaux de la Famille Rose à décor de personnages - Porcelain', 'ACTIVE', 300, 300, 600, 10, NOW(), NOW() + INTERVAL '6 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 26, 'Vase - Porcelain - China (No reserve price)', 'ACTIVE', 500, 500, 900, 10, NOW(), NOW() + INTERVAL '7 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 26, 'Bowl - Porcelain', 'ACTIVE', 1000, 1000, 9000, 10, NOW(), NOW() + INTERVAL '8 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 26, 'Vase - Porcelain - China (No reserve price)', 'ACTIVE', 600, 600, 2000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 26, 'Cup (2) - Ceramic', 'ACTIVE', 800, 800, 4000, 10, NOW(), NOW() + INTERVAL '12 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 26, 'Teapot - Blue and white floral decorated teapot. - Porcelain', 'ACTIVE', 250, 250, 6000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 26, 'Boxwood Carved Eighteen Arhats Brush pot - Wood - China (No reserve price)', 'ACTIVE', 7000, 7000, 10000, 10, NOW(), NOW() + INTERVAL '5 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (1, 26, 'Draak - Wood - Asia - 20th century', 'ACTIVE', 4000, 4000, 12000, 10, NOW(), NOW() + INTERVAL '10 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.'),
+    (2, 26, 'Dish - Paire de coupes creuses à décor bleu et blanc de fleurs - Porcelain', 'ACTIVE', 6000, 6000, 40000, 10, NOW(), NOW() + INTERVAL '14 days', NOW(), 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus.');
+
 
 INSERT INTO product_image (product_id, url, is_thumbnail)
 VALUES
@@ -121,7 +150,6 @@ VALUES
     (7,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/7/18/5/6/3/5632cb04-3050-4d67-886b-2286f986edc8.jpg@webp', false),
     (7,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2024/7/18/a/7/e/a7e4e05c-60a8-4c00-aab4-a5707b8f2425.jpg', false),
     (7,  'https://assets.catawiki.com/image/cw_large/plain/assets/catawiki/assets/2024/7/18/8/4/4/844de92a-4b5e-4b63-b878-9c01a5b55bc8.jpg', false);
-
 
 INSERT INTO product_image (product_id, url, is_thumbnail)
 VALUES
@@ -530,6 +558,184 @@ VALUES
     (54,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/11/10/d/f/7/df7854f3-3547-4359-ba6b-71557168ac9b.jpg@webp', false),
     (54,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/11/10/2/0/4/2047b784-109f-48f9-9d65-16a31fd6d821.jpg@webp', false);
 
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (55,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/c/7/5/c7534dc7-1c91-4a1c-b0e6-2b8459154f2e.jpg@webp', true),
+    (55,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/8/d/5/8d58f5ce-6c61-4847-b8fd-ccc0b42f9d2e.jpg@webp', false),
+    (55,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/1/2/d/12d41fa8-7cce-465f-bd5e-f5bab761d4fa.jpg@webp', false),
+    (55,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/8/a/7/8a7c58a7-ac78-48d4-9700-2b3dc92c23ad.jpg@webp', false),
+    (55,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/1/4/d/14d418be-9fe9-4aa3-bd69-9b5820755bc9.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (56,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/d/a/0/da0828a0-ef16-4345-b7d7-e9222c7c507a.jpg@webp', true),
+    (56,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/e/4/1/e4154801-8efa-46a8-ba5a-15246f515f7d.jpg@webp', false),
+    (56,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/f/4/7/f473e612-e0c2-4a4a-9d74-119d6a96e931.jpg@webp', false),
+    (56,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/2/2/8/228fe430-6555-46b0-9f19-4c67e9fe965f.jpg@webp', false),
+    (56,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/6/7/7/677d62f6-384c-420f-8a2b-715ec67504fb.jpg@webp', false);
+
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (57,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/15/1/2/e/12e4ef41-bc3b-4713-981f-f81382ae033e.jpg@webp', true),
+    (57,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/15/7/0/7/707dd381-3e82-4e83-b8fa-870030486e7b.jpg@webp', false),
+    (57,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/15/3/8/5/38503b3f-3e6f-4032-848d-5db5dc0583f8.jpg@webp', false),
+    (57,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/15/4/f/9/4f92b885-e092-4780-a23f-806b2f84b0f2.jpg@webp', false),
+    (57,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/15/3/9/7/3971f9dd-ebaf-49ee-bc0c-07c875b96861.jpg@webp', false);
+
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (58,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/8/5/b/85b93e8f-d0a3-439c-9ed4-5de86f8df85d.jpg@webp', true),
+    (58,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/f/6/b/f6ba7460-b448-4b3d-ba30-4a7f80f51399.jpg@webp', false),
+    (58,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/2/e/d/2ed4ba78-53fb-44cf-a099-d37bf446f64b.jpg@webp', false),
+    (58,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/d/4/5/d453a09d-e9a2-4946-8c8b-f5029e624b2d.jpg@webp', false),
+    (58,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/b/1/d/b1df3e39-a779-4170-8cd8-6197fb97d756.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (59,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/5/9/0/5900b729-c5a3-4534-bdf1-da7109e62898.jpg@webp', true),
+    (59,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/2/4/c/24c6446c-d333-4d78-992f-41cc0bdb804e.jpg@webp', false),
+    (59,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/8/c/f/8cf3a422-2c0a-46d4-b95f-72f30c68f4b4.jpg@webp', false),
+    (59,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/2/b/5/2b56deeb-0276-4546-b9c5-8d92dbc2895e.jpg@webp', false),
+    (59,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/9/b/d/9bd32cc5-c1a5-4940-a89b-272b6b53753f.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (60,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/10/7/3/2/73253ff2-5cc7-4a17-a84f-cee70ea6441c.jpg@webp', true),
+    (60,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/10/5/d/e/5de1ec57-c8c2-4693-b2f2-ed245e95a815.jpg@webp', false),
+    (60,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/10/a/5/e/a5ec70db-4296-4796-a09f-e1dba3240dd8.jpg@webp', false),
+    (60,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/10/3/8/4/384c1be9-f169-48be-ac62-b44b89fbe770.jpg@webp', false),
+    (60,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/10/9/a/0/9a0a59a5-7f1e-48b1-a217-b5d9312bbf42.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (61,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/20/8/e/e/8ee3c65a-56c8-4957-967f-1f8b5a2c60cb.jpg@webp', true),
+    (61,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/20/b/8/7/b8717f4e-e2a0-448a-84a7-81e4c8b11908.jpg@webp', false),
+    (61,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/20/3/9/e/39e1aaab-4a60-4f08-aaf7-dee3f93fd488.jpg@webp', false),
+    (61,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/20/c/3/3/c3367686-7c2a-4ebc-a4e3-8cf4850c0f5f.jpg@webp', false),
+    (61,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/20/6/b/e/6beb352f-f8ab-4ec7-b337-f559e80b1e7b.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (62,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/13/7/8/2/78294588-d270-46df-9fa6-3ffd573b64df.jpg@webp', true),
+    (62,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/13/0/d/3/0d3ba2cb-fd32-490c-bef3-0857b7713337.jpg@webp', false),
+    (62,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/13/b/9/3/b931b6e4-48e1-4e2a-8661-0e0871e86bb6.jpg@webp', false),
+    (62,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/13/f/4/2/f428e380-f27d-460e-b7de-e004b70029d7.jpg@webp', false),
+    (62,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/13/a/4/9/a497489d-99a9-480a-9953-c8cbd64fc0fa.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (63,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/10/d/a/0/da04ee72-241c-475b-97fd-79e68180b2ca.jpg@webp', true),
+    (63,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/3/f/7/3f7eeab0-037c-4dec-9513-2ad2c35a6332.jpg@webp', false),
+    (63,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/d/6/7/d671ddbc-6752-486b-a73e-be4ee69266f1.jpg@webp', false),
+    (63,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/5/f/b/5fba8221-d1ed-4928-a50a-a87e51b90d7c.jpg@webp', false),
+    (63,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/14/7/8/2/7828b443-69ad-40d6-86b2-554ea06f1db0.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (64,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/5/0/8/50816ad3-dbb6-43c4-ab14-8db70596b339.jpg@webp', true),
+    (64,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/a/d/7/ad7bf0d0-f303-4c36-9ea7-1b1eca40c4af.jpg@webp', false),
+    (64,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/8/9/b/89bb787f-7f91-4b1b-990e-99c402f886a3.jpg@webp', false),
+    (64,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/3/2/7/327efb65-d7a4-4e51-b8fc-45c436f1a942.jpg@webp', false),
+    (64,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/2/9/2/2921f540-4c40-4b70-bdd1-97efee250f15.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (65,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/3/c/8/3c82e79b-a353-4c0d-9269-baa2cfb3506b.jpg@webp', true),
+    (65,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/2/f/1/2f1d3cc3-54ab-4cac-af90-c90fb702c107.jpg@webp', false),
+    (65,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/c/2/a/c2a9842c-e92b-46d1-9bdf-0faed2be7e40.jpg@webp', false),
+    (65,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/b/6/6/b661d0a4-b72f-4a94-ba3f-ea8613b6e50e.jpg@webp', false),
+    (65,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/17/2/8/3/283340c8-c102-472b-867e-fa61137ccefb.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (66,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/d/3/5/d35b23f4-1731-443e-bd39-a53c0b2115c1.jpg@webp', true),
+    (66,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/4/3/c/43cef6c2-53c9-4f77-af6a-786efbcebc03.jpg@webp', false),
+    (66,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/7/c/1/7c151844-6228-4b3e-b4f5-d96ebf845a0c.jpg@webp', false),
+    (66,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/f/d/4/fd4509e7-3ceb-4838-b1a8-9b5ca639c722.jpg@webp', false),
+    (66,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/5/e/8/5e89e346-cbbc-47f8-b734-ae03c55e4366.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (67,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/1/d/4/1d423fa4-4865-45e4-b9a6-6012f0f97459.jpg@webp', true),
+    (67,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/8/f/4/8f43eef3-8899-4131-87b2-d89ef491a58a.jpg@webp', false),
+    (67,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/f/a/5/fa57f67b-d4c5-429b-b0c6-1c6a2dea7f9d.jpg@webp', false),
+    (67,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/3/2/1/321a23dd-bf49-425a-8377-71faa290a2f7.jpg@webp', false),
+    (67,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/24/8/6/2/86276bb6-0da6-43fb-85db-0263f59cf989.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (68,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/10/22/d/3/7/d37c177d-6dfc-4cfa-a701-5fcdd3c9feb2.jpg@webp', true),
+    (68,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/10/22/a/d/9/ad9dc89e-b9b3-4828-bac8-9af2bfa6408f.jpg@webp', false),
+    (68,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/10/22/5/9/3/59330bc8-02da-42f4-9ec5-adc7e15b9310.jpg@webp', false),
+    (68,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/10/22/c/e/0/ce0e8036-8cb2-44df-99b0-da83aef0cb1a.jpg@webp', false),
+    (68,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/10/22/6/c/e/6cea82e7-9a94-467d-9bdb-434161ad93af.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (69,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/c/5/c/c5cab9b4-a133-4fb4-94bd-8358cfe632b1.jpg@webp', true),
+    (69,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/e/6/d/e6d53cc2-9215-40b7-b230-6592acf9908b.jpg@webp', false),
+    (69,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/5/8/d/58d26c8d-58e9-4800-adb1-978b3341930e.jpg@webp', false),
+    (69,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/8/2/e/82e107cf-6d91-4cd1-9bde-36f8664d5c47.jpg@webp', false),
+    (69,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/f/2/5/f2535619-498f-4d0f-b150-3cdeeb2a83e1.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (70,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/19/2/1/7/21795683-56b8-4542-8d63-9cde3e59fd2d.jpg@webp', true),
+    (70,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/19/a/1/3/a13db0cd-478a-4ba1-946e-f587873077aa.jpg@webp', false),
+    (70,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/19/1/a/5/1a56dcca-094b-453c-b45f-89fa7cc385ee.jpg@webp', false),
+    (70,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/19/c/4/b/c4bd22f5-36d5-42cd-840e-9c8db8d5b973.jpg@webp', false),
+    (70,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/19/6/b/a/6ba6cf00-2b56-462d-b55e-5fc58fe32007.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (71,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/4/16/f/c/0/fc0510c7-17d4-4f49-a4f6-4e23953889b0.jpg@webp', true),
+    (71,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/4/16/4/6/4/464193bf-b504-46c2-9368-8e3011582a55.jpg@webp', false),
+    (71,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/4/16/6/f/5/6f575da9-c7d3-49a2-a92a-ced9bac02445.jpg@webp', false),
+    (71,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/4/16/f/8/e/f8e012af-0cf6-4670-860b-f17a2bca792c.jpg@webp', false),
+    (71,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2024/4/16/a/b/4/ab445c49-12f7-4a55-8f26-5d44af14b7b2.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (72,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/22/7/3/d/73dc45ee-05e2-4c40-a8de-fcadd32443f7.jpg@webp', true),
+    (72,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/22/2/8/7/287e87ca-db2f-40f5-a0f4-038d5c1e72a8.jpg@webp', false),
+    (72,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/22/b/0/d/b0d72ac2-b57d-4583-b24a-88dc8eac7bea.jpg@webp', false),
+    (72,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/22/a/a/3/aa3dd6b1-d5fe-4212-8cda-5a528d07ab90.jpg@webp', false),
+    (72,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/22/d/b/8/db8e3832-238c-4974-a9a5-c2b5d5c737fb.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (73,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/b/5/d/b5d0be10-c3c1-4c0d-a51b-abd2d3868fae.jpg@webp', true),
+    (73,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/6/3/b/63beb7e2-50ec-455d-be63-7c4736846fb9.jpg@webp', false),
+    (73,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/c/3/9/c398cde7-f699-4408-9a3e-fdb20f81a85f.jpg@webp', false),
+    (73,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/a/f/7/af7dbcdf-8b3b-4f99-8e19-c081f5166a11.jpg@webp', false),
+    (73,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/d/6/3/d63de1ef-fae3-4acc-acb8-4a2c3ee4d752.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (74,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/23/6/8/e/68e4304f-4328-4a08-9817-a6e66ec81773.jpg@webp', true),
+    (74,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/23/9/b/2/9b27e624-1bbb-47e5-a697-4d02176d2eb6.jpg@webp', false),
+    (74,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/23/e/0/6/e063ceba-22d7-4c10-a454-2104c578f506.jpg@webp', false),
+    (74,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/23/4/1/1/4118ac76-a7b2-4398-98af-4171bf4609a2.jpg@webp', false),
+    (74,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/23/2/3/2/2322e549-3672-4ea5-a5a7-6afae880d54e.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (75,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/d/3/a/d3a5aa4e-7920-402d-8e6b-a7395a185ad8.jpg@webp', true),
+    (75,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/4/e/7/4e793c9f-b482-422a-803c-941e579161ce.jpg@webp', false),
+    (75,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/1/c/9/1c957fbe-136a-4e26-bd53-53c1b7642a70.jpg@webp', false),
+    (75,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/9/a/6/9a6bd7e8-29a7-4a1f-8f86-c2d134cb9a1a.jpg@webp', false),
+    (75,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/12/18/7/1/9/719753bc-0a03-4327-b7f5-84d4edf1ab57.jpg@webp', false);
+
+INSERT INTO product_image (product_id, url, is_thumbnail)
+VALUES
+    (76,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/8/c/c/8ccfd87c-4ae5-487e-86ac-62dfc46a9384.jpg@webp', true),
+    (76,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/f/9/e/f9e0440f-9245-436f-84e7-d2fafde13651.jpg@webp', false),
+    (76,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/1/5/f/15fe79a7-837f-4560-9ff8-e8936d3c8d49.jpg@webp', false),
+    (76,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/8/3/e/83e909bf-9631-4f21-8220-6fcbaae87031.jpg@webp', false),
+    (76,  'https://assets.catawiki.com/image/cw_ldp_l/plain/assets/catawiki/assets/2025/7/2/f/1/1/f11bddd6-a0e4-481d-ad65-28d664a6a5fe.jpg@webp', false);
+
 
 INSERT INTO product_extra_description(product_id, content, created_at)
 VALUES
@@ -672,6 +878,50 @@ VALUES
     (53, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
      NOW()),
     (54, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (55, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (56, 'Aliquam accumsan augue eget nisi dictum, vel venenatis enim vulputate. Proin nec ultricies massa. Praesent eu tempus nisi. Ut vitae felis ut ligula elementum ullamcorper. Ut rutrum cursus nisl in imperdiet. Ut ut mauris id metus porttitor euismod vel nec lorem. Nam malesuada felis in bibendum gravida. Integer ac nisi efficitur, rutrum leo malesuada, venenatis augue. Ut scelerisque, tortor eu commodo pulvinar, justo eros pharetra lacus, vel sollicitudin orci ex laoreet nisi. Pellentesque rhoncus luctus felis, eu blandit felis imperdiet nec. Nam lobortis nec est nec tincidunt. Pellentesque quis tempus nisi.',
+     NOW()),
+    (57, 'Aenean maximus congue mauris, nec porttitor nisl convallis ut. Mauris sed risus sed sapien rhoncus ornare. Mauris condimentum, dolor non egestas aliquam, lorem justo scelerisque lacus, non placerat nunc magna quis ante. Pellentesque congue faucibus varius. Vivamus at metus enim. Vestibulum sed dictum urna. In eget neque ac eros convallis efficitur. Vivamus posuere lacus leo, eget sagittis massa lobortis eu. Nunc malesuada ligula vitae sapien condimentum facilisis. Aenean ultricies euismod ipsum, et cursus mauris ultricies in. Curabitur vehicula arcu eget nunc suscipit bibendum. Nullam dolor ex, lobortis eget aliquam eu, hendrerit volutpat est. Donec vel ipsum nec elit accumsan varius non a sapien. Fusce eget egestas turpis. Praesent rhoncus purus quis ligula posuere, sed venenatis velit hendrerit.',
+     NOW()),
+    (58, 'Phasellus quis accumsan nunc. Suspendisse sit amet enim vel justo consectetur porta eu eu nulla. Proin quis ornare mi. Fusce ac volutpat odio, ut tempor massa. Praesent consequat congue est eget ultrices. Nam tincidunt maximus erat in luctus. Maecenas finibus aliquam diam sit amet dignissim. Donec ante leo, tincidunt non fringilla id, tincidunt ac diam. Aliquam purus est, dapibus non pellentesque et, fringilla ut sapien. Mauris vulputate, sem nec posuere rutrum, enim dui aliquet erat, vel condimentum eros lorem in ligula. Pellentesque eget velit vel nisl facilisis ullamcorper vitae consectetur urna. Praesent pretium a magna ut eleifend. Integer convallis a elit vel feugiat. Integer interdum non sem ut tempus. Suspendisse potenti.',
+     NOW()),
+    (59, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (60, 'Aliquam accumsan augue eget nisi dictum, vel venenatis enim vulputate. Proin nec ultricies massa. Praesent eu tempus nisi. Ut vitae felis ut ligula elementum ullamcorper. Ut rutrum cursus nisl in imperdiet. Ut ut mauris id metus porttitor euismod vel nec lorem. Nam malesuada felis in bibendum gravida. Integer ac nisi efficitur, rutrum leo malesuada, venenatis augue. Ut scelerisque, tortor eu commodo pulvinar, justo eros pharetra lacus, vel sollicitudin orci ex laoreet nisi. Pellentesque rhoncus luctus felis, eu blandit felis imperdiet nec. Nam lobortis nec est nec tincidunt. Pellentesque quis tempus nisi.',
+     NOW()),
+    (61, 'Aenean maximus congue mauris, nec porttitor nisl convallis ut. Mauris sed risus sed sapien rhoncus ornare. Mauris condimentum, dolor non egestas aliquam, lorem justo scelerisque lacus, non placerat nunc magna quis ante. Pellentesque congue faucibus varius. Vivamus at metus enim. Vestibulum sed dictum urna. In eget neque ac eros convallis efficitur. Vivamus posuere lacus leo, eget sagittis massa lobortis eu. Nunc malesuada ligula vitae sapien condimentum facilisis. Aenean ultricies euismod ipsum, et cursus mauris ultricies in. Curabitur vehicula arcu eget nunc suscipit bibendum. Nullam dolor ex, lobortis eget aliquam eu, hendrerit volutpat est. Donec vel ipsum nec elit accumsan varius non a sapien. Fusce eget egestas turpis. Praesent rhoncus purus quis ligula posuere, sed venenatis velit hendrerit.',
+     NOW()),
+    (62, 'Phasellus quis accumsan nunc. Suspendisse sit amet enim vel justo consectetur porta eu eu nulla. Proin quis ornare mi. Fusce ac volutpat odio, ut tempor massa. Praesent consequat congue est eget ultrices. Nam tincidunt maximus erat in luctus. Maecenas finibus aliquam diam sit amet dignissim. Donec ante leo, tincidunt non fringilla id, tincidunt ac diam. Aliquam purus est, dapibus non pellentesque et, fringilla ut sapien. Mauris vulputate, sem nec posuere rutrum, enim dui aliquet erat, vel condimentum eros lorem in ligula. Pellentesque eget velit vel nisl facilisis ullamcorper vitae consectetur urna. Praesent pretium a magna ut eleifend. Integer convallis a elit vel feugiat. Integer interdum non sem ut tempus. Suspendisse potenti.',
+     NOW()),
+    (63, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (64, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus. Nunc lacus mauris, rutrum ut ante sed, lobortis finibus arcu. Etiam libero felis, malesuada vel ante ac, fermentum semper risus. Curabitur id finibus libero. Aenean tortor felis, laoreet a rutrum et, condimentum eu mi. Nam vel placerat quam, in imperdiet eros. Fusce volutpat quis dolor porta suscipit. Nam placerat mauris metus, eu volutpat velit porta efficitur. Integer efficitur magna eget nisi suscipit feugiat. Suspendisse ut maximus lorem. Mauris at ex pharetra, dignissim eros vel, auctor lacus. Nullam in ligula ultrices, accumsan ex quis, fermentum mi. Quisque et turpis a quam viverra suscipit.',
+     NOW()),
+    (65, 'Aliquam accumsan augue eget nisi dictum, vel venenatis enim vulputate. Proin nec ultricies massa. Praesent eu tempus nisi. Ut vitae felis ut ligula elementum ullamcorper. Ut rutrum cursus nisl in imperdiet. Ut ut mauris id metus porttitor euismod vel nec lorem. Nam malesuada felis in bibendum gravida. Integer ac nisi efficitur, rutrum leo malesuada, venenatis augue. Ut scelerisque, tortor eu commodo pulvinar, justo eros pharetra lacus, vel sollicitudin orci ex laoreet nisi. Pellentesque rhoncus luctus felis, eu blandit felis imperdiet nec. Nam lobortis nec est nec tincidunt. Pellentesque quis tempus nisi.',
+     NOW()),
+    (66, 'Aenean maximus congue mauris, nec porttitor nisl convallis ut. Mauris sed risus sed sapien rhoncus ornare. Mauris condimentum, dolor non egestas aliquam, lorem justo scelerisque lacus, non placerat nunc magna quis ante. Pellentesque congue faucibus varius. Vivamus at metus enim. Vestibulum sed dictum urna. In eget neque ac eros convallis efficitur. Vivamus posuere lacus leo, eget sagittis massa lobortis eu. Nunc malesuada ligula vitae sapien condimentum facilisis. Aenean ultricies euismod ipsum, et cursus mauris ultricies in. Curabitur vehicula arcu eget nunc suscipit bibendum. Nullam dolor ex, lobortis eget aliquam eu, hendrerit volutpat est. Donec vel ipsum nec elit accumsan varius non a sapien. Fusce eget egestas turpis. Praesent rhoncus purus quis ligula posuere, sed venenatis velit hendrerit.',
+     NOW()),
+    (67, 'Phasellus quis accumsan nunc. Suspendisse sit amet enim vel justo consectetur porta eu eu nulla. Proin quis ornare mi. Fusce ac volutpat odio, ut tempor massa. Praesent consequat congue est eget ultrices. Nam tincidunt maximus erat in luctus. Maecenas finibus aliquam diam sit amet dignissim. Donec ante leo, tincidunt non fringilla id, tincidunt ac diam. Aliquam purus est, dapibus non pellentesque et, fringilla ut sapien. Mauris vulputate, sem nec posuere rutrum, enim dui aliquet erat, vel condimentum eros lorem in ligula. Pellentesque eget velit vel nisl facilisis ullamcorper vitae consectetur urna. Praesent pretium a magna ut eleifend. Integer convallis a elit vel feugiat. Integer interdum non sem ut tempus. Suspendisse potenti.',
+     NOW()),
+    (68, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (69, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (70, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (71, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nibh nunc, convallis facilisis placerat vel, dapibus at lacus. Nunc lacus mauris, rutrum ut ante sed, lobortis finibus arcu. Etiam libero felis, malesuada vel ante ac, fermentum semper risus. Curabitur id finibus libero. Aenean tortor felis, laoreet a rutrum et, condimentum eu mi. Nam vel placerat quam, in imperdiet eros. Fusce volutpat quis dolor porta suscipit. Nam placerat mauris metus, eu volutpat velit porta efficitur. Integer efficitur magna eget nisi suscipit feugiat. Suspendisse ut maximus lorem. Mauris at ex pharetra, dignissim eros vel, auctor lacus. Nullam in ligula ultrices, accumsan ex quis, fermentum mi. Quisque et turpis a quam viverra suscipit.',
+     NOW()),
+    (72, 'Aliquam accumsan augue eget nisi dictum, vel venenatis enim vulputate. Proin nec ultricies massa. Praesent eu tempus nisi. Ut vitae felis ut ligula elementum ullamcorper. Ut rutrum cursus nisl in imperdiet. Ut ut mauris id metus porttitor euismod vel nec lorem. Nam malesuada felis in bibendum gravida. Integer ac nisi efficitur, rutrum leo malesuada, venenatis augue. Ut scelerisque, tortor eu commodo pulvinar, justo eros pharetra lacus, vel sollicitudin orci ex laoreet nisi. Pellentesque rhoncus luctus felis, eu blandit felis imperdiet nec. Nam lobortis nec est nec tincidunt. Pellentesque quis tempus nisi.',
+     NOW()),
+    (73, 'Aenean maximus congue mauris, nec porttitor nisl convallis ut. Mauris sed risus sed sapien rhoncus ornare. Mauris condimentum, dolor non egestas aliquam, lorem justo scelerisque lacus, non placerat nunc magna quis ante. Pellentesque congue faucibus varius. Vivamus at metus enim. Vestibulum sed dictum urna. In eget neque ac eros convallis efficitur. Vivamus posuere lacus leo, eget sagittis massa lobortis eu. Nunc malesuada ligula vitae sapien condimentum facilisis. Aenean ultricies euismod ipsum, et cursus mauris ultricies in. Curabitur vehicula arcu eget nunc suscipit bibendum. Nullam dolor ex, lobortis eget aliquam eu, hendrerit volutpat est. Donec vel ipsum nec elit accumsan varius non a sapien. Fusce eget egestas turpis. Praesent rhoncus purus quis ligula posuere, sed venenatis velit hendrerit.',
+     NOW()),
+    (74, 'Phasellus quis accumsan nunc. Suspendisse sit amet enim vel justo consectetur porta eu eu nulla. Proin quis ornare mi. Fusce ac volutpat odio, ut tempor massa. Praesent consequat congue est eget ultrices. Nam tincidunt maximus erat in luctus. Maecenas finibus aliquam diam sit amet dignissim. Donec ante leo, tincidunt non fringilla id, tincidunt ac diam. Aliquam purus est, dapibus non pellentesque et, fringilla ut sapien. Mauris vulputate, sem nec posuere rutrum, enim dui aliquet erat, vel condimentum eros lorem in ligula. Pellentesque eget velit vel nisl facilisis ullamcorper vitae consectetur urna. Praesent pretium a magna ut eleifend. Integer convallis a elit vel feugiat. Integer interdum non sem ut tempus. Suspendisse potenti.',
+     NOW()),
+    (75, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
+     NOW()),
+    (76, 'Vivamus convallis varius libero, ac luctus ante aliquet a. Donec elementum molestie odio vitae posuere. Mauris et eleifend arcu. Quisque et sapien congue, bibendum risus id, facilisis lectus. Phasellus ultricies faucibus neque quis sagittis. Praesent vel tellus consectetur, imperdiet lectus vel, varius quam. Ut vestibulum vel tellus at fermentum. Mauris non pharetra nulla. Vestibulum eget odio id diam lacinia aliquam.',
      NOW());
 
 
