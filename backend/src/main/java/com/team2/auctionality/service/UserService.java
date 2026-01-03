@@ -4,14 +4,14 @@ import com.team2.auctionality.dto.RatingRequest;
 import com.team2.auctionality.dto.WatchListItemDto;
 import com.team2.auctionality.enums.ApproveStatus;
 import com.team2.auctionality.model.*;
-import com.team2.auctionality.repository.OrderRatingRepository;
-import com.team2.auctionality.repository.SellerUpgradeRequestRepository;
-import com.team2.auctionality.repository.UserRepository;
+import com.team2.auctionality.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 import java.util.List;
@@ -26,6 +26,7 @@ public class UserService {
     private final ProductService productService;
     private final SellerUpgradeRequestRepository sellerUpgradeRequestRepository;
     private final OrderRatingRepository orderRatingRepository;
+    private final RoleRepository roleRepository;
     private final OrderService orderService;
 
     @Transactional(readOnly = true)
@@ -61,6 +62,36 @@ public class UserService {
                 .requestedAt(new Date())
                 .build();
         return sellerUpgradeRequestRepository.save(sellerUpgradeRequest);
+    }
+
+    @Transactional
+    public SellerUpgradeRequest approveSellerUpgradeRequest(User admin, Integer requestId) {
+        SellerUpgradeRequest request =
+                sellerUpgradeRequestRepository.findById(requestId)
+                        .orElseThrow(() -> new EntityNotFoundException("Request not found"));
+
+        if (request.getStatus() != ApproveStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Request already processed"
+            );
+        }
+
+        request.setStatus(ApproveStatus.APPROVED);
+        request.setProcessedAt(new Date());
+        request.setProcessedByAdmin(admin);
+
+        User user = request.getUser();
+        Role sellerRole = roleRepository.findById(3)
+                .orElseThrow(() -> new EntityNotFoundException("Seller role not found"));
+
+        if (!user.getRoles().contains(sellerRole)) {
+            user.getRoles().add(sellerRole);
+        }
+
+        userRepository.save(user);
+
+        return sellerUpgradeRequestRepository.save(request);
     }
 
     @Transactional(readOnly = true)

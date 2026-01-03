@@ -76,6 +76,22 @@ public class UserController {
                 .body(SellerUpgradeRequestMapper.toDto(request));
     }
 
+    @PostMapping("/{requestId}/approve")
+    @Operation(summary = "Approve upgrade request from bidder to seller")
+    public ResponseEntity<SellerUpgradeRequestDto> approveSellerUpgradeRequest(
+            @PathVariable Integer requestId,
+            @CurrentUser User user
+    ) {
+        log.info("Approve request {} by admin {}", requestId, user.getId());
+
+        SellerUpgradeRequest request =
+                userService.approveSellerUpgradeRequest(user, requestId);
+
+        return ResponseEntity.ok(
+                SellerUpgradeRequestMapper.toDto(request)
+        );
+    }
+
     @GetMapping("/rates")
     @Operation(summary = "Get user's ratings")
     public ResponseEntity<List<OrderRatingDto>> getRatings(@CurrentUser User user) {
