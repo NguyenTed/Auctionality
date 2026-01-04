@@ -11,6 +11,9 @@ import watchlistReducer from "../features/watchlist/watchlistSlice";
 import bidReducer from "../features/bid/bidSlice";
 import adminReducer from "../features/admin/adminSlice";
 import sellerReducer from "../features/seller/sellerSlice";
+import qaReducer from "../features/qa/qaSlice";
+import orderReducer from "../features/order/orderSlice";
+import chatReducer from "../features/chat/chatSlice";
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +24,9 @@ export const store = configureStore({
     bid: bidReducer,
     admin: adminReducer,
     seller: sellerReducer,
+    qa: qaReducer,
+    order: orderReducer,
+    chat: chatReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

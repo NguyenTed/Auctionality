@@ -29,6 +29,7 @@ import {
   selectBidHistory,
   selectBidLoading,
 } from "../../features/bid/bidSlice";
+import { buyNowAsync, selectBuyingNow } from "../../features/order/orderSlice";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -37,9 +38,9 @@ import InfoIcon from "@mui/icons-material/Info";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
 import StarIcon from "@mui/icons-material/Star";
-import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
 import CountdownClock from "../../components/CountdownClock";
 import ProductCard from "../../components/ProductCard";
+import QASection from "../../components/QASection";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import DOMPurify from "dompurify";
@@ -60,12 +61,15 @@ export default function ProductDetailPage() {
   const bidHistory = useAppSelector(
     product ? selectBidHistory(product.id) : () => []
   );
-  const { toasts, success, error, info, removeToast } = useToast();
+  const buyingNow = useAppSelector(
+    product ? selectBuyingNow(product.id) : () => false
+  );
+  const { toasts, success, error, removeToast } = useToast();
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [bidAmount, setBidAmount] = useState("");
   const [isPlacingBid, setIsPlacingBid] = useState(false);
-  
+
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
 
@@ -112,8 +116,10 @@ export default function ProductDetailPage() {
     if (!product || !bidAmount) return;
 
     const amount = Number(bidAmount);
-    const minBid = (product.currentPrice || product.startPrice || 0) + (product.bidIncrement || 0);
-    
+    const minBid =
+      (product.currentPrice || product.startPrice || 0) +
+      (product.bidIncrement || 0);
+
     if (amount < minBid) {
       error(`Minimum bid is ${formatPrice(minBid)}`);
       return;
@@ -121,23 +127,28 @@ export default function ProductDetailPage() {
 
     setIsPlacingBid(true);
     try {
-      const result = await dispatch(placeBidAsync({ productId: product.id, amount }));
-      
+      const result = await dispatch(
+        placeBidAsync({ productId: product.id, amount })
+      );
+
       if (placeBidAsync.fulfilled.match(result)) {
         // Optimistically update product state
-        dispatch(updateProductBid({
-          productId: product.id,
-          newPrice: amount,
-          bidCount: (product.bidCount || 0) + 1,
-        }));
-        
+        dispatch(
+          updateProductBid({
+            productId: product.id,
+            newPrice: amount,
+            bidCount: (product.bidCount || 0) + 1,
+          })
+        );
+
         // Refresh bid history in background (non-blocking)
         dispatch(fetchBidHistoryAsync(product.id));
-        
+
         setBidAmount("");
         success(`Bid of ${formatPrice(amount)} placed successfully!`);
       } else {
-        const errorMessage = result.payload as string || "Failed to place bid";
+        const errorMessage =
+          (result.payload as string) || "Failed to place bid";
         error(errorMessage);
       }
     } catch (err) {
@@ -168,14 +179,16 @@ export default function ProductDetailPage() {
         if (removeFromWatchlistAsync.fulfilled.match(result)) {
           success("Removed from watchlist");
         } else {
-          error(result.payload as string || "Failed to remove from watchlist");
+          error(
+            (result.payload as string) || "Failed to remove from watchlist"
+          );
         }
       } else {
         const result = await dispatch(addToWatchlistAsync(product.id));
         if (addToWatchlistAsync.fulfilled.match(result)) {
           success("Added to watchlist");
         } else {
-          error(result.payload as string || "Failed to add to watchlist");
+          error((result.payload as string) || "Failed to add to watchlist");
         }
       }
     } catch (err) {
@@ -200,7 +213,10 @@ export default function ProductDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <p className="text-xl text-gray-600 mb-4">Product not found</p>
-          <Link to="/products" className="text-primary hover:text-primary/80 font-medium">
+          <Link
+            to="/products"
+            className="text-primary hover:text-primary/80 font-medium"
+          >
             Back to products
           </Link>
         </div>
@@ -209,14 +225,18 @@ export default function ProductDetailPage() {
   }
 
   const images = product.images || [];
-  const mainImage = images[selectedImageIndex]?.url || "https://via.placeholder.com/600x600?text=No+Image";
-  const nextBidAmount = (product.currentPrice || product.startPrice || 0) + (product.bidIncrement || 0);
+  const mainImage =
+    images[selectedImageIndex]?.url ||
+    "https://via.placeholder.com/600x600?text=No+Image";
+  const nextBidAmount =
+    (product.currentPrice || product.startPrice || 0) +
+    (product.bidIncrement || 0);
   const isActive = product.status === "ACTIVE";
 
   return (
     <div className="min-h-screen bg-gray-50">
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Breadcrumb Navigation */}
         <nav className="mb-6">
@@ -240,7 +260,9 @@ export default function ProductDetailPage() {
                 <span className="text-gray-400">/</span>
               </>
             )}
-            <span className="text-gray-900 font-medium line-clamp-1">{product.title}</span>
+            <span className="text-gray-900 font-medium line-clamp-1">
+              {product.title}
+            </span>
           </div>
         </nav>
 
@@ -260,7 +282,9 @@ export default function ProductDetailPage() {
                   type="button"
                   onClick={handleToggleWatchlist}
                   className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 z-10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                  aria-label={
+                    isInWatchlist ? "Remove from watchlist" : "Add to watchlist"
+                  }
                   disabled={watchlistLoading}
                 >
                   {watchlistLoading ? (
@@ -303,16 +327,22 @@ export default function ProductDetailPage() {
             <div className="mt-6 bg-white rounded-xl shadow-sm p-8">
               <div className="flex items-center gap-2 mb-6">
                 <InfoIcon className="text-primary" />
-                <h2 className="text-2xl font-bold text-gray-900">Description</h2>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Description
+                </h2>
               </div>
               <div className="prose max-w-none">
                 {product.description ? (
-                  <div 
+                  <div
                     className="text-gray-700 leading-relaxed text-lg"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(product.description),
+                    }}
                   />
                 ) : (
-                  <p className="text-gray-500 italic">No description available for this product.</p>
+                  <p className="text-gray-500 italic">
+                    No description available for this product.
+                  </p>
                 )}
               </div>
             </div>
@@ -322,7 +352,9 @@ export default function ProductDetailPage() {
               <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <PersonIcon className="text-primary" />
-                  <h2 className="text-xl font-bold text-gray-900">Seller Information</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Seller Information
+                  </h2>
                 </div>
                 <div className="flex items-center gap-4">
                   {product.sellerInfo.avatarUrl ? (
@@ -337,12 +369,15 @@ export default function ProductDetailPage() {
                     </div>
                   )}
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{product.sellerInfo.fullName || "Unknown Seller"}</p>
+                    <p className="font-semibold text-gray-900">
+                      {product.sellerInfo.fullName || "Unknown Seller"}
+                    </p>
                     {product.sellerInfo.ratingPercent !== null && (
                       <div className="flex items-center gap-1 mt-1">
                         <StarIcon className="text-yellow-400 text-sm" />
                         <span className="text-sm font-medium text-gray-700">
-                          {product.sellerInfo.ratingPercent.toFixed(1)}% positive
+                          {product.sellerInfo.ratingPercent.toFixed(1)}%
+                          positive
                         </span>
                       </div>
                     )}
@@ -356,7 +391,9 @@ export default function ProductDetailPage() {
               <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <GavelIcon className="text-primary" />
-                  <h2 className="text-xl font-bold text-gray-900">Current Highest Bidder</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Current Highest Bidder
+                  </h2>
                 </div>
                 <div className="flex items-center gap-4">
                   {product.highestBidderInfo.avatarUrl ? (
@@ -371,12 +408,15 @@ export default function ProductDetailPage() {
                     </div>
                   )}
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{product.highestBidderInfo.fullName || "Unknown Bidder"}</p>
+                    <p className="font-semibold text-gray-900">
+                      {product.highestBidderInfo.fullName || "Unknown Bidder"}
+                    </p>
                     {product.highestBidderInfo.ratingPercent !== null && (
                       <div className="flex items-center gap-1 mt-1">
                         <StarIcon className="text-yellow-400 text-sm" />
                         <span className="text-sm font-medium text-gray-700">
-                          {product.highestBidderInfo.ratingPercent.toFixed(1)}% positive
+                          {product.highestBidderInfo.ratingPercent.toFixed(1)}%
+                          positive
                         </span>
                       </div>
                     )}
@@ -390,26 +430,23 @@ export default function ProductDetailPage() {
               <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-6">
                   <InfoIcon className="text-primary" />
-                  <h2 className="text-2xl font-bold text-gray-900">Related Products</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Related Products
+                  </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {relatedProducts.map((relatedProduct) => (
-                    <ProductCard key={relatedProduct.id} product={relatedProduct} />
+                    <ProductCard
+                      key={relatedProduct.id}
+                      product={relatedProduct}
+                    />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Q&A Section - Placeholder for future implementation */}
-            <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <QuestionAnswerIcon className="text-primary" />
-                <h2 className="text-2xl font-bold text-gray-900">Questions & Answers</h2>
-              </div>
-              <p className="text-gray-500 text-center py-8">
-                Q&A feature coming soon. Ask questions about this product!
-              </p>
-            </div>
+            {/* Q&A Section */}
+            <QASection productId={product.id} sellerId={product.sellerId} />
           </div>
 
           {/* Right Column - Auction Info & Bidding */}
@@ -438,13 +475,17 @@ export default function ProductDetailPage() {
                     <div className="mb-6">
                       <p className="text-sm text-gray-600 mb-2">Current Bid</p>
                       <p className="text-4xl font-bold text-gray-900 mb-1">
-                        {formatPrice(product.currentPrice || product.startPrice)}
+                        {formatPrice(
+                          product.currentPrice || product.startPrice
+                        )}
                       </p>
-                      {product.bidCount !== undefined && product.bidCount > 0 && (
-                        <p className="text-sm text-gray-500">
-                          {product.bidCount} bid{product.bidCount !== 1 ? "s" : ""}
-                        </p>
-                      )}
+                      {product.bidCount !== undefined &&
+                        product.bidCount > 0 && (
+                          <p className="text-sm text-gray-500">
+                            {product.bidCount} bid
+                            {product.bidCount !== 1 ? "s" : ""}
+                          </p>
+                        )}
                     </div>
 
                     {/* Countdown Clock */}
@@ -455,7 +496,9 @@ export default function ProductDetailPage() {
                     {/* Buy Now Price */}
                     {product.buyNowPrice && (
                       <div className="mb-6 pb-6 border-b border-primary/20">
-                        <p className="text-sm text-gray-600 mb-1">Buy Now Price</p>
+                        <p className="text-sm text-gray-600 mb-1">
+                          Buy Now Price
+                        </p>
                         <p className="text-2xl font-bold text-primary">
                           {formatPrice(product.buyNowPrice)}
                         </p>
@@ -477,7 +520,10 @@ export default function ProductDetailPage() {
                               type="number"
                               value={bidAmount}
                               onChange={(e) => setBidAmount(e.target.value)}
-                              placeholder={formatPrice(nextBidAmount).replace("€", "")}
+                              placeholder={formatPrice(nextBidAmount).replace(
+                                "€",
+                                ""
+                              )}
                               min={nextBidAmount}
                               step={product.bidIncrement || 1}
                               className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-lg font-semibold"
@@ -487,40 +533,87 @@ export default function ProductDetailPage() {
                           <button
                             onClick={handlePlaceBid}
                             className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md cursor-pointer"
-                            disabled={!bidAmount || Number(bidAmount) < nextBidAmount || isPlacingBid || bidLoading}
+                            disabled={
+                              !bidAmount ||
+                              Number(bidAmount) < nextBidAmount ||
+                              isPlacingBid ||
+                              bidLoading
+                            }
                           >
                             {isPlacingBid || bidLoading ? "Placing..." : "Bid"}
                           </button>
                         </div>
                         <p className="text-xs text-gray-500 mt-2">
-                          Minimum bid: <span className="font-semibold">{formatPrice(nextBidAmount)}</span>
+                          Minimum bid:{" "}
+                          <span className="font-semibold">
+                            {formatPrice(nextBidAmount)}
+                          </span>
                         </p>
                       </div>
 
                       {product.buyNowPrice && (
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (!isAuthenticated) {
                               error("Please log in to buy now");
                               navigate("/login");
                               return;
                             }
-                            // TODO: Implement buy now functionality
-                            info("Buy Now feature coming soon!");
+                            if (!product) return;
+
+                            try {
+                              const result = await dispatch(
+                                buyNowAsync(product.id)
+                              );
+                              if (buyNowAsync.fulfilled.match(result)) {
+                                success(
+                                  `Product purchased successfully! Order #${result.payload.order.id} created.`
+                                );
+                                // Refresh product to show updated status
+                                dispatch(fetchProductByIdAsync(product.id));
+                                // Navigate to orders page or show order details
+                                navigate(`/profile?tab=won`);
+                              } else {
+                                const errorMessage =
+                                  (result.payload as string) ||
+                                  "Failed to purchase product";
+                                error(errorMessage);
+                              }
+                            } catch (err) {
+                              error(
+                                "An unexpected error occurred. Please try again."
+                              );
+                              console.error("Failed to buy now:", err);
+                            }
                           }}
-                          className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                          disabled={buyingNow || bidLoading}
+                          className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <CheckCircleIcon />
-                          Buy Now for {formatPrice(product.buyNowPrice)}
+                          {buyingNow ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircleIcon />
+                              Buy Now for {formatPrice(product.buyNowPrice)}
+                            </>
+                          )}
                         </button>
                       )}
                     </div>
                   </>
                 ) : (
                   <div className="text-center py-8">
-                    <GavelIcon className="text-gray-400 mx-auto mb-3" style={{ fontSize: 48 }} />
+                    <GavelIcon
+                      className="text-gray-400 mx-auto mb-3"
+                      style={{ fontSize: 48 }}
+                    />
                     <p className="text-lg font-semibold text-gray-700 mb-2">
-                      {product.status === "ENDED" ? "Auction Ended" : "Auction Not Active"}
+                      {product.status === "ENDED"
+                        ? "Auction Ended"
+                        : "Auction Not Active"}
                     </p>
                     <p className="text-sm text-gray-500">
                       {product.status === "ENDED"
@@ -536,8 +629,12 @@ export default function ProductDetailPage() {
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <GavelIcon className="text-primary" fontSize="small" />
-                    <h3 className="text-lg font-bold text-gray-900">Bid History</h3>
-                    <span className="ml-auto text-sm text-gray-500">({bidHistory.length})</span>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Bid History
+                    </h3>
+                    <span className="ml-auto text-sm text-gray-500">
+                      ({bidHistory.length})
+                    </span>
                   </div>
                   <div className="space-y-3 max-h-80 overflow-y-auto">
                     {bidHistory.slice(0, 10).map((bid, index) => (
@@ -546,7 +643,9 @@ export default function ProductDetailPage() {
                         className="flex justify-between items-start py-3 border-b border-gray-100 last:border-0"
                       >
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{bid.bidderName}</p>
+                          <p className="font-semibold text-gray-900">
+                            {bid.bidderName}
+                          </p>
                           <p className="text-xs text-gray-500 mt-1">
                             {new Date(bid.createdAt).toLocaleString("en-US", {
                               month: "short",
@@ -572,7 +671,9 @@ export default function ProductDetailPage() {
 
               {/* Auction Info */}
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Auction Details</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Auction Details
+                </h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Start Price</span>

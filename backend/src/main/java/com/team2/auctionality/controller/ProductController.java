@@ -170,4 +170,15 @@ public class ProductController {
                 )
         );
     }
+
+    @PostMapping("/{productId}/buy-now")
+    @Operation(summary = "Buy product immediately at buy now price")
+    public ResponseEntity<OrderDto> buyNow(
+            @PathVariable Integer productId,
+            @CurrentUser User user
+    ) {
+        log.info("User {} buying product {} at buy now price", user.getId(), productId);
+        OrderDto order = productService.buyNow(productId, user);
+        return ResponseEntity.ok(order);
+    }
 }

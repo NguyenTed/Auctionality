@@ -178,10 +178,13 @@ export const initializeAuthAsync = createAppAsyncThunk(
           };
         } catch (error) {
           // Token invalid, clear auth
+          // Return null instead of rejecting to avoid redirect loops
+          // The fulfilled handler will set isAuthenticated = false
+          console.warn("Token validation failed during auth initialization:", error);
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
-          return rejectWithValue("Token validation failed");
+          return null;
         }
       }
       return null;
@@ -364,12 +367,20 @@ const authSlice = createSlice({
           // Update localStorage with user including roles as array
           localStorage.setItem("user", JSON.stringify(state.user));
         } else {
+          // No valid auth found - clear state
+          state.user = null;
+          state.accessToken = null;
+          state.refreshToken = null;
           state.isAuthenticated = false;
         }
       })
       .addCase(initializeAuthAsync.rejected, (state) => {
         state.isLoading = false;
         state.isAuthenticated = false;
+        // Clear auth state on rejection (shouldn't happen often now, but keep for safety)
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
       });
   },
 });

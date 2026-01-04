@@ -7,6 +7,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import LogoutIcon from "@mui/icons-material/Logout";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import StoreIcon from "@mui/icons-material/Store";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 
 import logo from "../assets/imgs/catawikiLogo.png";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
@@ -31,13 +32,17 @@ const Header = () => {
 
   const [open, setOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+
   // Use ref to track if we've already initiated fetch (prevents infinite loops)
   const hasFetchedCategories = useRef(false);
 
   // Only fetch categories once on mount if not already loaded
   useEffect(() => {
-    if (!hasFetchedCategories.current && categories.length === 0 && !categoryLoading) {
+    if (
+      !hasFetchedCategories.current &&
+      categories.length === 0 &&
+      !categoryLoading
+    ) {
       hasFetchedCategories.current = true;
       dispatch(fetchCategoriesAsync());
     }
@@ -185,6 +190,14 @@ const Header = () => {
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <Link
+                    to="/orders"
+                    onClick={() => setShowUserMenu(false)}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <ShoppingBagIcon fontSize="small" />
+                    Orders
+                  </Link>
+                  <Link
                     to="/profile"
                     onClick={() => setShowUserMenu(false)}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
@@ -192,35 +205,39 @@ const Header = () => {
                     Profile
                   </Link>
                   {/* Admin Dashboard Link */}
-                  {user.roles && (
-                    Array.isArray(user.roles) ? user.roles : Array.from(user.roles || [])
-                  ).some(
-                    (role) => role === "ADMIN" || role === "ROLE_ADMIN"
-                  ) && (
-                    <Link
-                      to="/admin/dashboard"
-                      onClick={() => setShowUserMenu(false)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                    >
-                      <DashboardIcon fontSize="small" />
-                      Admin Dashboard
-                    </Link>
-                  )}
+                  {user.roles &&
+                    (Array.isArray(user.roles)
+                      ? user.roles
+                      : Array.from(user.roles || [])
+                    ).some(
+                      (role) => role === "ADMIN" || role === "ROLE_ADMIN"
+                    ) && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setShowUserMenu(false)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <DashboardIcon fontSize="small" />
+                        Admin Dashboard
+                      </Link>
+                    )}
                   {/* Seller Panel Link */}
-                  {user.roles && (
-                    Array.isArray(user.roles) ? user.roles : Array.from(user.roles || [])
-                  ).some(
-                    (role) => role === "SELLER" || role === "ROLE_SELLER"
-                  ) && (
-                    <Link
-                      to="/seller/listings"
-                      onClick={() => setShowUserMenu(false)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                    >
-                      <StoreIcon fontSize="small" />
-                      Seller Panel
-                    </Link>
-                  )}
+                  {user.roles &&
+                    (Array.isArray(user.roles)
+                      ? user.roles
+                      : Array.from(user.roles || [])
+                    ).some(
+                      (role) => role === "SELLER" || role === "ROLE_SELLER"
+                    ) && (
+                      <Link
+                        to="/seller/listings"
+                        onClick={() => setShowUserMenu(false)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <StoreIcon fontSize="small" />
+                        Seller Panel
+                      </Link>
+                    )}
                   <button
                     onClick={async () => {
                       await dispatch(logoutAsync());

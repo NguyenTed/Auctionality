@@ -1,15 +1,19 @@
 package com.team2.auctionality.service;
 
-import com.team2.auctionality.dto.RatingRequest;
-import com.team2.auctionality.dto.WatchListItemDto;
+import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ApproveStatus;
+import com.team2.auctionality.exception.AuthException;
+import com.team2.auctionality.exception.EmailAlreadyExistsException;
+import com.team2.auctionality.exception.InvalidCredentialsException;
 import com.team2.auctionality.exception.SellerUpgradeBadRequestException;
+import com.team2.auctionality.mapper.UserMapper;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,6 +33,7 @@ public class UserService {
     private final OrderRatingRepository orderRatingRepository;
     private final RoleRepository roleRepository;
     private final OrderService orderService;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public User getUserById(Integer userId) {
@@ -178,6 +183,54 @@ public class UserService {
     public List<WatchListItemDto> getWatchList(User user) {
         log.debug("Getting watchlist for user: {}", user.getId());
         return watchListItemService.getWatchList(user);
+    }
+
+    @Transactional
+    public UserDto updateProfile(User user, UpdateProfileRequest request) {
+        log.info("User {} updating profile", user.getId());
+
+        // Update email if provided and different
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            // Check if new email already exists
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new EmailAlreadyExistsException(request.getEmail());
+            }
+            user.setEmail(request.getEmail());
+            user.setIsEmailVerified(false); // Require re-verification when email changes
+        }
+
+        // Update profile information
+        UserProfile profile = user.getProfile();
+        if (profile == null) {
+            profile = new UserProfile();
+            profile.setUser(user);
+            user.setProfile(profile);
+        }
+
+        if (request.getFullName() != null) {
+            profile.setFullName(request.getFullName());
+        }
+
+        if (request.getPhoneNumber() != null) {
+            profile.setPhoneNumber(request.getPhoneNumber());
+        }
+
+        user = userRepository.save(user);
+        return UserMapper.toDto(user);
+    }
+
+    @Transactional
+    public void changePassword(User user, ChangePasswordRequest request) {
+        log.info("User {} changing password", user.getId());
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new InvalidCredentialsException();
+        }
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
 }
