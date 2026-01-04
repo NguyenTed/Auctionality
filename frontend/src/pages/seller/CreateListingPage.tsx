@@ -4,10 +4,18 @@
  */
 
 import { useState, useEffect } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { fetchCategoriesAsync, selectCategories } from "../../features/category/categorySlice";
-import { createProductAsync as createSellerProductAsync, selectSellerLoading } from "../../features/seller/sellerSlice";
+import {
+  fetchCategoriesAsync,
+  selectCategories,
+} from "../../features/category/categorySlice";
+import {
+  createProductAsync as createSellerProductAsync,
+  selectSellerLoading,
+} from "../../features/seller/sellerSlice";
 import { selectUser } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
@@ -52,7 +60,9 @@ export default function CreateListingPage() {
   }, [dispatch]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
@@ -60,13 +70,20 @@ export default function CreateListingPage() {
     if (type === "checkbox") {
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else if (name === "categoryId") {
-      setFormData((prev) => ({ ...prev, [name]: value ? parseInt(value) : null }));
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value ? parseInt(value) : null,
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleImageChange = (index: number, field: keyof ProductImageInput, value: string | boolean) => {
+  const handleImageChange = (
+    index: number,
+    field: keyof ProductImageInput,
+    value: string | boolean
+  ) => {
     setImages((prev) => {
       const newImages = [...prev];
       if (field === "isThumbnail" && value === true) {
@@ -92,7 +109,10 @@ export default function CreateListingPage() {
     }
   };
 
-  const flattenCategories = (cats: typeof categories, result: typeof categories = []): typeof categories => {
+  const flattenCategories = (
+    cats: typeof categories,
+    result: typeof categories = []
+  ): typeof categories => {
     for (const cat of cats) {
       result.push(cat);
       if (cat.children && cat.children.length > 0) {
@@ -130,7 +150,11 @@ export default function CreateListingPage() {
       toastError("End time must be after start time");
       return;
     }
-    if (!formData.description.trim() || formData.description.length < 10) {
+    // Strip HTML tags for length validation
+    const plainTextDescription = formData.description
+      .replace(/<[^>]*>/g, "")
+      .trim();
+    if (!plainTextDescription || plainTextDescription.length < 10) {
       toastError("Description must be at least 10 characters");
       return;
     }
@@ -161,7 +185,9 @@ export default function CreateListingPage() {
           status: "ACTIVE",
           startPrice: parseFloat(formData.startPrice),
           bidIncrement: parseFloat(formData.bidIncrement),
-          buyNowPrice: formData.buyNowPrice ? parseFloat(formData.buyNowPrice) : undefined,
+          buyNowPrice: formData.buyNowPrice
+            ? parseFloat(formData.buyNowPrice)
+            : undefined,
           startTime: new Date(formData.startTime),
           endTime: new Date(formData.endTime),
           autoExtensionEnabled: formData.autoExtensionEnabled,
@@ -177,7 +203,7 @@ export default function CreateListingPage() {
         success("Product created successfully!");
         navigate("/seller/listings");
       } else {
-        toastError(result.payload as string || "Failed to create product");
+        toastError((result.payload as string) || "Failed to create product");
       }
     } catch (err) {
       toastError("An unexpected error occurred");
@@ -190,13 +216,21 @@ export default function CreateListingPage() {
       <ToastContainer toasts={toasts} onClose={removeToast} />
       <h1 className="text-3xl font-bold text-gray-900">Create New Listing</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-8 space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl shadow-sm p-8 space-y-6"
+      >
         {/* Basic Information */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">Basic Information</h2>
+          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+            Basic Information
+          </h2>
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Product Title <span className="text-red-500">*</span>
             </label>
             <input
@@ -213,7 +247,10 @@ export default function CreateListingPage() {
           </div>
 
           <div>
-            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="categoryId"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Category <span className="text-red-500">*</span>
             </label>
             <select
@@ -234,33 +271,53 @@ export default function CreateListingPage() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Description <span className="text-red-500">*</span>
             </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows={6}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-              required
-              minLength={10}
-              maxLength={10000}
-            />
+            <div className="mt-1">
+              <ReactQuill
+                theme="snow"
+                value={formData.description}
+                onChange={(value) =>
+                  setFormData((prev) => ({ ...prev, description: value }))
+                }
+                placeholder="Provide a detailed description of your product..."
+                modules={{
+                  toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ["bold", "italic", "underline", "strike"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    [{ align: [] }],
+                    ["link", "image"],
+                    ["clean"],
+                  ],
+                }}
+                className="bg-white"
+                style={{ minHeight: "200px" }}
+              />
+            </div>
             <p className="text-xs text-gray-500 mt-1">
-              {formData.description.length}/10000 characters
+              {formData.description.replace(/<[^>]*>/g, "").length}/10000
+              characters
             </p>
           </div>
         </div>
 
         {/* Pricing */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">Pricing</h2>
+          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+            Pricing
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="startPrice" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="startPrice"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Start Price (€) <span className="text-red-500">*</span>
               </label>
               <input
@@ -277,7 +334,10 @@ export default function CreateListingPage() {
             </div>
 
             <div>
-              <label htmlFor="bidIncrement" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="bidIncrement"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Bid Increment (€) <span className="text-red-500">*</span>
               </label>
               <input
@@ -294,8 +354,12 @@ export default function CreateListingPage() {
             </div>
 
             <div>
-              <label htmlFor="buyNowPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                Buy Now Price (€) <span className="text-gray-500">(Optional)</span>
+              <label
+                htmlFor="buyNowPrice"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Buy Now Price (€){" "}
+                <span className="text-gray-500">(Optional)</span>
               </label>
               <input
                 type="number"
@@ -313,11 +377,16 @@ export default function CreateListingPage() {
 
         {/* Auction Timing */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">Auction Timing</h2>
+          <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">
+            Auction Timing
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="startTime"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Start Time <span className="text-red-500">*</span>
               </label>
               <input
@@ -332,7 +401,10 @@ export default function CreateListingPage() {
             </div>
 
             <div>
-              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="endTime"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 End Time <span className="text-red-500">*</span>
               </label>
               <input
@@ -356,8 +428,12 @@ export default function CreateListingPage() {
               onChange={handleInputChange}
               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
             />
-            <label htmlFor="autoExtensionEnabled" className="ml-2 block text-sm text-gray-900">
-              Enable auto-extension (extends auction if bid placed near end time)
+            <label
+              htmlFor="autoExtensionEnabled"
+              className="ml-2 block text-sm text-gray-900"
+            >
+              Enable auto-extension (extends auction if bid placed near end
+              time)
             </label>
           </div>
         </div>
@@ -381,7 +457,8 @@ export default function CreateListingPage() {
           </div>
 
           <p className="text-sm text-gray-500">
-            At least 3 images required. Mark one as thumbnail. Maximum 10 images.
+            At least 3 images required. Mark one as thumbnail. Maximum 10
+            images.
           </p>
 
           {images.map((image, index) => (
@@ -393,7 +470,9 @@ export default function CreateListingPage() {
                 <input
                   type="url"
                   value={image.url}
-                  onChange={(e) => handleImageChange(index, "url", e.target.value)}
+                  onChange={(e) =>
+                    handleImageChange(index, "url", e.target.value)
+                  }
                   placeholder="https://example.com/image.jpg"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                 />
@@ -403,7 +482,9 @@ export default function CreateListingPage() {
                   <input
                     type="checkbox"
                     checked={image.isThumbnail}
-                    onChange={(e) => handleImageChange(index, "isThumbnail", e.target.checked)}
+                    onChange={(e) =>
+                      handleImageChange(index, "isThumbnail", e.target.checked)
+                    }
                     className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700">Thumbnail</span>
@@ -449,4 +530,3 @@ export default function CreateListingPage() {
     </div>
   );
 }
-

@@ -8,8 +8,8 @@ import com.team2.auctionality.model.User;
 import com.team2.auctionality.repository.OrderRepository;
 import com.team2.auctionality.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,12 +19,21 @@ import java.util.Date;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ProductService productService;
+
+    public OrderService(
+            OrderRepository orderRepository,
+            UserRepository userRepository,
+            @Lazy ProductService productService
+    ) {
+        this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
+        this.productService = productService;
+    }
 
     @Transactional(readOnly = true)
     public Order getOrderById(Integer id) {

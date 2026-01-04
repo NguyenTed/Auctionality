@@ -16,6 +16,7 @@ interface ProductState {
   topProducts: Product[];
   topProductsEndingSoon: Product[];
   topProductsMostBid: Product[];
+  topProductsHighestPrice: Product[];
   pagination: PagedResponse<Product>["pagination"] | null;
   isLoading: boolean;
   error: string | null;
@@ -29,6 +30,7 @@ const initialState: ProductState = {
   topProducts: [],
   topProductsEndingSoon: [],
   topProductsMostBid: [],
+  topProductsHighestPrice: [],
   pagination: null,
   isLoading: false,
   error: null,
@@ -271,6 +273,8 @@ const productSlice = createSlice({
           state.topProductsEndingSoon = action.payload.products;
         } else if (action.payload.topType === "MOST_BID") {
           state.topProductsMostBid = action.payload.products;
+        } else if (action.payload.topType === "HIGHEST_PRICE") {
+          state.topProductsHighestPrice = action.payload.products;
         }
         // Keep topProducts for backward compatibility (use ENDING_SOON as default)
         state.topProducts = action.payload.topType === "ENDING_SOON" 
@@ -367,6 +371,7 @@ export const selectRelatedProducts = (state: RootState) => state.product.related
 export const selectTopProducts = (state: RootState) => state.product.topProducts;
 export const selectTopProductsEndingSoon = (state: RootState) => state.product.topProductsEndingSoon;
 export const selectTopProductsMostBid = (state: RootState) => state.product.topProductsMostBid;
+export const selectTopProductsHighestPrice = (state: RootState) => state.product.topProductsHighestPrice;
 export const selectProductPagination = (state: RootState) => state.product.pagination;
 export const selectProductLoading = (state: RootState) => state.product.isLoading;
 export const selectProductError = (state: RootState) => state.product.error;

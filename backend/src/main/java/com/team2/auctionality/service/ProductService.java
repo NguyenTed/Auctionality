@@ -2,7 +2,9 @@ package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductStatus;
+import com.team2.auctionality.exception.AuctionClosedException;
 import com.team2.auctionality.exception.InvalidBidPriceException;
+import com.team2.auctionality.mapper.OrderMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.*;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,6 +34,7 @@ public class ProductService {
     private final OrderRepository orderRepository;
     private final CategoryService categoryService;
     private final ProductMapper productMapper;
+    private final OrderService orderService;
 
     @Transactional(readOnly = true)
     public List<ProductDto> getTop5EndingSoon() {
@@ -240,5 +244,47 @@ public class ProductService {
                     "Bid price must increase by step of " + step
             );
         }
+    }
+
+    @Transactional
+    public OrderDto buyNow(Integer productId, User buyer) {
+        Product product = getProductById(productId);
+        LocalDateTime now = LocalDateTime.now();
+
+        // Validate buy now price exists
+        if (product.getBuyNowPrice() == null) {
+            throw new IllegalArgumentException("This product does not have a buy now price");
+        }
+
+        // Validate auction is still active
+        if (product.getEndTime().isBefore(now) || product.getEndTime().isEqual(now)) {
+            throw new AuctionClosedException("Auction has already ended");
+        }
+
+        if (product.getStatus() != ProductStatus.ACTIVE) {
+            throw new IllegalArgumentException("Product is not active");
+        }
+
+        // Validate buyer is not the seller
+        if (product.getSeller().getId().equals(buyer.getId())) {
+            throw new IllegalArgumentException("You cannot buy your own product");
+        }
+
+        // End the auction immediately
+        product.setStatus(ProductStatus.ENDED);
+        product.setEndTime(now);
+        productRepository.save(product);
+
+        // Create order
+        Order order = orderService.createOrderForBuyNow(
+                product,
+                buyer.getId(),
+                product.getBuyNowPrice()
+        );
+
+        log.info("Buy now completed for product {} by user {}, order {} created", 
+                productId, buyer.getId(), order.getId());
+
+        return OrderMapper.toDto(order);
     }
 }

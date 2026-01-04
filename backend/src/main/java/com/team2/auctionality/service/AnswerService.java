@@ -54,13 +54,16 @@ public class AnswerService {
 
         // Send email notification to question asker
         String productUrl = frontendBaseUrl + "/products/" + product.getId();
+        String responderName = responder.getProfile() != null && responder.getProfile().getFullName() != null
+                ? responder.getProfile().getFullName()
+                : responder.getEmail();
         emailService.sendAnswerNotification(
                 new AnswerNotificationEmailRequest(
                         question.getAsker().getEmail(),
                         product.getTitle(),
                         productUrl,
                         savedAnswer.getContent(),
-                        responder.getProfile().getFullName()
+                        responderName
                 )
         );
 

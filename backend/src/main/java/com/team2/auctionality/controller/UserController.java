@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -156,5 +157,27 @@ public class UserController {
                 .map(ProductMapper::toDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(productDtos);
+    }
+
+    @PutMapping("/profile")
+    @Operation(summary = "Update user profile")
+    public ResponseEntity<UserDto> updateProfile(
+            @CurrentUser User user,
+            @Valid @RequestBody UpdateProfileRequest request
+    ) {
+        log.info("User {} updating profile", user.getId());
+        UserDto updatedUser = userService.updateProfile(user, request);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PostMapping("/change-password")
+    @Operation(summary = "Change user password")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @CurrentUser User user,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        log.info("User {} changing password", user.getId());
+        userService.changePassword(user, request);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
     }
 }

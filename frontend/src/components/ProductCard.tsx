@@ -4,6 +4,7 @@
  */
 
 import { Link } from "react-router-dom";
+import { getRelativeTime, isNewProduct } from "../utils/dateUtils";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import type { Product } from "../interfaces/Product";
@@ -29,26 +30,6 @@ export default function ProductCard({
     }).format(price);
   };
 
-  const formatRemainingTime = (endTime: string | null | undefined) => {
-    if (!endTime) return "Ended";
-    const now = Date.now();
-    const diffMs = new Date(endTime).getTime() - now;
-
-    if (diffMs <= 0) return "Ended";
-
-    const minutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (days >= 1) {
-      return `${days} day${days > 1 ? "s" : ""}`;
-    }
-    if (hours >= 1) {
-      return `${hours} hour${hours > 1 ? "s" : ""}`;
-    }
-    return `${minutes} minute${minutes > 1 ? "s" : ""}`;
-  };
-
   const thumbnailImage =
     product.images?.find((img) => img.isThumbnail)?.url ||
     product.images?.[0]?.url ||
@@ -56,7 +37,13 @@ export default function ProductCard({
 
   return (
     <div className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
-      <Link to={`/products/${product.id}`} className="block flex-1 flex flex-col">
+      {/* New Badge */}
+      {product.createdAt && isNewProduct(product.createdAt) && (
+        <div className="absolute top-2 left-2 z-10 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+          NEW
+        </div>
+      )}
+      <Link to={`/products/${product.id}`} className="flex-1 flex flex-col">
         {/* Image */}
         <div className="relative aspect-square bg-gray-100 overflow-hidden">
           <img
@@ -74,12 +61,17 @@ export default function ProductCard({
                 onToggleWatchlist(product.id);
               }}
               className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors z-10"
-              aria-label={isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+              aria-label={
+                isInWatchlist ? "Remove from watchlist" : "Add to watchlist"
+              }
             >
               {isInWatchlist ? (
                 <FavoriteIcon className="text-red-500" fontSize="small" />
               ) : (
-                <FavoriteBorderIcon className="text-gray-600" fontSize="small" />
+                <FavoriteBorderIcon
+                  className="text-gray-600"
+                  fontSize="small"
+                />
               )}
             </button>
           )}
@@ -94,7 +86,9 @@ export default function ProductCard({
 
           {/* Category */}
           {product.category && (
-            <p className="text-xs text-gray-500 mb-2">{product.category.name}</p>
+            <p className="text-xs text-gray-500 mb-2">
+              {product.category.name}
+            </p>
           )}
 
           {/* Price and Time */}
@@ -109,7 +103,7 @@ export default function ProductCard({
             </div>
             <div className="text-right">
               <p className="text-sm font-semibold text-orange-600">
-                {formatRemainingTime(product.endTime)}
+                {product.endTime ? getRelativeTime(product.endTime) : "Ended"}
               </p>
               <p className="text-xs text-gray-500">remaining</p>
             </div>
@@ -119,4 +113,3 @@ export default function ProductCard({
     </div>
   );
 }
-

@@ -7,6 +7,7 @@ import HomePage from "../pages/common/HomePage";
 import ProductListPage from "../pages/products/ProductListPage";
 import ProductDetailPage from "../pages/products/ProductDetailPage";
 import ProfilePage from "../pages/user/ProfilePage";
+import OrderManagementPage from "../pages/orders/OrderManagementPage";
 import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
@@ -73,14 +74,22 @@ function AppRouterContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductListPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute requireAuth>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute requireAuth>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute requireAuth>
+                  <OrderManagementPage />
+                </ProtectedRoute>
+              }
+            />
         <Route
           path="/login"
           element={

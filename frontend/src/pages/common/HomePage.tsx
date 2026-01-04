@@ -10,6 +10,7 @@ import {
   fetchTopProductsAsync,
   selectTopProductsEndingSoon,
   selectTopProductsMostBid,
+  selectTopProductsHighestPrice,
   selectProductLoading,
 } from "../../features/product/productSlice";
 import { selectCategories } from "../../features/category/categorySlice";
@@ -47,14 +48,18 @@ export default function HomePage() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const watchlistItems = useAppSelector(selectWatchlistItems);
   const watchlistLoading = useAppSelector(selectWatchlistLoading);
-  
+
   // Use refs to track if we've already initiated fetches (prevents infinite loops)
   const hasFetchedEndingSoon = useRef(false);
   const hasFetchedWatchlist = useRef(false);
 
   // Fetch ending soon products once on mount
   useEffect(() => {
-    if (!hasFetchedEndingSoon.current && endingSoonProducts.length === 0 && !isLoading) {
+    if (
+      !hasFetchedEndingSoon.current &&
+      endingSoonProducts.length === 0 &&
+      !isLoading
+    ) {
       hasFetchedEndingSoon.current = true;
       dispatch(fetchTopProductsAsync("ENDING_SOON"));
     }
@@ -62,7 +67,12 @@ export default function HomePage() {
 
   // Fetch watchlist once if authenticated
   useEffect(() => {
-    if (isAuthenticated && !hasFetchedWatchlist.current && watchlistItems.length === 0 && !watchlistLoading) {
+    if (
+      isAuthenticated &&
+      !hasFetchedWatchlist.current &&
+      watchlistItems.length === 0 &&
+      !watchlistLoading
+    ) {
       hasFetchedWatchlist.current = true;
       dispatch(fetchWatchlistAsync());
     }
@@ -102,7 +112,9 @@ export default function HomePage() {
       {categories.length > 0 && (
         <section className="py-12 bg-white border-b">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop by Category</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Shop by Category
+            </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {categories.slice(0, 12).map((category) => (
                 <Link
@@ -157,7 +169,9 @@ export default function HomePage() {
               </Carousel>
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">No auctions ending soon</p>
+            <p className="text-gray-500 text-center py-8">
+              No auctions ending soon
+            </p>
           )}
         </div>
       </section>
@@ -177,6 +191,22 @@ export default function HomePage() {
           <MostBidsSection />
         </div>
       </section>
+
+      {/* Highest Price Section */}
+      <section className="py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Highest Price</h2>
+            <Link
+              to="/products?sort=priceDesc"
+              className="text-primary hover:text-primary/80 font-medium"
+            >
+              View all →
+            </Link>
+          </div>
+          <HighestPriceSection />
+        </div>
+      </section>
     </div>
   );
 }
@@ -185,13 +215,17 @@ function MostBidsSection() {
   const dispatch = useAppDispatch();
   const mostBidProducts = useAppSelector(selectTopProductsMostBid);
   const isLoading = useAppSelector(selectProductLoading);
-  
+
   // Use ref to track if we've already initiated fetch (prevents infinite loops)
   const hasFetchedMostBid = useRef(false);
 
   // Fetch most bid products once on mount
   useEffect(() => {
-    if (!hasFetchedMostBid.current && mostBidProducts.length === 0 && !isLoading) {
+    if (
+      !hasFetchedMostBid.current &&
+      mostBidProducts.length === 0 &&
+      !isLoading
+    ) {
       hasFetchedMostBid.current = true;
       dispatch(fetchTopProductsAsync("MOST_BID"));
     }
@@ -202,7 +236,9 @@ function MostBidsSection() {
   }
 
   if (mostBidProducts.length === 0) {
-    return <p className="text-gray-500 text-center py-8">No products with bids</p>;
+    return (
+      <p className="text-gray-500 text-center py-8">No products with bids</p>
+    );
   }
 
   return (
@@ -218,6 +254,58 @@ function MostBidsSection() {
         itemClass="px-2"
       >
         {mostBidProducts.map((product) => (
+          <div key={product.id} className="h-full px-2">
+            <ProductCard product={product} />
+          </div>
+        ))}
+      </Carousel>
+    </div>
+  );
+}
+
+function HighestPriceSection() {
+  const dispatch = useAppDispatch();
+  const highestPriceProducts = useAppSelector(selectTopProductsHighestPrice);
+  const isLoading = useAppSelector(selectProductLoading);
+
+  // Use ref to track if we've already initiated fetch (prevents infinite loops)
+  const hasFetchedHighestPrice = useRef(false);
+
+  // Fetch highest price products once on mount
+  useEffect(() => {
+    if (
+      !hasFetchedHighestPrice.current &&
+      highestPriceProducts.length === 0 &&
+      !isLoading
+    ) {
+      hasFetchedHighestPrice.current = true;
+      dispatch(fetchTopProductsAsync("HIGHEST_PRICE"));
+    }
+  }, [dispatch, highestPriceProducts.length, isLoading]);
+
+  if (isLoading) {
+    return <ProductGrid products={[]} isLoading={true} />;
+  }
+
+  if (highestPriceProducts.length === 0) {
+    return (
+      <p className="text-gray-500 text-center py-8">No products available</p>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden">
+      <Carousel
+        responsive={carouselResponsive}
+        infinite={highestPriceProducts.length > 4}
+        arrows
+        draggable
+        swipeable
+        keyBoardControl
+        containerClass="pb-4"
+        itemClass="px-2"
+      >
+        {highestPriceProducts.map((product) => (
           <div key={product.id} className="h-full px-2">
             <ProductCard product={product} />
           </div>

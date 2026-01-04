@@ -39,13 +39,16 @@ public class QuestionService {
 
         // Send email notification to seller
         String productUrl = frontendBaseUrl + "/products/" + productId;
+        String askerName = asker.getProfile() != null && asker.getProfile().getFullName() != null
+                ? asker.getProfile().getFullName()
+                : asker.getEmail();
         emailService.sendQuestionNotification(
                 new QuestionNotificationEmailRequest(
                         product.getSeller().getEmail(),
                         product.getTitle(),
                         productUrl,
                         question.getContent(),
-                        asker.getProfile().getFullName()
+                        askerName
                 )
         );
 
