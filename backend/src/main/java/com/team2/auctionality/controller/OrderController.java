@@ -7,6 +7,7 @@ import com.team2.auctionality.dto.PagedResponse;
 import com.team2.auctionality.dto.ShippingAddressRequest;
 import com.team2.auctionality.mapper.OrderMapper;
 import com.team2.auctionality.mapper.PaginationMapper;
+import com.team2.auctionality.model.Shipment;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.OrderDeliveryService;
 import com.team2.auctionality.service.OrderService;
@@ -62,13 +63,13 @@ public class OrderController {
 
     @PostMapping("/{orderId}/ship")
     @Operation(summary = "Create shipment")
-    public ResponseEntity<ApiResponse<Void>> shipOrder(
+    public ResponseEntity<ApiResponse<Shipment>> shipOrder(
             @PathVariable Integer orderId,
             @CurrentUser User user
     ) {
         log.info("User {} shipping order {}", user.getId(), orderId);
-        shipmentService.ship(orderId, user);
-        return ResponseEntity.ok(new ApiResponse<>("Order shipped successfully", null));
+        Shipment shipment = shipmentService.ship(orderId, user);
+        return ResponseEntity.ok(new ApiResponse<>("Order shipped successfully", shipment));
     }
 
     @PostMapping("/{orderId}/deliver")

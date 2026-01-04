@@ -25,7 +25,7 @@ public class ShipmentService {
     private final ShipmentRepository shipmentRepository;
 
     @Transactional
-    public void ship(Integer orderId, User seller) {
+    public Shipment ship(Integer orderId, User seller) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow();
 
@@ -44,10 +44,10 @@ public class ShipmentService {
                 .shippedAt(new Date())
                 .build();
 
-        shipmentRepository.save(shipment);
 
         order.setStatus(OrderStatus.SHIPPING);
         orderRepository.save(order);
+        return shipmentRepository.save(shipment);
     }
 
     private String randomCarrier() {
