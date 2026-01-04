@@ -7,7 +7,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./backend/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -29,13 +29,38 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./backend/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./backend/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - monitoring
     depends_on:
       - prometheus
     restart: unless-stopped
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: auctionality-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./backend/monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.4
+    container_name: auctionality-promtail
+    volumes:
+      - ./backend/monitoring/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - ./logs:/var/log/app   # log Spring Boot
+    command: -config.file=/etc/promtail/promtail-config.yml
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+    restart: unless-stopped
+
 
 volumes:
   prometheus-data:
