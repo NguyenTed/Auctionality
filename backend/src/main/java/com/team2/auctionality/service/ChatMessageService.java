@@ -9,6 +9,7 @@ import com.team2.auctionality.repository.ChatMessageRepository;
 import com.team2.auctionality.repository.ChatThreadRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,12 +23,20 @@ public class ChatMessageService {
     private final ChatMessageRepository messageRepository;
     private final ChatThreadService chatThreadService;
     private final OrderService orderService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public ChatMessage saveMessage(
             Integer orderId,
             User sender,
             String content
     ) {
+        // Validate sender is not null
+        if (sender == null || sender.getId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User not authenticated"
+            );
+        }
         Integer senderId = sender.getId();
         Order order = orderService.getOrderById(orderId);
 
@@ -47,7 +56,12 @@ public class ChatMessageService {
         message.setIsRead(false);
         message.setCreatedAt(new Date());
 
-        return messageRepository.save(message);
+        ChatMessage savedMessage = messageRepository.save(message);
+        
+        // Broadcast message to the thread's topic via WebSocket
+        messagingTemplate.convertAndSend("/topic/chat/" + chatThread.getId(), savedMessage);
+        
+        return savedMessage;
     }
 
     public List<ChatMessage> getMessages(Integer threadId) {

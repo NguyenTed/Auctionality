@@ -166,10 +166,13 @@ const chatSlice = createSlice({
 
 export const { clearError, addMessage } = chatSlice.actions;
 
+// Memoized empty array to avoid creating new references
+const EMPTY_ARRAY: ChatMessage[] = [];
+
 export const selectChatThread = (orderId: number) => (state: RootState) =>
   state.chat.threads[orderId] || null;
 export const selectChatMessages = (threadId: number) => (state: RootState) =>
-  state.chat.messages[threadId] || [];
+  state.chat.messages[threadId] || EMPTY_ARRAY;
 export const selectChatLoading = (state: RootState) => state.chat.isLoading;
 export const selectChatSending = (state: RootState) => state.chat.isSending;
 export const selectChatError = (state: RootState) => state.chat.error;

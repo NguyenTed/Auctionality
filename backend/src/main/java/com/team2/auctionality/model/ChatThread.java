@@ -10,13 +10,16 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "chat_thread")
+@Table(
+    name = "chat_thread",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"order_id"})
+)
 public class ChatThread {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "order_id")
+    @Column(name = "order_id", unique = true)
     private Integer orderId;
 
     @Column(name = "buyer_id")

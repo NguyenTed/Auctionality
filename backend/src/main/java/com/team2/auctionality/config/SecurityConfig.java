@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/health/**").permitAll()
                         // Actuator endpoints (monitoring)
                         .requestMatchers("/actuator/**").permitAll()
+                        // WebSocket endpoints (SockJS handshake and transport)
+                        .requestMatchers("/ws-chat/**").permitAll()
                         // Public read-only endpoints for products (GET only)
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         // Public read-only endpoints for categories (GET only)
