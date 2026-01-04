@@ -14,6 +14,7 @@ import sellerReducer from "../features/seller/sellerSlice";
 import qaReducer from "../features/qa/qaSlice";
 import orderReducer from "../features/order/orderSlice";
 import chatReducer from "../features/chat/chatSlice";
+import paymentReducer from "../features/payment/paymentSlice";
 
 export const store = configureStore({
   reducer: {
@@ -27,6 +28,7 @@ export const store = configureStore({
     qa: qaReducer,
     order: orderReducer,
     chat: chatReducer,
+    payment: paymentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

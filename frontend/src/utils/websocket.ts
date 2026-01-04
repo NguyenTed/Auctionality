@@ -268,3 +268,36 @@ export const getStompClient = (): Client | null => {
   return stompClient;
 };
 
+export interface AuctionEndNotification {
+  productId: number;
+  orderId: number;
+  buyerId: number;
+  sellerId: number;
+  finalPrice: number;
+  message: string;
+}
+
+export const subscribeToAuctionEnd = (
+  productId: number,
+  onNotification: (notification: AuctionEndNotification) => void
+): StompSubscription | null => {
+  if (!stompClient?.connected) {
+    console.error("WebSocket not connected");
+    return null;
+  }
+
+  const subscription = stompClient.subscribe(
+    `/topic/auction-end/${productId}`,
+    (message: IMessage) => {
+      try {
+        const notification: AuctionEndNotification = JSON.parse(message.body);
+        onNotification(notification);
+      } catch (error) {
+        console.error("Error parsing auction end notification:", error);
+      }
+    }
+  );
+
+  return subscription;
+};
+

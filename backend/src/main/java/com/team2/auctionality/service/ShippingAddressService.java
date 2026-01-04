@@ -8,10 +8,13 @@ import com.team2.auctionality.model.User;
 import com.team2.auctionality.repository.OrderRepository;
 import com.team2.auctionality.repository.ShippingAddressRepository;
 import com.team2.auctionality.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +31,7 @@ public class ShippingAddressService {
             User buyer
     ) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow();
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
 
         if (!order.getBuyer().getId().equals(buyer.getId())) {
             throw new AccessDeniedException("Not buyer");
@@ -50,5 +53,20 @@ public class ShippingAddressService {
                 .build();
 
         shippingAddressRepository.save(address);
+    }
+
+    @Transactional(readOnly = true)
+    public ShippingAddress getShippingAddress(Integer orderId, User user) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+
+        // Verify user is buyer or seller
+        if (!order.getBuyer().getId().equals(user.getId()) && 
+            !order.getSeller().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Not authorized to view this order's shipping address");
+        }
+
+        return shippingAddressRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Shipping address not found for this order"));
     }
 }

@@ -8,6 +8,9 @@ import ProductListPage from "../pages/products/ProductListPage";
 import ProductDetailPage from "../pages/products/ProductDetailPage";
 import ProfilePage from "../pages/user/ProfilePage";
 import OrderManagementPage from "../pages/orders/OrderManagementPage";
+import OrderCompletionPage from "../pages/orders/OrderCompletionPage";
+import PaymentPage from "../pages/payment/PaymentPage";
+import PaymentCallbackPage from "../pages/payment/PaymentCallbackPage";
 import LoginPage from "../pages/auth/LoginPage";
 import SignUpPage from "../pages/auth/SignUpPage";
 import VerifyEmailPage from "../pages/auth/VerifyEmailPage";
@@ -74,22 +77,39 @@ function AppRouterContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductListPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute requireAuth>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute requireAuth>
-                  <OrderManagementPage />
-                </ProtectedRoute>
-              }
-            />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute requireAuth>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute requireAuth>
+              <OrderManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:orderId/complete"
+          element={
+            <ProtectedRoute requireAuth>
+              <OrderCompletionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/:productId"
+          element={
+            <ProtectedRoute requireAuth>
+              <PaymentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/vnpay-return" element={<PaymentCallbackPage />} />
         <Route
           path="/login"
           element={
