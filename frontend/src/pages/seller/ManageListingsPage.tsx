@@ -33,6 +33,7 @@ export default function ManageListingsPage() {
   const size = 10;
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   useEffect(() => {
     dispatch(fetchMyProductsAsync({ page, size }));
@@ -91,7 +92,7 @@ export default function ManageListingsPage() {
     <div className="space-y-8">
       <ToastContainer toasts={toasts} onClose={removeToast} />
       
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <InventoryIcon className="text-4xl text-primary" />
           <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
@@ -102,6 +103,28 @@ export default function ManageListingsPage() {
         >
           <AddIcon className="mr-2" /> Create New Listing
         </Link>
+      </div>
+
+      {/* Status Filter */}
+      <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-700">Filter by Status:</span>
+          <div className="flex gap-2">
+            {["ALL", "ACTIVE", "ENDED", "SUSPENDED", "REMOVED"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  statusFilter === status
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {isLoading && products.length === 0 ? (
@@ -153,7 +176,9 @@ export default function ManageListingsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product) => (
+                  {products
+                    .filter((p) => statusFilter === "ALL" || p.status === statusFilter)
+                    .map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -209,6 +234,15 @@ export default function ManageListingsPage() {
                           >
                             <EditIcon fontSize="small" />
                           </Link>
+                          {(product.status === "ACTIVE" && (product.bidCount || 0) === 0) && (
+                            <Link
+                              to={`/seller/listings/${product.id}/edit`}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Edit Product"
+                            >
+                              <EditIcon fontSize="small" />
+                            </Link>
+                          )}
                           <button
                             onClick={() => handleDeleteClick(product)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

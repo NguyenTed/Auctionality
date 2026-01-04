@@ -157,6 +157,64 @@ public class ProductService {
     }
 
     @Transactional
+    public ProductDto updateProduct(Integer productId, User seller, UpdateProductDto productDto) {
+        Product product = getProductById(productId);
+        
+        // Ownership validation
+        if (product.getSeller() == null || !product.getSeller().getId().equals(seller.getId())) {
+            throw new com.team2.auctionality.exception.BidNotAllowedException(
+                    "You can only update your own products"
+            );
+        }
+        
+        // Check if product has bids - if so, only allow certain fields to be updated
+        long bidCount = bidRepository.countByProductId(productId);
+        if (bidCount > 0) {
+            // If there are bids, only allow updating description and images
+            product.setDescription(productDto.getDescription());
+            // Update images
+            if (productDto.getImages() != null && !productDto.getImages().isEmpty()) {
+                // Remove existing images
+                product.getImages().clear();
+                // Add new images
+                for (CreateProductImageDto imageDto : productDto.getImages()) {
+                    ProductImage image = new ProductImage();
+                    image.setUrl(imageDto.getUrl());
+                    image.setIsThumbnail(imageDto.getIsThumbnail() != null ? imageDto.getIsThumbnail() : false);
+                    image.setProduct(product);
+                    product.getImages().add(image);
+                }
+            }
+        } else {
+            // No bids yet, allow full update
+            product.setTitle(productDto.getTitle());
+            product.setCategory(categoryService.getCategoryById(productDto.getCategoryId()));
+            product.setStartPrice(productDto.getStartPrice());
+            product.setBidIncrement(productDto.getBidIncrement());
+            product.setBuyNowPrice(productDto.getBuyNowPrice());
+            product.setStartTime(productDto.getStartTime());
+            product.setEndTime(productDto.getEndTime());
+            product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled() != null ? productDto.getAutoExtensionEnabled() : true);
+            product.setDescription(productDto.getDescription());
+            
+            // Update images
+            if (productDto.getImages() != null && !productDto.getImages().isEmpty()) {
+                product.getImages().clear();
+                for (CreateProductImageDto imageDto : productDto.getImages()) {
+                    ProductImage image = new ProductImage();
+                    image.setUrl(imageDto.getUrl());
+                    image.setIsThumbnail(imageDto.getIsThumbnail() != null ? imageDto.getIsThumbnail() : false);
+                    image.setProduct(product);
+                    product.getImages().add(image);
+                }
+            }
+        }
+        
+        Product updatedProduct = productRepository.save(product);
+        return productMapper.toDto(updatedProduct);
+    }
+
+    @Transactional
     public void deleteProductById(Integer id, Integer userId) {
         Product product = getProductById(id);
         

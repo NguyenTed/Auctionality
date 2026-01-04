@@ -1,10 +1,10 @@
 /**
- * Create Listing Page
- * Seller page for creating new auction listings
+ * Edit Listing Page
+ * Seller page for editing existing auction listings
  */
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import RichTextEditor from "../../components/RichTextEditor";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
@@ -12,9 +12,10 @@ import {
   selectCategories,
 } from "../../features/category/categorySlice";
 import {
-  createProductAsync as createSellerProductAsync,
+  updateProductAsync,
   selectSellerLoading,
 } from "../../features/seller/sellerSlice";
+import { fetchProductByIdAsync } from "../../features/product/productSlice";
 import { selectUser } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
@@ -28,12 +29,16 @@ interface ProductImageInput {
   isThumbnail: boolean;
 }
 
-export default function CreateListingPage() {
+export default function EditListingPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const categories = useAppSelector(selectCategories);
   const isLoading = useAppSelector(selectSellerLoading);
   const user = useAppSelector(selectUser);
+  const product = useAppSelector((state) =>
+    id ? state.product.products.find((p) => p.id === parseInt(id)) : null
+  );
   const { toasts, success, error: toastError, removeToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -54,31 +59,72 @@ export default function CreateListingPage() {
     { url: "", isThumbnail: false },
   ]);
 
+  const [hasBids, setHasBids] = useState(false);
+  const [loadingProduct, setLoadingProduct] = useState(true);
+
   useEffect(() => {
     dispatch(fetchCategoriesAsync());
-
-    // Load draft from localStorage
-    const savedDraft = localStorage.getItem("product-draft");
-    if (savedDraft) {
-      try {
-        const draft = JSON.parse(savedDraft);
-        setFormData(draft.formData || formData);
-        setImages(draft.images || images);
-      } catch (err) {
-        console.error("Failed to load draft:", err);
-      }
+    
+    if (id) {
+      dispatch(fetchProductByIdAsync(parseInt(id)));
     }
-  }, [dispatch]);
+  }, [dispatch, id]);
 
-  // Save draft to localStorage whenever form data or images change
   useEffect(() => {
-    const draft = {
-      formData,
-      images,
-      timestamp: new Date().toISOString(),
-    };
-    localStorage.setItem("product-draft", JSON.stringify(draft));
-  }, [formData, images]);
+    if (product) {
+      // Check if user is the seller
+      if (product.sellerId !== user?.id) {
+        toastError("You can only edit your own products");
+        navigate("/seller/listings");
+        return;
+      }
+
+      // Check if product has bids
+      setHasBids((product.bidCount || 0) > 0);
+
+      // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
+      const formatDateForInput = (dateString: string | null | undefined) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      };
+
+      setFormData({
+        title: product.title || "",
+        categoryId: product.category?.id || null,
+        startPrice: product.startPrice?.toString() || "",
+        bidIncrement: product.bidIncrement?.toString() || "",
+        buyNowPrice: product.buyNowPrice?.toString() || "",
+        startTime: formatDateForInput(product.startTime),
+        endTime: formatDateForInput(product.endTime),
+        autoExtensionEnabled: product.autoExtensionEnabled ?? true,
+        description: product.description || "",
+      });
+
+      // Set images
+      if (product.images && product.images.length > 0) {
+        setImages(
+          product.images.map((img) => ({
+            url: img.url || "",
+            isThumbnail: img.isThumbnail || false,
+          }))
+        );
+      } else {
+        setImages([
+          { url: "", isThumbnail: true },
+          { url: "", isThumbnail: false },
+          { url: "", isThumbnail: false },
+        ]);
+      }
+
+      setLoadingProduct(false);
+    }
+  }, [product, user, navigate, toastError]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -108,7 +154,6 @@ export default function CreateListingPage() {
     setImages((prev) => {
       const newImages = [...prev];
       if (field === "isThumbnail" && value === true) {
-        // Unset other thumbnails
         newImages.forEach((img, i) => {
           if (i !== index) img.isThumbnail = false;
         });
@@ -144,14 +189,10 @@ export default function CreateListingPage() {
   };
 
   const validateForm = (): string | null => {
-    // Basic field validation
     if (!formData.title.trim()) {
       return "Product title is required";
     }
-    if (
-      formData.title.trim().length < 3 ||
-      formData.title.trim().length > 200
-    ) {
+    if (formData.title.trim().length < 3 || formData.title.trim().length > 200) {
       return "Product title must be between 3 and 200 characters";
     }
     if (!formData.categoryId) {
@@ -167,29 +208,18 @@ export default function CreateListingPage() {
       return "Start time and end time are required";
     }
 
-    // Date/time validation
-    const now = new Date();
     const startTime = new Date(formData.startTime);
     const endTime = new Date(formData.endTime);
 
-    // Start time must be in the future (allow 5 minutes buffer for server time differences)
-    if (startTime <= new Date(now.getTime() - 5 * 60 * 1000)) {
-      return "Start time must be in the future";
-    }
-
-    // End time must be after start time
     if (endTime <= startTime) {
       return "End time must be after start time";
     }
 
-    // Minimum auction duration: 1 hour
-    const durationHours =
-      (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+    const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
     if (durationHours < 1) {
       return "Auction duration must be at least 1 hour";
     }
 
-    // Buy now price validation
     if (formData.buyNowPrice) {
       const buyNowPrice = parseFloat(formData.buyNowPrice);
       const startPrice = parseFloat(formData.startPrice);
@@ -201,7 +231,6 @@ export default function CreateListingPage() {
       }
     }
 
-    // Description validation
     const plainTextDescription = formData.description
       .replace(/<[^>]*>/g, "")
       .trim();
@@ -212,7 +241,6 @@ export default function CreateListingPage() {
       return "Description must not exceed 10000 characters";
     }
 
-    // Image validation
     const validImages = images.filter((img) => img.url.trim());
     if (validImages.length < 3) {
       return "At least 3 images are required";
@@ -221,7 +249,6 @@ export default function CreateListingPage() {
       return "Maximum 10 images allowed";
     }
 
-    // Image URL format validation
     const urlPattern = /^https?:\/\/.+/i;
     for (let i = 0; i < validImages.length; i++) {
       const img = validImages[i];
@@ -235,13 +262,17 @@ export default function CreateListingPage() {
       return "At least one image must be marked as thumbnail";
     }
 
-    return null; // Validation passed
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Run validation
+    if (!id) {
+      toastError("Product ID is missing");
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       toastError(validationError);
@@ -249,7 +280,6 @@ export default function CreateListingPage() {
     }
 
     try {
-      // Prepare images for backend
       const validImages = images.filter((img) => img.url.trim());
       const imageDtos = validImages.map((img) => ({
         url: img.url.trim(),
@@ -257,33 +287,33 @@ export default function CreateListingPage() {
       }));
 
       const result = await dispatch(
-        createSellerProductAsync({
-          id: null,
-          title: formData.title,
-          status: "ACTIVE",
-          startPrice: parseFloat(formData.startPrice),
-          bidIncrement: parseFloat(formData.bidIncrement),
-          buyNowPrice: formData.buyNowPrice
-            ? parseFloat(formData.buyNowPrice)
-            : undefined,
-          startTime: new Date(formData.startTime),
-          endTime: new Date(formData.endTime),
-          autoExtensionEnabled: formData.autoExtensionEnabled,
-          sellerId: user?.id || 0,
-          categoryId: formData.categoryId,
-          subcategoryId: null,
-          description: formData.description,
-          images: imageDtos,
-        } as any)
+        updateProductAsync({
+          id: parseInt(id),
+          payload: {
+            id: parseInt(id),
+            title: formData.title,
+            status: product?.status || "ACTIVE",
+            startPrice: parseFloat(formData.startPrice),
+            bidIncrement: parseFloat(formData.bidIncrement),
+            buyNowPrice: formData.buyNowPrice
+              ? parseFloat(formData.buyNowPrice)
+              : undefined,
+            startTime: new Date(formData.startTime),
+            endTime: new Date(formData.endTime),
+            autoExtensionEnabled: formData.autoExtensionEnabled,
+            sellerId: user?.id || 0,
+            categoryId: formData.categoryId,
+            subcategoryId: null,
+            description: formData.description,
+            images: imageDtos,
+          } as any,
+        })
       );
 
-      if (createSellerProductAsync.fulfilled.match(result)) {
-        success("Product created successfully!");
-        // Clear draft from localStorage
-        localStorage.removeItem("product-draft");
+      if (updateProductAsync.fulfilled.match(result)) {
+        success("Product updated successfully!");
         navigate("/seller/listings");
       } else {
-        // Handle backend validation errors
         const errorPayload = result.payload as any;
         if (errorPayload && typeof errorPayload === "string") {
           toastError(errorPayload);
@@ -292,13 +322,10 @@ export default function CreateListingPage() {
         } else if (errorPayload?.error) {
           toastError(errorPayload.error);
         } else {
-          toastError(
-            "Failed to create product. Please check all fields and try again."
-          );
+          toastError("Failed to update product. Please check all fields and try again.");
         }
       }
     } catch (err: any) {
-      // Handle axios errors with detailed messages
       if (err.response?.data) {
         const errorData = err.response.data;
         if (errorData.message) {
@@ -313,14 +340,47 @@ export default function CreateListingPage() {
       } else {
         toastError("An unexpected error occurred");
       }
-      console.error("Failed to create product:", err);
+      console.error("Failed to update product:", err);
     }
   };
+
+  if (loadingProduct) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-2 text-gray-600">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600">Product not found</p>
+        <button
+          onClick={() => navigate("/seller/listings")}
+          className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Back to Listings
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      <h1 className="text-3xl font-bold text-gray-900">Create New Listing</h1>
+      <h1 className="text-3xl font-bold text-gray-900">Edit Listing</h1>
+
+      {hasBids && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-sm text-yellow-800">
+            <strong>Note:</strong> This product has existing bids. Only description and images can be updated.
+          </p>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -345,7 +405,8 @@ export default function CreateListingPage() {
               name="title"
               value={formData.title}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+              disabled={hasBids}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
               required
               minLength={3}
               maxLength={200}
@@ -364,7 +425,8 @@ export default function CreateListingPage() {
               name="categoryId"
               value={formData.categoryId || ""}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+              disabled={hasBids}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
               required
             >
               <option value="">Select a category</option>
@@ -419,9 +481,10 @@ export default function CreateListingPage() {
                 name="startPrice"
                 value={formData.startPrice}
                 onChange={handleInputChange}
+                disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -439,9 +502,10 @@ export default function CreateListingPage() {
                 name="bidIncrement"
                 value={formData.bidIncrement}
                 onChange={handleInputChange}
+                disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -460,9 +524,10 @@ export default function CreateListingPage() {
                 name="buyNowPrice"
                 value={formData.buyNowPrice}
                 onChange={handleInputChange}
+                disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -488,7 +553,8 @@ export default function CreateListingPage() {
                 name="startTime"
                 value={formData.startTime}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                disabled={hasBids}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -506,7 +572,8 @@ export default function CreateListingPage() {
                 name="endTime"
                 value={formData.endTime}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                disabled={hasBids}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -519,7 +586,8 @@ export default function CreateListingPage() {
               name="autoExtensionEnabled"
               checked={formData.autoExtensionEnabled}
               onChange={handleInputChange}
-              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+              disabled={hasBids}
+              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded disabled:cursor-not-allowed"
             />
             <label
               htmlFor="autoExtensionEnabled"
@@ -569,7 +637,6 @@ export default function CreateListingPage() {
                   placeholder="https://example.com/image.jpg"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                 />
-                {/* Image Preview */}
                 {image.url.trim() && (
                   <div className="mt-2">
                     <img
@@ -632,10 +699,11 @@ export default function CreateListingPage() {
             ) : (
               <SaveIcon className="mr-2" />
             )}
-            Create Listing
+            Update Listing
           </button>
         </div>
       </form>
     </div>
   );
 }
+

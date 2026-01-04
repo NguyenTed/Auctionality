@@ -45,6 +45,7 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import CountdownClock from "../../components/CountdownClock";
 import ProductCard from "../../components/ProductCard";
 import QASection from "../../components/QASection";
+import ExtraDescriptionSection from "../../components/ExtraDescriptionSection";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import DOMPurify from "dompurify";
@@ -518,6 +519,12 @@ export default function ProductDetailPage() {
             )}
 
             {/* Q&A Section */}
+            {/* Extra Description Section */}
+            <ExtraDescriptionSection
+              productId={product.id}
+              isSeller={user?.id === product.sellerId}
+            />
+
             <QASection productId={product.id} sellerId={product.sellerId} />
           </div>
 

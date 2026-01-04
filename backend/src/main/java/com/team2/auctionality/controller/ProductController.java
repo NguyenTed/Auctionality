@@ -109,6 +109,7 @@ public class ProductController {
 
     @PostMapping
     @Operation(summary = "Create product")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
     public ResponseEntity<ProductDto> createProduct(
             @CurrentUser User user,
             @Valid @RequestBody CreateProductDto productDto
@@ -119,6 +120,19 @@ public class ProductController {
         return ResponseEntity
                 .created(location)
                 .body(createdProduct);
+    }
+
+    @PutMapping("/{productId}")
+    @Operation(summary = "Update product")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ResponseEntity<ProductDto> updateProduct(
+            @PathVariable Integer productId,
+            @CurrentUser User user,
+            @Valid @RequestBody UpdateProductDto productDto
+    ) {
+        log.info("User {} updating product: {}", user.getId(), productId);
+        ProductDto updatedProduct = productService.updateProduct(productId, user, productDto);
+        return ResponseEntity.ok(updatedProduct);
     }
 
     @PostMapping("/{productId}/descriptions")

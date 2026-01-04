@@ -25,6 +25,7 @@ import AdminUsersPage from "../pages/admin/AdminUsersPage";
 import AdminSellerRequestsPage from "../pages/admin/AdminSellerRequestsPage";
 import SellerLayout from "../layouts/SellerLayout";
 import CreateListingPage from "../pages/seller/CreateListingPage";
+import EditListingPage from "../pages/seller/EditListingPage";
 import ManageListingsPage from "../pages/seller/ManageListingsPage";
 import BidderApprovalsPage from "../pages/seller/BidderApprovalsPage";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -159,6 +160,7 @@ function AppRouterContent() {
       >
         <Route path="listings" element={<ManageListingsPage />} />
         <Route path="listings/create" element={<CreateListingPage />} />
+        <Route path="listings/:id/edit" element={<EditListingPage />} />
         <Route path="bidder-approvals" element={<BidderApprovalsPage />} />
       </Route>
     </Routes>
