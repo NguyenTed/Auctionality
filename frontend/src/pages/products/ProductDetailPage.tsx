@@ -30,6 +30,9 @@ import {
   selectBidLoading,
 } from "../../features/bid/bidSlice";
 import { buyNowAsync, selectBuyingNow } from "../../features/order/orderSlice";
+import { orderService, type OrderDto } from "../../features/order/orderService";
+import { selectUser } from "../../features/auth/authSlice";
+import { connectWebSocket, subscribeToAuctionEnd } from "../../utils/websocket";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -38,9 +41,11 @@ import InfoIcon from "@mui/icons-material/Info";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
 import StarIcon from "@mui/icons-material/Star";
+import PaymentIcon from "@mui/icons-material/Payment";
 import CountdownClock from "../../components/CountdownClock";
 import ProductCard from "../../components/ProductCard";
 import QASection from "../../components/QASection";
+import ExtraDescriptionSection from "../../components/ExtraDescriptionSection";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import DOMPurify from "dompurify";
@@ -64,11 +69,13 @@ export default function ProductDetailPage() {
   const buyingNow = useAppSelector(
     product ? selectBuyingNow(product.id) : () => false
   );
+  const user = useAppSelector(selectUser);
   const { toasts, success, error, removeToast } = useToast();
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [bidAmount, setBidAmount] = useState("");
   const [isPlacingBid, setIsPlacingBid] = useState(false);
+  const [order, setOrder] = useState<OrderDto | null>(null);
 
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
@@ -96,6 +103,72 @@ export default function ProductDetailPage() {
       dispatch(fetchWatchlistAsync());
     }
   }, [isAuthenticated, dispatch]);
+
+  // Fetch order if auction ended and user is authenticated
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (
+        product &&
+        product.status === "ENDED" &&
+        isAuthenticated &&
+        user &&
+        product.id
+      ) {
+        try {
+          const fetchedOrder = await orderService.getOrderByProductId(
+            product.id
+          );
+          setOrder(fetchedOrder);
+        } catch {
+          // Order not found or user not authorized - that's okay
+          setOrder(null);
+        }
+      } else {
+        setOrder(null);
+      }
+    };
+
+    fetchOrder();
+  }, [product, isAuthenticated, user]);
+
+  // WebSocket subscription for auction end notifications
+  useEffect(() => {
+    if (!product || !isAuthenticated || product.status !== "ACTIVE" || !user) {
+      return;
+    }
+
+    let subscription: ReturnType<typeof subscribeToAuctionEnd> | null = null;
+
+    const setupWebSocket = () => {
+      connectWebSocket(
+        () => {
+          // Connected - subscribe to auction end
+          subscription = subscribeToAuctionEnd(product.id, (notification) => {
+            // Refresh product data
+            if (id) {
+              dispatch(fetchProductByIdAsync(parseInt(id)));
+            }
+            // Show notification
+            if (notification.buyerId === user.id) {
+              success("Auction ended! You won! Please complete your order.");
+            }
+          });
+        },
+        (err) => {
+          console.error("WebSocket connection error:", err);
+        }
+      );
+    };
+
+    setupWebSocket();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [product, isAuthenticated, user, id, dispatch, success]);
 
   const formatPrice = (price: number | null | undefined) => {
     if (!price) return "€0";
@@ -446,6 +519,12 @@ export default function ProductDetailPage() {
             )}
 
             {/* Q&A Section */}
+            {/* Extra Description Section */}
+            <ExtraDescriptionSection
+              productId={product.id}
+              isSeller={user?.id === product.sellerId}
+            />
+
             <QASection productId={product.id} sellerId={product.sellerId} />
           </div>
 
@@ -615,11 +694,35 @@ export default function ProductDetailPage() {
                         ? "Auction Ended"
                         : "Auction Not Active"}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 mb-4">
                       {product.status === "ENDED"
                         ? "This auction has concluded"
                         : "This auction is currently unavailable"}
                     </p>
+                    {/* Show Complete Order button if user is winner */}
+                    {product.status === "ENDED" &&
+                      order &&
+                      user &&
+                      order.buyer.id === user.id && (
+                        <Link
+                          to={`/orders/${order.id}/complete`}
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+                        >
+                          <PaymentIcon />
+                          Complete Order
+                        </Link>
+                      )}
+                    {product.status === "ENDED" &&
+                      order &&
+                      user &&
+                      order.seller.id === user.id && (
+                        <Link
+                          to={`/orders/${order.id}/complete`}
+                          className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        >
+                          View Order
+                        </Link>
+                      )}
                   </div>
                 )}
               </div>

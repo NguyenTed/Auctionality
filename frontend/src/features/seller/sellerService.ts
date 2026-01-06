@@ -44,16 +44,33 @@ export const sellerService = {
       backendPayload.buyNowPrice = payload.buyNowPrice;
     }
     
+    // Convert Date to ISO string format (YYYY-MM-DDTHH:mm:ss) for LocalDateTime
     if (payload.startTime) {
-      backendPayload.startTime = payload.startTime instanceof Date 
-        ? payload.startTime.toISOString().slice(0, 16) // Format for LocalDateTime
-        : payload.startTime;
+      if (payload.startTime instanceof Date) {
+        // Format as ISO string without timezone (LocalDateTime format)
+        const year = payload.startTime.getFullYear();
+        const month = String(payload.startTime.getMonth() + 1).padStart(2, '0');
+        const day = String(payload.startTime.getDate()).padStart(2, '0');
+        const hours = String(payload.startTime.getHours()).padStart(2, '0');
+        const minutes = String(payload.startTime.getMinutes()).padStart(2, '0');
+        backendPayload.startTime = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+      } else {
+        backendPayload.startTime = payload.startTime;
+      }
     }
     
     if (payload.endTime) {
-      backendPayload.endTime = payload.endTime instanceof Date
-        ? payload.endTime.toISOString().slice(0, 16) // Format for LocalDateTime
-        : payload.endTime;
+      if (payload.endTime instanceof Date) {
+        // Format as ISO string without timezone (LocalDateTime format)
+        const year = payload.endTime.getFullYear();
+        const month = String(payload.endTime.getMonth() + 1).padStart(2, '0');
+        const day = String(payload.endTime.getDate()).padStart(2, '0');
+        const hours = String(payload.endTime.getHours()).padStart(2, '0');
+        const minutes = String(payload.endTime.getMinutes()).padStart(2, '0');
+        backendPayload.endTime = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+      } else {
+        backendPayload.endTime = payload.endTime;
+      }
     }
     
     const response = await axiosInstance.post<Product>("/products", backendPayload);
@@ -61,7 +78,49 @@ export const sellerService = {
   },
 
   updateProduct: async (id: number, payload: ProductRequest): Promise<Product> => {
-    const response = await axiosInstance.put<Product>(`/products/${id}`, payload);
+    // Transform frontend payload to backend DTO format (same as createProduct)
+    const backendPayload: any = {
+      title: payload.title,
+      categoryId: payload.categoryId,
+      startPrice: payload.startPrice,
+      bidIncrement: payload.bidIncrement,
+      autoExtensionEnabled: payload.autoExtensionEnabled,
+      description: payload.description || "",
+      images: payload.images || [],
+    };
+    
+    if (payload.buyNowPrice) {
+      backendPayload.buyNowPrice = payload.buyNowPrice;
+    }
+    
+    // Convert Date to ISO string format (YYYY-MM-DDTHH:mm:ss) for LocalDateTime
+    if (payload.startTime) {
+      if (payload.startTime instanceof Date) {
+        const year = payload.startTime.getFullYear();
+        const month = String(payload.startTime.getMonth() + 1).padStart(2, '0');
+        const day = String(payload.startTime.getDate()).padStart(2, '0');
+        const hours = String(payload.startTime.getHours()).padStart(2, '0');
+        const minutes = String(payload.startTime.getMinutes()).padStart(2, '0');
+        backendPayload.startTime = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+      } else {
+        backendPayload.startTime = payload.startTime;
+      }
+    }
+    
+    if (payload.endTime) {
+      if (payload.endTime instanceof Date) {
+        const year = payload.endTime.getFullYear();
+        const month = String(payload.endTime.getMonth() + 1).padStart(2, '0');
+        const day = String(payload.endTime.getDate()).padStart(2, '0');
+        const hours = String(payload.endTime.getHours()).padStart(2, '0');
+        const minutes = String(payload.endTime.getMinutes()).padStart(2, '0');
+        backendPayload.endTime = `${year}-${month}-${day}T${hours}:${minutes}:00`;
+      } else {
+        backendPayload.endTime = payload.endTime;
+      }
+    }
+    
+    const response = await axiosInstance.put<Product>(`/products/${id}`, backendPayload);
     return response.data;
   },
 

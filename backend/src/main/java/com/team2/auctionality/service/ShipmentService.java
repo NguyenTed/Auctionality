@@ -7,6 +7,7 @@ import com.team2.auctionality.model.User;
 import com.team2.auctionality.repository.OrderRepository;
 import com.team2.auctionality.repository.ShipmentRepository;
 import com.team2.auctionality.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -27,7 +29,7 @@ public class ShipmentService {
     @Transactional
     public Shipment ship(Integer orderId, User seller) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow();
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
 
         if (!order.getSeller().getId().equals(seller.getId())) {
             throw new AccessDeniedException("Not seller");
@@ -48,6 +50,21 @@ public class ShipmentService {
         order.setStatus(OrderStatus.SHIPPING);
         orderRepository.save(order);
         return shipmentRepository.save(shipment);
+    }
+
+    @Transactional(readOnly = true)
+    public Shipment getShipment(Integer orderId, User user) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+
+        // Verify user is buyer or seller
+        if (!order.getBuyer().getId().equals(user.getId()) && 
+            !order.getSeller().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Not authorized to view this order's shipment");
+        }
+
+        return shipmentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Shipment not found for this order"));
     }
 
     private String randomCarrier() {

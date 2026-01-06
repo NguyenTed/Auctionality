@@ -1,5 +1,6 @@
 package com.team2.auctionality.scheduler;
 
+import com.team2.auctionality.dto.AuctionEndNotificationDto;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.model.Bid;
 import com.team2.auctionality.model.Order;
@@ -10,6 +11,7 @@ import com.team2.auctionality.service.OrderService;
 import com.team2.auctionality.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,7 @@ public class AuctionFinalizationScheduler {
     private final BidRepository bidRepository;
     private final OrderService orderService;
     private final PaymentService paymentService;
-//    private final NotificationService notificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Scheduled(fixedRate = 60000)
     @Transactional
@@ -56,12 +58,21 @@ public class AuctionFinalizationScheduler {
                     highestBid.getAmount()
             );
 
-//            String paymentUrl = paymentService.createVnPayPayment(order);
-//
-//            notificationService.notifyWinner(
-//                    highestBid.getBidder().getId(),
-//                    paymentUrl
-//            );
+            // Publish WebSocket notification for auction end
+            AuctionEndNotificationDto notification = AuctionEndNotificationDto.builder()
+                    .productId(product.getId())
+                    .orderId(order.getId())
+                    .buyerId(order.getBuyer().getId())
+                    .sellerId(order.getSeller().getId())
+                    .finalPrice(order.getFinalPrice())
+                    .message("Auction ended! Order created. Please complete your payment.")
+                    .build();
+
+            // Send to product-specific topic
+            messagingTemplate.convertAndSend("/topic/auction-end/" + product.getId(), notification);
+            
+            log.info("Published auction end notification for product {} with order {}", 
+                    product.getId(), order.getId());
         }
     }
 }

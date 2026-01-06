@@ -4,9 +4,14 @@ import com.team2.auctionality.config.CurrentUser;
 import com.team2.auctionality.dto.ApiResponse;
 import com.team2.auctionality.dto.OrderDto;
 import com.team2.auctionality.dto.PagedResponse;
+import com.team2.auctionality.dto.ShipmentDto;
+import com.team2.auctionality.dto.ShippingAddressDto;
 import com.team2.auctionality.dto.ShippingAddressRequest;
+import com.team2.auctionality.exception.AuthException;
 import com.team2.auctionality.mapper.OrderMapper;
 import com.team2.auctionality.mapper.PaginationMapper;
+import com.team2.auctionality.mapper.ShipmentMapper;
+import com.team2.auctionality.mapper.ShippingAddressMapper;
 import com.team2.auctionality.model.Shipment;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.OrderDeliveryService;
@@ -47,6 +52,64 @@ public class OrderController {
                                     .getOrders(user, isSeller, PaginationUtils.createPageable(page, size))
                                     .map(OrderMapper::toDto);
         return PaginationMapper.from(orders);
+    }
+
+    @GetMapping("/{orderId}")
+    @Operation(summary = "Get order by ID")
+    public ResponseEntity<OrderDto> getOrderById(
+            @PathVariable Integer orderId,
+            @CurrentUser User user
+    ) {
+        log.info("User {} getting order {}", user.getId(), orderId);
+        var order = orderService.getOrderById(orderId);
+
+        // Verify user is buyer or seller
+        if (!order.getBuyer().getId().equals(user.getId()) &&
+            !order.getSeller().getId().equals(user.getId())) {
+            throw new AuthException("Not authorized to view this order");
+        }
+
+        return ResponseEntity.ok(OrderMapper.toDto(order));
+    }
+
+    @GetMapping("/product/{productId}")
+    @Operation(summary = "Get order by product ID")
+    public ResponseEntity<OrderDto> getOrderByProductId(
+            @PathVariable Integer productId,
+            @CurrentUser User user
+    ) {
+        log.info("User {} getting order for product {}", user.getId(), productId);
+        var order = orderService.getOrderByProductId(productId);
+
+        // Verify user is buyer or seller
+        if (!order.getBuyer().getId().equals(user.getId()) &&
+            !order.getSeller().getId().equals(user.getId())) {
+            throw new AuthException("Not authorized to view this order");
+        }
+
+        return ResponseEntity.ok(OrderMapper.toDto(order));
+    }
+
+    @GetMapping("/{orderId}/shipping-address")
+    @Operation(summary = "Get shipping address for an order")
+    public ResponseEntity<ShippingAddressDto> getShippingAddress(
+            @PathVariable Integer orderId,
+            @CurrentUser User user
+    ) {
+        log.info("User {} getting shipping address for order {}", user.getId(), orderId);
+        var address = shippingAddressService.getShippingAddress(orderId, user);
+        return ResponseEntity.ok(ShippingAddressMapper.toDto(address));
+    }
+
+    @GetMapping("/{orderId}/shipment")
+    @Operation(summary = "Get shipment information for an order")
+    public ResponseEntity<ShipmentDto> getShipment(
+            @PathVariable Integer orderId,
+            @CurrentUser User user
+    ) {
+        log.info("User {} getting shipment for order {}", user.getId(), orderId);
+        var shipment = shipmentService.getShipment(orderId, user);
+        return ResponseEntity.ok(ShipmentMapper.toDto(shipment));
     }
 
     @PostMapping("/{orderId}/shipping-address")

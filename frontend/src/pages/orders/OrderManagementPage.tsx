@@ -21,13 +21,16 @@ import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import RatingModal from "../../components/RatingModal";
 import ChatWindow from "../../components/ChatWindow";
-import type { OrderDto } from "../../features/order/orderService";
+import type { OrderDto, ShipmentDto } from "../../features/order/orderService";
+import { orderService } from "../../features/order/orderService";
+import { useNavigate } from "react-router-dom";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import MessageIcon from "@mui/icons-material/Message";
+import PaymentIcon from "@mui/icons-material/Payment";
 
 const getStatusIcon = (status: string) => {
   switch (status) {
@@ -73,6 +76,7 @@ const getStatusColor = (status: string) => {
 
 export default function OrderManagementPage() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const orders = useAppSelector(selectOrders);
   const loading = useAppSelector(selectOrderLoading);
@@ -88,11 +92,40 @@ export default function OrderManagementPage() {
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
   const [chatOrderId, setChatOrderId] = useState<number | null>(null);
+  const [orderShipments, setOrderShipments] = useState<
+    Record<number, ShipmentDto>
+  >({});
 
   useEffect(() => {
     const isSeller = activeTab === "seller";
     dispatch(fetchOrdersAsync({ isSeller, page, size: 10 }));
   }, [dispatch, activeTab, page]);
+
+  // Load shipments for orders that are in SHIPPING or DELIVERED status
+  useEffect(() => {
+    const loadShipments = async () => {
+      const shipments: Record<number, ShipmentDto> = {};
+      for (const order of orders) {
+        if (
+          order.status === "SHIPPING" ||
+          order.status === "DELIVERED" ||
+          order.status === "COMPLETED"
+        ) {
+          try {
+            const shipment = await orderService.getShipment(order.id);
+            shipments[order.id] = shipment;
+          } catch (err) {
+            // Shipment not found, skip
+          }
+        }
+      }
+      setOrderShipments(shipments);
+    };
+
+    if (orders.length > 0) {
+      loadShipments();
+    }
+  }, [orders]);
 
   const handleTabChange = (tab: "buyer" | "seller") => {
     setActiveTab(tab);
@@ -286,8 +319,60 @@ export default function OrderManagementPage() {
                           </div>
                         </div>
 
+                        {/* Shipment Information */}
+                        {orderShipments[order.id] && (
+                          <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <LocalShippingIcon
+                                className="text-blue-600"
+                                fontSize="small"
+                              />
+                              <span className="text-sm font-semibold text-blue-900">
+                                Shipment Tracking
+                              </span>
+                            </div>
+                            <div className="text-xs text-blue-800 space-y-1">
+                              <div>
+                                <span className="font-medium">Carrier:</span>{" "}
+                                {orderShipments[order.id].carrier}
+                              </div>
+                              <div>
+                                <span className="font-medium">Tracking:</span>{" "}
+                                <span className="font-mono">
+                                  {orderShipments[order.id].trackingNumber}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Action Buttons */}
-                        <div className="flex gap-2 mt-3">
+                        <div className="flex gap-2 mt-3 flex-wrap">
+                          {/* Pay Now button for buyers with pending orders */}
+                          {activeTab === "buyer" &&
+                            order.status === "PENDING" && (
+                              <button
+                                onClick={() =>
+                                  navigate(`/orders/${order.id}/complete`)
+                                }
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm font-medium"
+                              >
+                                <PaymentIcon fontSize="small" />
+                                Pay Now
+                              </button>
+                            )}
+                          {/* View/Complete Order button */}
+                          {(order.status !== "PENDING" ||
+                            activeTab === "seller") && (
+                            <button
+                              onClick={() =>
+                                navigate(`/orders/${order.id}/complete`)
+                              }
+                              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
+                            >
+                              View Order
+                            </button>
+                          )}
                           <button
                             onClick={() => setChatOrderId(order.id)}
                             className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2 text-sm font-medium"

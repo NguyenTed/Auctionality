@@ -31,14 +31,17 @@ public class PaymentService {
     @Value("${vnpay.url}")
     private String vnp_PayUrl;
 
-    @Value("${vnpay.return-url}")
-    private String vnp_ReturnUrl;
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
     @Value("${vnpay.tmn-code}")
     private String vnp_TmnCode;
 
     @Value("${vnpay.secret-key}")
     private String secretKey;
+
+    @Value("${vnpay.usd-to-vnd-rate:24000}")
+    private Float usdToVndRate;
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
@@ -48,7 +51,8 @@ public class PaymentService {
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String orderType = "other";
-        long amount = Math.round(price * 1000);
+        // Convert USD to VND, then multiply by 100 (VNPay requirement)
+        long amount = Math.round(price * usdToVndRate * 100);
         String bankCode = req.getParameter("bankCode");
 
         String vnp_TxnRef = PaymentConfig.getRandomNumber(8);
@@ -69,8 +73,9 @@ public class PaymentService {
         vnp_Params.put("vnp_OrderType", orderType);
 
         vnp_Params.put("vnp_Locale", "vn");
+        // Use frontend base URL + /vnpay-return path
         String vnp_ReturnUrlWithPayment =
-                vnp_ReturnUrl + "?paymentId=" + payment.getId();
+                frontendBaseUrl + "/vnpay-return?paymentId=" + payment.getId();
         vnp_Params.put("vnp_ReturnUrl", vnp_ReturnUrlWithPayment);
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
