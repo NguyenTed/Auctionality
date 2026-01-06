@@ -57,46 +57,18 @@ export const connectWebSocket = (
   
   // Add a timeout to detect if connection hangs
   let connectionTimeout: ReturnType<typeof setTimeout> | null = null;
-  let sockJSSocket: SockJS | null = null;
   
-  // Create STOMP client with SockJS
-  // For STOMP.js v7 with SockJS, we need to use webSocketFactory
-  // The factory is called when activate() is called
+  // Create SockJS socket first (matching reference implementation exactly)
+  const sockJSSocket = new SockJS(wsUrl);
+  
+  // Create STOMP client with SockJS (matching reference implementation)
+  // Note: webSocketFactory is called when activate() is called
   console.log("connectWebSocket: Creating STOMP client with SockJS");
   
   stompClient = new Client({
     webSocketFactory: () => {
-      console.log("connectWebSocket: webSocketFactory called, creating SockJS socket");
-      // Create SockJS socket when STOMP needs it
-      sockJSSocket = new SockJS(wsUrl);
-      
-      // Add event listeners for debugging
-      sockJSSocket.onopen = () => {
-        console.log("connectWebSocket: SockJS socket opened, readyState:", sockJSSocket?.readyState);
-      };
-      
-      sockJSSocket.onclose = (event) => {
-        console.log("connectWebSocket: SockJS socket closed", { 
-          code: event.code, 
-          reason: event.reason, 
-          wasClean: event.wasClean 
-        });
-      };
-      
-      sockJSSocket.onerror = (error) => {
-        console.error("connectWebSocket: SockJS socket error", error);
-        if (connectionTimeout) {
-          clearTimeout(connectionTimeout);
-          connectionTimeout = null;
-        }
-        pendingCallbacks = [];
-        onError(error);
-      };
-      
-      sockJSSocket.onmessage = (event) => {
-        console.log("connectWebSocket: SockJS socket message received", event.data);
-      };
-      
+      // Return the same socket instance (matching reference)
+      console.log("connectWebSocket: webSocketFactory called, returning SockJS socket");
       return sockJSSocket as WebSocket;
     },
     connectHeaders: {
@@ -105,14 +77,19 @@ export const connectWebSocket = (
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
+    // Disable automatic reconnection for now to debug
+    // reconnectDelay: 0 means no auto-reconnect
     debug: (str) => {
-      // Only log important debug messages to avoid spam
-      if (str.includes("ERROR") || str.includes("CONNECT") || str.includes("CONNECTED")) {
-        console.log("STOMP Debug:", str);
+      // Log all STOMP debug messages to help diagnose connection issues
+      console.log("STOMP Debug:", str);
+      // Check for CONNECTED frame specifically
+      if (str.includes("CONNECTED")) {
+        console.log("connectWebSocket: CONNECTED frame detected in debug output!");
       }
     },
     onConnect: (frame) => {
       console.log("connectWebSocket: onConnect callback fired!", frame);
+      console.log("connectWebSocket: Connected frame details:", JSON.stringify(frame, null, 2));
       // Clear timeout on successful connection
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
@@ -161,6 +138,33 @@ export const connectWebSocket = (
     },
   });
 
+  // Add event listeners for debugging (after creating client)
+  sockJSSocket.onopen = () => {
+    console.log("connectWebSocket: SockJS socket opened, readyState:", sockJSSocket.readyState);
+  };
+  
+  sockJSSocket.onclose = (event) => {
+    console.log("connectWebSocket: SockJS socket closed", { 
+      code: event.code, 
+      reason: event.reason, 
+      wasClean: event.wasClean 
+    });
+  };
+  
+  sockJSSocket.onerror = (error) => {
+    console.error("connectWebSocket: SockJS socket error", error);
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+      connectionTimeout = null;
+    }
+    pendingCallbacks = [];
+    onError(error);
+  };
+  
+  sockJSSocket.onmessage = (event) => {
+    console.log("connectWebSocket: SockJS socket message received", event.data);
+  };
+
   console.log("connectWebSocket: Activating STOMP client");
   
   // Set timeout after creating client but before activating
@@ -168,12 +172,8 @@ export const connectWebSocket = (
     if (stompClient && !stompClient.connected) {
       console.error("connectWebSocket: Connection timeout - WebSocket did not connect within 10 seconds");
       console.error("connectWebSocket: Current client state:", stompClient.state);
-      if (sockJSSocket) {
-        console.error("connectWebSocket: SockJS readyState:", sockJSSocket.readyState);
-        console.error("connectWebSocket: SockJS protocol:", sockJSSocket.protocol);
-      } else {
-        console.error("connectWebSocket: SockJS socket was never created");
-      }
+      console.error("connectWebSocket: SockJS readyState:", sockJSSocket.readyState);
+      console.error("connectWebSocket: SockJS protocol:", sockJSSocket.protocol);
       pendingCallbacks = [];
       onError("Connection timeout - WebSocket server may not be responding");
     }
@@ -204,7 +204,7 @@ export const disconnectWebSocket = () => {
 };
 
 export const subscribeToThread = (
-  threadId: number,
+  orderId: number, // Changed from threadId to orderId to match backend
   onMessage: (message: ChatMessage) => void
 ): StompSubscription | null => {
   if (!stompClient?.connected) {
@@ -213,7 +213,7 @@ export const subscribeToThread = (
   }
 
   const subscription = stompClient.subscribe(
-    `/topic/chat/${threadId}`,
+    `/topic/chat/${orderId}`, // Use orderId instead of threadId to match backend
     (message: IMessage) => {
       try {
         const chatMessage: ChatMessage = JSON.parse(message.body);

@@ -27,6 +27,8 @@ public class ChatSocketController {
             ChatMessageRequest request,
             @CurrentUser User user
     ) {
+        System.out.println("DCMMMMMMMMMMMMM");
+
         return messageService.saveMessage(
                 orderId,
                 user,

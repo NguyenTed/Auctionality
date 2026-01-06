@@ -56,8 +56,9 @@ public class ChatMessageService {
 
         ChatMessage savedMessage = messageRepository.save(message);
         
-        // Broadcast message to the thread's topic via WebSocket
-        messagingTemplate.convertAndSend("/topic/chat/" + chatThread.getId(), savedMessage);
+        // Broadcast message to the order's topic via WebSocket (using orderId, not threadId)
+        // This matches the controller's @SendTo("/topic/chat/{orderId}") pattern
+        messagingTemplate.convertAndSend("/topic/chat/" + orderId, savedMessage);
         
         return savedMessage;
     }

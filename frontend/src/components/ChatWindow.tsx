@@ -85,14 +85,17 @@ export default function ChatWindow({
       console.log(
         "ChatWindow: WebSocket already connected, setting up subscriptions"
       );
-      if (!connectionStateRef.current) {
-        connectionStateRef.current = true;
-        setIsConnected(true);
-      }
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        if (!connectionStateRef.current) {
+          connectionStateRef.current = true;
+          setIsConnected(true);
+        }
+      }, 0);
       // Fetch initial messages
       dispatch(fetchMessagesAsync(thread.id));
-      // Subscribe to this thread's messages
-      const subscription = subscribeToThread(thread.id, (message) => {
+      // Subscribe to this order's messages (using orderId, not threadId)
+      const subscription = subscribeToThread(orderId, (message) => {
         console.log("ChatWindow: Received message via WebSocket", message);
         dispatch(addMessage({ threadId: thread.id, message }));
       });
@@ -119,11 +122,11 @@ export default function ChatWindow({
             setIsConnected(true);
           }
 
-          // On connect: fetch initial messages and subscribe to thread
+          // On connect: fetch initial messages and subscribe to order
           dispatch(fetchMessagesAsync(thread.id));
 
-          // Subscribe to this thread's messages
-          const subscription = subscribeToThread(thread.id, (message) => {
+          // Subscribe to this order's messages (using orderId, not threadId)
+          const subscription = subscribeToThread(orderId, (message) => {
             console.log("ChatWindow: Received message via WebSocket", message);
             // Add incoming message to Redux store
             dispatch(addMessage({ threadId: thread.id, message }));
@@ -156,10 +159,12 @@ export default function ChatWindow({
 
       if (!client) {
         console.error("ChatWindow: Failed to create WebSocket client");
-        if (connectionStateRef.current) {
-          connectionStateRef.current = false;
-          setIsConnected(false);
-        }
+        setTimeout(() => {
+          if (connectionStateRef.current) {
+            connectionStateRef.current = false;
+            setIsConnected(false);
+          }
+        }, 0);
       }
     }
 
@@ -178,7 +183,7 @@ export default function ChatWindow({
       // Only disconnect when all chat windows are closed (handled globally)
       // Don't set isConnected to false here as it might be used by other windows
     };
-  }, [isOpen, thread?.id, dispatch, showError]);
+  }, [isOpen, thread?.id, orderId, dispatch, showError]);
 
   // Update connection state when thread or isOpen changes - use setTimeout to avoid synchronous setState
   useEffect(() => {
