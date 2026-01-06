@@ -34,6 +34,7 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final OrderService orderService;
     private final PasswordEncoder passwordEncoder;
+    private final UserProfileRepository userProfileRepository;
 
     @Transactional(readOnly = true)
     public User getUserById(Integer userId) {
@@ -154,28 +155,70 @@ public class UserService {
     @Transactional
     public OrderRating rateUser(User user, RatingRequest ratingRequest) {
         log.info("User {} rating order {}", user.getId(), ratingRequest.getOrderId());
+
         Order order = orderService.getOrderById(ratingRequest.getOrderId());
 
         OrderRating orderRating = orderRatingRepository
                 .findByOrderIdAndFromUser(ratingRequest.getOrderId(), user)
-                .orElseGet(() -> {
-                    OrderRating r = new OrderRating();
-                    r.setOrderId(order.getId());
-                    r.setFromUser(user);
-                    r.setCreatedAt(new Date());
-                    return r;
-                });
+                .orElse(null);
+
+        boolean isNewRating = false;
+        Integer oldValue = null;
+
+        if (orderRating == null) {
+            orderRating = new OrderRating();
+            orderRating.setOrderId(order.getId());
+            orderRating.setFromUser(user);
+            orderRating.setCreatedAt(new Date());
+            isNewRating = true;
+        } else {
+            oldValue = orderRating.getValue();
+        }
 
         User toUser = ratingRequest.getIsBuyer()
-                ? order.getSeller()   // buyer rate seller
-                : order.getBuyer();   // seller rate buyer
+                ? order.getSeller()
+                : order.getBuyer();
         orderRating.setToUser(toUser);
 
         if (ratingRequest.getComment() != null) {
             orderRating.setComment(ratingRequest.getComment());
         }
-        orderRating.setValue(ratingRequest.getValue());
 
+        Integer newValue = ratingRequest.getValue(); // 1 = positive, -1 = negative
+        orderRating.setValue(newValue);
+
+        UserProfile userProfile = userProfileRepository.findByUserId(toUser.getId());
+
+        // ===== Update counter =====
+        if (isNewRating) {
+            if (newValue == 1) {
+                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() + 1);
+            } else {
+                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() + 1);
+            }
+        } else if (!newValue.equals(oldValue)) {
+            if (oldValue == 1) {
+                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() - 1);
+            } else {
+                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() - 1);
+            }
+
+            if (newValue == 1) {
+                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() + 1);
+            } else {
+                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() + 1);
+            }
+        }
+
+        // ===== Caculate ratingPercent =====
+        int positive = userProfile.getRatingPositiveCount();
+        int negative = userProfile.getRatingNegativeCount();
+        int total = positive + negative;
+
+        float ratingPercent = total == 0 ? 0f : (float) positive / total;
+        userProfile.setRatingPercent(ratingPercent);
+
+        userProfileRepository.save(userProfile);
         return orderRatingRepository.save(orderRating);
     }
 

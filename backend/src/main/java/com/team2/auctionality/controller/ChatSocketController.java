@@ -20,15 +20,15 @@ import org.springframework.stereotype.Controller;
 public class ChatSocketController {
     private final ChatMessageService messageService;
 
-    @MessageMapping("/chat.send")
-    @SendTo("/topic/chat/{threadId}")
+    @MessageMapping("/chat.send/{orderId}")
+    @SendTo("/topic/chat/{orderId}")
     public ChatMessage sendMessage(
-            @DestinationVariable Integer threadId,
+            @DestinationVariable Integer orderId,
             ChatMessageRequest request,
             @CurrentUser User user
     ) {
         return messageService.saveMessage(
-                threadId,
+                orderId,
                 user,
                 request.getContent()
         );

@@ -1,12 +1,10 @@
 package com.team2.auctionality.service;
 
-import com.team2.auctionality.exception.AuthException;
 import com.team2.auctionality.model.ChatMessage;
 import com.team2.auctionality.model.ChatThread;
 import com.team2.auctionality.model.Order;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.repository.ChatMessageRepository;
-import com.team2.auctionality.repository.ChatThreadRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
