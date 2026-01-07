@@ -34,61 +34,44 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-        
-        if (accessor == null) {
-            log.warn("WebSocket message has no StompHeaderAccessor");
-            return message;
-        }
+        if (accessor == null) return message;
 
         StompCommand command = accessor.getCommand();
-        
-        // Handle CONNECT - authenticate on connection
+
+        // CONNECT frame → cho anonymous
         if (StompCommand.CONNECT.equals(command)) {
-            log.info("WebSocket CONNECT frame received, attempting authentication");
-            log.debug("CONNECT frame headers: {}", accessor.toMap());
-            try {
-                boolean authenticated = authenticateFromHeaders(accessor);
-                if (!authenticated) {
-                    log.warn("WebSocket CONNECT authentication failed, but allowing connection to proceed");
-                    // Don't block the connection - allow it to proceed even if auth fails
-                    // The server can handle unauthenticated connections if needed
-                } else {
-                    log.info("WebSocket CONNECT authentication successful, connection will proceed");
-                }
-            } catch (Exception e) {
-                log.error("Error during WebSocket CONNECT authentication: {}", e.getMessage(), e);
-                // Don't block the connection even if authentication throws an exception
-                // Allow it to proceed as unauthenticated
-            }
-            // MessageHeaderAccessor modifies the message in place
-            // The accessor changes are automatically reflected in the message
+            log.info("CONNECT frame received, skipping authentication (anonymous allowed)");
         }
-        // Handle CONNECTED - log successful connection
-        else if (StompCommand.CONNECTED.equals(command)) {
-            log.info("WebSocket CONNECTED frame being sent to client");
-        }
-        // Handle SEND - authenticate on message send
-        // Always authenticate SEND messages to ensure user is set
-        else if (StompCommand.SEND.equals(command)) {
-            // Always try to authenticate from headers for SEND commands
-            // This ensures the user is available for @CurrentUser annotation
+        // SEND hoặc SUBSCRIBE → authenticate
+        else if (StompCommand.SEND.equals(command) || StompCommand.SUBSCRIBE.equals(command)) {
+            log.info("SEND/SUBSCRIBE headers: {}", accessor.toMap());
             authenticateFromHeaders(accessor);
+            Authentication auth = (Authentication) accessor.getUser();
+            if (auth != null) {
+                Object principal = auth.getPrincipal();
+                if (principal instanceof User) {
+                    log.info("WebSocket authenticated user: {} (ID: {})",
+                            ((User) principal).getEmail(),
+                            ((User) principal).getId());
+                } else {
+                    log.info("WebSocket authenticated principal: {}", principal);
+                }
+            }
         }
 
-        // Always return the message to allow it to proceed
         return message;
     }
 
     private boolean authenticateFromHeaders(StompHeaderAccessor accessor) {
         // Extract token from headers
         String token = null;
-        
+
         // Method 1: Try getFirstNativeHeader (works for CONNECT and SEND)
         String authHeader = accessor.getFirstNativeHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
         }
-        
+
         // Method 2: Try getNativeHeader (returns list) - fallback
         if (token == null) {
             java.util.List<String> authHeaders = accessor.getNativeHeader("Authorization");
@@ -99,7 +82,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 }
             }
         }
-        
+
         // Log all headers for debugging on CONNECT
         if (token == null && StompCommand.CONNECT.equals(accessor.getCommand())) {
             log.debug("No Authorization header found in CONNECT frame. Available headers: {}", accessor.toMap());
@@ -117,7 +100,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                             log.error("WebSocket authentication failed: User not found for email: {}", userEmail);
                             return false;
                         }
-                        
+
                         // Create authentication with User entity (not UserDetails)
                         // This allows @CurrentUser to inject User directly
                         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -125,11 +108,11 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                                 null, // Credentials
                                 userDetails.getAuthorities()
                         );
-                        
+
                         // Set authentication in accessor and SecurityContext
                         accessor.setUser(authentication);
                         SecurityContextHolder.getContext().setAuthentication(authentication);
-                        
+
                         log.info("WebSocket authenticated user: {} (ID: {})", userEmail, user.getId());
                         return true;
                     } else {
@@ -146,7 +129,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 log.warn("No JWT token found in WebSocket CONNECT frame headers");
             }
         }
-        
+
         return false;
     }
 }

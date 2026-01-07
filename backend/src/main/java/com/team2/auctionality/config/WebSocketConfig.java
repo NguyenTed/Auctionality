@@ -3,6 +3,7 @@ package com.team2.auctionality.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.scheduling.TaskScheduler;
@@ -11,12 +12,15 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer  {
 
     private final WebSocketAuthInterceptor webSocketAuthInterceptor;
+    private final MessagingUserArgumentResolver messagingUserArgumentResolver;
 
     @Bean
     public TaskScheduler taskScheduler() {
@@ -47,4 +51,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer  {
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(webSocketAuthInterceptor);
     }
+
+    // Some Spring versions expose different hook methods for registering message handler argument resolvers.
+    // Provide compatibility by implementing both possible names (without @Override) so compilation won't fail
+    // if the method is not present in the current framework version.
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
+        argumentResolvers.add(messagingUserArgumentResolver);
+    }
+
+//    public void configureMessageHandlerMethodArgumentResolvers(List<Object> argumentResolvers) {
+//        argumentResolvers.add(messagingUserArgumentResolver);
+//    }
 }

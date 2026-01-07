@@ -102,8 +102,17 @@ const chatSlice = createSlice({
       if (!state.messages[threadId]) {
         state.messages[threadId] = [];
       }
-      state.messages[threadId].push(message);
+      const exists = state.messages[threadId].some((m) => m.id === message.id);
+      if (!exists) {
+        state.messages[threadId].push(message);
+      } else {
+        // Replace existing message in case the incoming message is an update
+        state.messages[threadId] = state.messages[threadId].map((m) =>
+          m.id === message.id ? message : m
+        );
+      }
     },
+
   },
   extraReducers: (builder) => {
     // Create Thread
@@ -132,7 +141,9 @@ const chatSlice = createSlice({
       .addCase(fetchMessagesAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         const { threadId, messages } = action.payload;
-        state.messages[threadId] = messages;
+        // Deduplicate server-provided messages by id while preserving order
+        const unique = Array.from(new Map(messages.map((m) => [m.id, m])).values());
+        state.messages[threadId] = unique;
         state.error = null;
       })
       .addCase(fetchMessagesAsync.rejected, (state, action) => {
@@ -154,7 +165,14 @@ const chatSlice = createSlice({
         if (!state.messages[threadId]) {
           state.messages[threadId] = [];
         }
-        state.messages[threadId].push(message);
+        const exists = state.messages[threadId].some((m) => m.id === message.id);
+        if (!exists) {
+          state.messages[threadId].push(message);
+        } else {
+          state.messages[threadId] = state.messages[threadId].map((m) =>
+            m.id === message.id ? message : m
+          );
+        }
         state.error = null;
       })
       .addCase(sendMessageAsync.rejected, (state, action) => {
