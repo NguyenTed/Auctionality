@@ -1,14 +1,19 @@
 package com.team2.auctionality.service;
 
+import com.team2.auctionality.dto.CancelOrderRequestDto;
 import com.team2.auctionality.dto.OrderDto;
+import com.team2.auctionality.dto.TransactionCancellationDto;
 import com.team2.auctionality.enums.OrderStatus;
-import com.team2.auctionality.model.Order;
-import com.team2.auctionality.model.Product;
-import com.team2.auctionality.model.User;
+import com.team2.auctionality.exception.CancelOrderBadRequestException;
+import com.team2.auctionality.mapper.TransactionCancellationMapper;
+import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.OrderRepository;
+import com.team2.auctionality.repository.PaymentRepository;
+import com.team2.auctionality.repository.TransactionCancellationRepository;
 import com.team2.auctionality.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,15 +28,21 @@ import java.util.List;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final TransactionCancellationRepository transactionCancellationRepository;
+    private final PaymentRepository paymentRepository;
     private final ProductService productService;
 
     public OrderService(
             OrderRepository orderRepository,
             UserRepository userRepository,
+            TransactionCancellationRepository transactionCancellationRepository,
+            PaymentRepository paymentRepository,
             @Lazy ProductService productService
     ) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
+        this.transactionCancellationRepository = transactionCancellationRepository;
+        this.paymentRepository = paymentRepository;
         this.productService = productService;
     }
 
@@ -82,5 +93,22 @@ public class OrderService {
 
     public Page<Order> getOrders(User user, Boolean isSeller, Pageable pageable) {
         return orderRepository.findOrders(user, isSeller, pageable);
+    }
+
+    @Transactional
+    public TransactionCancellationDto cancelOrder(Integer orderId, CancelOrderRequestDto cancelOrderRequestDto, User user) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new EntityNotFoundException("Order " + orderId + " not found"));
+        Payment payment = paymentRepository.findByOrderId(orderId).orElse(null);
+        if (payment != null && !payment.getStatus().equals(OrderStatus.PENDING)) {
+            throw new CancelOrderBadRequestException("Payment is not PENDING to be canceled");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        TransactionCancellation transactionCancellation = TransactionCancellation.builder()
+                .reason(cancelOrderRequestDto.getReason())
+                .cancelledByUser(user)
+                .createdAt(new Date())
+                .build();
+        return TransactionCancellationMapper.toDto(transactionCancellationRepository.save(transactionCancellation));
     }
 }

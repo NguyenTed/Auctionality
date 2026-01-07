@@ -1,12 +1,7 @@
 package com.team2.auctionality.controller;
 
 import com.team2.auctionality.config.CurrentUser;
-import com.team2.auctionality.dto.ApiResponse;
-import com.team2.auctionality.dto.OrderDto;
-import com.team2.auctionality.dto.PagedResponse;
-import com.team2.auctionality.dto.ShipmentDto;
-import com.team2.auctionality.dto.ShippingAddressDto;
-import com.team2.auctionality.dto.ShippingAddressRequest;
+import com.team2.auctionality.dto.*;
 import com.team2.auctionality.exception.AuthException;
 import com.team2.auctionality.mapper.OrderMapper;
 import com.team2.auctionality.mapper.PaginationMapper;
@@ -88,6 +83,17 @@ public class OrderController {
         }
 
         return ResponseEntity.ok(OrderMapper.toDto(order));
+    }
+
+    @DeleteMapping("/{orderId}/cancel")
+    @Operation(summary = "Cancel order when buyer have not paid yet.")
+    public ResponseEntity<TransactionCancellationDto> cancelOrder(
+            @PathVariable Integer orderId,
+            @RequestBody CancelOrderRequestDto cancelOrderRequestDto,
+            @CurrentUser User user
+    ) {
+        log.info("Called cancel order");
+        return ResponseEntity.ok(orderService.cancelOrder(orderId, cancelOrderRequestDto, user));
     }
 
     @GetMapping("/{orderId}/shipping-address")

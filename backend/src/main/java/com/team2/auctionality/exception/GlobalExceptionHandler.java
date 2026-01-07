@@ -262,5 +262,15 @@ public class GlobalExceptionHandler {
                         Instant.now()
                 ));
     }
+
+    @ExceptionHandler(CancelOrderBadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleCancelOrderBadRequest(CancelOrderBadRequestException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        Instant.now()
+                ));
+    }
 }
 

@@ -64,7 +64,6 @@ public class BidService {
 
     @Transactional(noRollbackFor = BidPendingApprovalException.class)
     public AutoBidConfig placeBid(User bidder, Integer productId, PlaceBidRequest bidRequest) {
-        System.out.println("aaaaaaaa");
         // 1. Check if bidder is in RejectedBidder
         if (rejectedBidderRepository.existsByProductIdAndBidderId(productId, bidder.getId())) {
             log.warn("User " + bidder.getId() + " is rejected.");
