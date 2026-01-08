@@ -371,4 +371,8 @@ public class BidService {
                     }
                 });
     }
+
+    public Bid getHighestBidByProductId(Integer productId) {
+        return bidRepository.findHighestBid(productId).orElse(null);
+    }
 }

@@ -16,7 +16,7 @@ export interface SellerInfo {
 
 export interface HighestBidderInfo {
   id: number;
-  fullName: string | null;
+  maskedName: string | null;
   avatarUrl: string | null;
   ratingPercent: number | null;
 }

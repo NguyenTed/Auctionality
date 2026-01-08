@@ -92,7 +92,8 @@ public class ProductController {
     @GetMapping("/{id}")
     @Operation(summary = "Get product by id")
     public ResponseEntity<ProductDto> getProductById(@PathVariable Integer id) {
-        ProductDto product = productMapper.toDto(productService.getProductById(id));
+        Bid highestBid = bidService.getHighestBidByProductId(id);
+        ProductDto product = productMapper.toDto(productService.getProductById(id), highestBid);
         return ResponseEntity.ok(product);
     }
 

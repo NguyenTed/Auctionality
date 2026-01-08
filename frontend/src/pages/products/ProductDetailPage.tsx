@@ -563,7 +563,7 @@ export default function ProductDetailPage() {
                   {product.highestBidderInfo.avatarUrl ? (
                     <img
                       src={product.highestBidderInfo.avatarUrl}
-                      alt={product.highestBidderInfo.fullName || "Bidder"}
+                      alt={product.highestBidderInfo.maskedName || "Bidder"}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
@@ -571,20 +571,33 @@ export default function ProductDetailPage() {
                       <PersonIcon className="text-gray-400 text-2xl" />
                     </div>
                   )}
+                 <div className="flex items-center justify-between flex-1">
+                  {/* Left: bidder info */}
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">
-                      {product.highestBidderInfo.fullName || "Unknown Bidder"}
+                      {product.highestBidderInfo.maskedName || "Unknown Bidder"}
                     </p>
+
                     {product.highestBidderInfo.ratingPercent !== null && (
                       <div className="flex items-center gap-1 mt-1">
                         <StarIcon className="text-yellow-400 text-sm" />
                         <span className="text-sm font-medium text-gray-700">
-                          {product.highestBidderInfo.ratingPercent.toFixed(1)}%
-                          positive
+                          {product.highestBidderInfo.ratingPercent.toFixed(1)}% positive
                         </span>
                       </div>
                     )}
                   </div>
+
+                  {/* Right: bid amount */}
+                  <div className="text-right ml-4">
+                    <p className="text-lg font-bold text-green-600">
+                      ${product.highestBidderInfo.bidAmount.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Highest bid
+                    </p>
+                  </div>
+                </div>
                 </div>
               </div>
             )}
