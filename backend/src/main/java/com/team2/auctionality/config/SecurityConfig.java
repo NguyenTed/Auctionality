@@ -59,6 +59,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api/payments/vnpay-return").permitAll()
                         .requestMatchers("/ws-chat/**").permitAll()
+                        .requestMatchers(
+                                "/api/bids/products/*/price",
+                                "/api/bids/products/*/history"
+                        ).permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )

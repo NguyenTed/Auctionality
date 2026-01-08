@@ -819,8 +819,7 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Auto-Bid Configuration (only visible to user who created it) */}
-              {/*{autoBidConfig && isAuthenticated && user && autoBidConfig.bidderId === user.id && (*/}
-              {autoBidConfig && (
+              {autoBidConfig && isAuthenticated && user && autoBidConfig.bidderId === user.id && (
                 <div className="bg-blue-50 rounded-xl shadow-sm p-6 border border-blue-200">
                   <div className="flex items-center gap-2 mb-2">
                     <GavelIcon className="text-blue-600" fontSize="small" />
