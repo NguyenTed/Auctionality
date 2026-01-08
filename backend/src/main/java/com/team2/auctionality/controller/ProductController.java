@@ -1,25 +1,22 @@
 package com.team2.auctionality.controller;
 
+import com.team2.auctionality.config.CurrentUser;
 import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductTopType;
 import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.ProductMapper;
-import com.team2.auctionality.mapper.ProductQuestionMapper;
 import com.team2.auctionality.mapper.RejectedBidderMapper;
 import com.team2.auctionality.model.*;
-import com.team2.auctionality.service.AuthService;
 import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
-import com.team2.auctionality.sse.SseEmitterManager;
+import com.team2.auctionality.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.net.URI;
 import java.util.List;
@@ -28,104 +25,129 @@ import java.util.List;
 @RequestMapping("/api/products")
 @Tag(name = "Product", description = "Product API")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@Slf4j
 public class ProductController {
-
-    private static final int PAGE_DEFAULT_VALUE = 1;
-    private static final int PAGE_SIZE_DEFAULT_VALUE = 10;
 
     private final ProductService productService;
     private final BidService bidService;
-    private final AuthService authService;
-
-    private final SseEmitterManager emitterManager;
-
+    private final ProductMapper productMapper;
 
     @GetMapping("/category/{categoryId}")
+    @Operation(summary = "Get products by category")
     public PagedResponse<ProductDto> getProductsByCategory(
             @PathVariable Integer categoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        if (page < 1) {
-            page = PAGE_DEFAULT_VALUE;
-        }
-        if (size < 1) {
-            size = PAGE_SIZE_DEFAULT_VALUE;
-        }
-        return PaginationMapper.from(productService.getProductsByCategory(categoryId, page - 1, size));
+        return PaginationMapper.from(
+                productService.getProductsByCategory(
+                        categoryId, 
+                        PaginationUtils.createPageable(page, size)
+                )
+        );
     }
 
     @GetMapping("/top")
-    public List<?> getTopProducts(
+    @Operation(summary = "Get top products by type")
+    public ResponseEntity<?> getTopProducts(
             @RequestParam ProductTopType type
     ) {
         return switch (type) {
-            case ENDING_SOON -> productService.getTop5EndingSoon();
-            case MOST_BID -> productService.getTop5MostBid();
-            case HIGHEST_PRICE -> productService.getTop5HighestPrice();
+            case ENDING_SOON -> ResponseEntity.ok(productService.getTop5EndingSoon());
+            case MOST_BID -> ResponseEntity.ok(productService.getTop5MostBid());
+            case HIGHEST_PRICE -> ResponseEntity.ok(productService.getTop5HighestPrice());
         };
     }
 
     @GetMapping("/search")
+    @Operation(summary = "Search products")
     public PagedResponse<ProductDto> searchProducts(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "endTimeDesc") String sort // endTimeDesc | priceAsc
+            @RequestParam(defaultValue = "endTimeDesc") String sort
     ) {
-        if (page < 1) {
-            page = PAGE_DEFAULT_VALUE;
-        }
-        if (size < 1) {
-            size = PAGE_SIZE_DEFAULT_VALUE;
-        }
-        return PaginationMapper.from(productService.searchProducts(keyword, categoryId, page - 1, size, sort));
+        return PaginationMapper.from(
+                productService.searchProducts(
+                        keyword, 
+                        categoryId, 
+                        PaginationUtils.createPageable(page, size),
+                        sort
+                )
+        );
     }
 
     @GetMapping
+    @Operation(summary = "Get all products")
     public PagedResponse<ProductDto> getAllProducts(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        if (page < 1) {
-            page = PAGE_DEFAULT_VALUE;
-        }
-        if (size < 1) {
-            size = PAGE_SIZE_DEFAULT_VALUE;
-        }
-        return PaginationMapper.from(productService.getAllProducts(page - 1, size));
+        return PaginationMapper.from(
+                productService.getAllProducts(PaginationUtils.createPageable(page, size))
+        );
     }
 
     @GetMapping("/{id}")
-    public ProductDto getProductById(@PathVariable Integer id) {
-        return ProductMapper.toDto(productService.getProductById(id));
+    @Operation(summary = "Get product by id")
+    public ResponseEntity<ProductDto> getProductById(@PathVariable Integer id) {
+        ProductDto product = productMapper.toDto(productService.getProductById(id));
+        return ResponseEntity.ok(product);
+    }
+
+    @GetMapping("/{id}/related")
+    @Operation(summary = "Get related products (5 products from same category)")
+    public ResponseEntity<List<ProductDto>> getRelatedProducts(@PathVariable Integer id) {
+        Product product = productService.getProductById(id);
+        if (product.getCategory() == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<ProductDto> relatedProducts = productService.getRelatedProducts(id, product.getCategory().getId());
+        return ResponseEntity.ok(relatedProducts);
     }
 
     @PostMapping
     @Operation(summary = "Create product")
-    @PreAuthorize("hasRole('SELLER') or hasAuthority('PRODUCT_CREATE')")
-    public ProductDto createProduct(
-            Authentication authentication,
-            @Valid @RequestBody CreateProductDto productDto) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-         return productService.createProduct(user, productDto);
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ResponseEntity<ProductDto> createProduct(
+            @CurrentUser User user,
+            @Valid @RequestBody CreateProductDto productDto
+    ) {
+        log.info("User {} creating product: {}", user.getId(), productDto.getTitle());
+        ProductDto createdProduct = productService.createProduct(user, productDto);
+        URI location = URI.create("/api/products/" + createdProduct.getId());
+        return ResponseEntity
+                .created(location)
+                .body(createdProduct);
+    }
+
+    @PutMapping("/{productId}")
+    @Operation(summary = "Update product")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
+    public ResponseEntity<ProductDto> updateProduct(
+            @PathVariable Integer productId,
+            @CurrentUser User user,
+            @Valid @RequestBody UpdateProductDto productDto
+    ) {
+        log.info("User {} updating product: {}", user.getId(), productId);
+        ProductDto updatedProduct = productService.updateProduct(productId, user, productDto);
+        return ResponseEntity.ok(updatedProduct);
     }
 
     @PostMapping("/{productId}/descriptions")
     @Operation(summary = "Add extra description for product")
-    @PreAuthorize("hasRole('SELLER') or hasAuthority('PRODUCT_UPDATE')")
-    public ResponseEntity<ProductExtraDescription> addExtraDescription(@PathVariable Integer productId, @Valid @RequestBody CreateExtraDescriptionDto dto) {
+    public ResponseEntity<ProductExtraDescription> addExtraDescription(
+            @PathVariable Integer productId,
+            @Valid @RequestBody CreateExtraDescriptionDto dto,
+            @CurrentUser User user
+    ) {
+        log.info("User {} adding description to product {}", user.getId(), productId);
         ProductExtraDescription productExtraDescription = productService.addExtraDescription(productId, dto);
-        URI location = URI.create("/api/" + productId + "/descriptions");
-
+        URI location = URI.create("/api/products/" + productId + "/descriptions/" + productExtraDescription.getId());
         return ResponseEntity
                 .created(location)
-                .body(
-                        productExtraDescription
-                );
+                .body(productExtraDescription);
     }
 
     @GetMapping("/{productId}/descriptions")
@@ -137,127 +159,40 @@ public class ProductController {
                 .ok(productExtraDescriptions);
     }
 
-//    @PutMapping("/{id}")
-//    public ProductDto editProductById(@PathVariable Integer id, @RequestBody CreateProductDto productDto) {
-//        return productService.editProductById(id, productDto);
-//    }
-
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SELLER') or hasAuthority('PRODUCT_DELETE_OWN')")
-    public void deleteProductById(@PathVariable Integer id) {
-        productService.deleteProductById(id);
+    @Operation(summary = "Delete product by id")
+    public ResponseEntity<Void> deleteProductById(
+            @PathVariable Integer id,
+            @CurrentUser User user
+    ) {
+        log.info("User {} deleting product {}", user.getId(), id);
+        productService.deleteProductById(id, user.getId());
+        return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{productId}/bidders/{bidderId}/reject")
-    @PreAuthorize("hasRole('SELLER')")
-    public ResponseEntity<RejectedBidderDto> rejectBidder(
-            @PathVariable Integer productId,
-            @PathVariable Integer bidderId,
-            @RequestBody(required = false) RejectBidderRequest request
+    @GetMapping("/seller/my-products")
+    @Operation(summary = "Get current seller's products")
+    public PagedResponse<ProductDto> getMyProducts(
+            @CurrentUser User user,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        RejectedBidder rejectedBidder = productService.rejectBidder(
-                productId,
-                bidderId,
-                request != null ? request.getReason() : null
+        return PaginationMapper.from(
+                productService.getProductsBySeller(
+                        user.getId(),
+                        PaginationUtils.createPageable(page, size)
+                )
         );
-
-        return ResponseEntity.ok(RejectedBidderMapper.toDto(rejectedBidder));
     }
 
-
-    // Bids api
-    @GetMapping("/{productId}/bids")
-    @Operation(summary = "Get bids histories by productId")
-    public SseEmitter subscribeBidHistory(@PathVariable Integer productId) {
-        // 1. Subscribe
-        SseEmitter emitter = emitterManager.subscribe(productId);
-
-        // 2. Send existed bid histories
-        try {
-            List<BidHistoryDto> histories =
-                    bidService.getBidHistory(productId);
-            emitter.send(
-                    SseEmitter.event()
-                            .name("bid-history")
-                            .data(histories)
-            );
-        } catch (Exception e) {
-            emitter.completeWithError(e);
-        }
-        return emitter;
-    }
-
-    @PostMapping("/{productId}/bids")
-    @Operation(summary = "Place bid")
-    @PreAuthorize("hasRole('BUYER') or hasAuthority('BID_PLACE')")
-    public ResponseEntity<ApiResponse<AutoBidConfig>> placeBid(
+    @PostMapping("/{productId}/buy-now")
+    @Operation(summary = "Buy product immediately at buy now price")
+    public ResponseEntity<OrderDto> buyNow(
             @PathVariable Integer productId,
-            @RequestBody PlaceBidRequest bidRequest,
-            Authentication authentication
+            @CurrentUser User user
     ) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-
-        AutoBidConfig bidConfig = bidService.placeBid(user, productId, bidRequest);
-
-        URI location = URI.create("/api/products/" + productId + "/bids");
-
-        return ResponseEntity
-                .created(location)
-                .body(new ApiResponse<>(
-                        "Bid placed successfully",
-                        bidConfig
-                ));
+        log.info("User {} buying product {} at buy now price", user.getId(), productId);
+        OrderDto order = productService.buyNow(productId, user);
+        return ResponseEntity.ok(order);
     }
-
-    @PostMapping("/{productId}/questions")
-    @Operation(summary = "Add question")
-    @PreAuthorize("hasRole('BUYER')")
-    public ResponseEntity<ApiResponse<ProductQuestionDto>> addQuestion(
-            @PathVariable Integer productId,
-            @RequestBody AddQuestionDto questionDto,
-            Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-
-        ProductQuestion question = productService.addQuestion(user, productId, questionDto);
-        URI location = URI.create("/api/products/" + productId + "/questions/");
-
-        return ResponseEntity
-                .created(location)
-                .body(new ApiResponse<>(
-                        "Add question successfully",
-                        ProductQuestionMapper.toDto(question)
-                ));
-    }
-    @GetMapping("/{productId}/questions")
-    @Operation(summary = "Get all questions by id")
-    public ResponseEntity<List<ProductQuestionDto>> getQuestionById(@PathVariable Integer productId) {
-        return ResponseEntity.ok(productService.getQuestionById(productId));
-    }
-
-    @PostMapping("/{productId}/questions/{questionId}/answer")
-    @Operation(summary = "Answer question")
-    public ResponseEntity<ProductAnswer> answerQuestion(
-            @PathVariable Integer productId,
-            @PathVariable Integer questionId,
-            @RequestBody AddAnswerDto answerDto,
-            Authentication authentication) {
-        String email = authentication.getName();
-        User user = authService.getUserByEmail(email);
-
-        ProductAnswer answer = productService.answerQuestion(user.getId(), productId, questionId, answerDto);
-        URI location = URI.create("/api/products/" + productId + "/questions/" + questionId);
-
-        return ResponseEntity
-                .created(location)
-                .body(answer);
-    }
-
-    @GetMapping("/{productId}/questions/{questionId}/answer")
-    @Operation(summary = "Get all answer by product id")
-    public ResponseEntity<List<ProductAnswer>> getAnswerByProductId(@PathVariable Integer productId) {
-        return ResponseEntity.ok(productService.getAnswerByProductId(productId));
-    }
-
 }

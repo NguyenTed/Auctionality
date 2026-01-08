@@ -12,9 +12,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String QUEUE = "bid.history.queue";
-    public static final String EXCHANGE = "bid.exchange";
-    public static final String ROUTING_KEY = "bid.history";
+    public static final String BID_HISTORY_QUEUE = "bid.history.queue";
+    public static final String BID_EXCHANGE = "bid.exchange";
+    public static final String BID_HISTORY_ROUTING_KEY = "bid.history";
+    public static final String PRODUCT_PRICE_QUEUE = "product.price.queue";
+    public static final String PRODUCT_PRICE_ROUTING_KEY = "product.price";
 
     @Bean
     public MessageConverter jsonConverter() {
@@ -30,12 +32,12 @@ public class RabbitConfig {
 
     @Bean
     public Queue bidHistoryQueue() {
-        return QueueBuilder.durable(QUEUE).build();
+        return QueueBuilder.durable(BID_HISTORY_QUEUE).build();
     }
 
     @Bean
     public DirectExchange bidExchange() {
-        return new DirectExchange(EXCHANGE);
+        return new DirectExchange(BID_EXCHANGE);
     }
 
     @Bean
@@ -43,7 +45,20 @@ public class RabbitConfig {
         return BindingBuilder
                 .bind(bidHistoryQueue())
                 .to(bidExchange())
-                .with(ROUTING_KEY);
+                .with(BID_HISTORY_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue productPriceQueue() {
+        return QueueBuilder.durable(PRODUCT_PRICE_QUEUE).build();
+    }
+
+    @Bean
+    public Binding productPriceBinding() {
+        return BindingBuilder
+                .bind(productPriceQueue())
+                .to(bidExchange())
+                .with(PRODUCT_PRICE_ROUTING_KEY);
     }
 }
 

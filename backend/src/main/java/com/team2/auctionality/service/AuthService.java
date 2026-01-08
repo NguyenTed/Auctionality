@@ -1,11 +1,14 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.*;
+import com.team2.auctionality.email.EmailService;
 import com.team2.auctionality.exception.*;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.repository.*;
 import com.team2.auctionality.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
@@ -35,6 +39,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsServiceImpl userDetailsService;
     private final PermissionService permissionService;
+    private final EmailService emailService;
+    private final RecaptchaService recaptchaService;
+    private final AuditLogService auditLogService;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
     // Generate 6-digit OTP
     private String generateOTP() {
@@ -44,6 +54,13 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        log.info("Registering new user with email: {}", request.getEmail());
+        
+        // Validate reCAPTCHA token
+        if (!recaptchaService.verifyToken(request.getRecaptchaToken())) {
+            throw new AuthException("reCAPTCHA verification failed. Please try again.");
+        }
+        
         // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException(request.getEmail());
@@ -88,8 +105,8 @@ public class AuthService {
         verificationToken.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         emailVerificationTokenRepository.save(verificationToken);
 
-        // TODO: Send verification email with OTP
-        // emailService.sendVerificationEmail(user.getEmail(), otp);
+        // Send verification email with OTP
+        emailService.sendVerificationEmail(user.getEmail(), otp, user.getProfile().getFullName());
 
         // Generate tokens
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -99,11 +116,15 @@ public class AuthService {
         // Save refresh token
         saveRefreshToken(user, refreshToken);
 
+        // Log registration action
+        auditLogService.logUserAction(user, "REGISTER");
+
         return buildAuthResponse(accessToken, refreshToken, user);
     }
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        log.info("Login attempt for email: {}", request.getEmail());
         // Authenticate user
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -125,6 +146,9 @@ public class AuthService {
         if (!user.getStatus().equals("active")) {
             throw new AuthException("Account is not active");
         }
+
+        // Log login action
+        auditLogService.logUserAction(user, "LOGIN");
 
         // Generate tokens
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -215,8 +239,8 @@ public class AuthService {
         verificationToken.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         emailVerificationTokenRepository.save(verificationToken);
 
-        // TODO: Send verification email with OTP
-        // emailService.sendVerificationEmail(user.getEmail(), otp);
+        // Send verification email with OTP
+        emailService.sendVerificationEmail(user.getEmail(), otp, user.getProfile().getFullName());
     }
 
     @Transactional
@@ -232,8 +256,9 @@ public class AuthService {
         resetToken.setExpiresAt(LocalDateTime.now().plusHours(1));
         passwordResetTokenRepository.save(resetToken);
 
-        // TODO: Send password reset email with token
-        // emailService.sendPasswordResetEmail(user.getEmail(), token);
+        // Send password reset email with token
+        String resetUrl = frontendBaseUrl + "/reset-password?token=" + token;
+        emailService.sendPasswordResetEmail(user.getEmail(), token, resetUrl, user.getProfile().getFullName());
     }
 
     @Transactional
@@ -270,12 +295,18 @@ public class AuthService {
         }
     }
 
+    @Transactional(readOnly = true)
     public User getUserByEmail(String email) {
+        log.debug("Getting user by email: {}", email);
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
     }
 
     public UserDto getCurrentUser(User user) {
+        Set<String> roles = user.getRoles().stream()
+                .map(role -> role.getName())
+                .collect(Collectors.toSet());
+        
         return UserDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -286,6 +317,7 @@ public class AuthService {
                 .status(user.getStatus())
                 .ratingPercent(user.getProfile() != null ? user.getProfile().getRatingPercent() : null)
                 .createdAt(user.getCreatedAt())
+                .roles(roles)
                 .build();
     }
 
@@ -309,7 +341,7 @@ public class AuthService {
 
     // Helper method to build auth response
     // Permissions are resolved server-side via PermissionService to keep JWT token size small
-    private AuthResponse buildAuthResponse(String accessToken, String refreshToken, User user) {
+    public AuthResponse buildAuthResponse(String accessToken, String refreshToken, User user) {
         Set<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());

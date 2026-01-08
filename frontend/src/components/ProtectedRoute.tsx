@@ -1,6 +1,7 @@
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAppSelector } from "../app/hooks";
+import { selectIsAuthenticated, selectAuthLoading } from "../features/auth/authSlice";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,7 +12,7 @@ interface ProtectedRouteProps {
 /**
  * ProtectedRoute component
  * Handles route protection based on authentication status
- * 
+ *
  * @param requireAuth - If true, redirects to login if not authenticated
  * @param requireGuest - If true, redirects to home if already authenticated
  */
@@ -20,7 +21,8 @@ export default function ProtectedRoute({
   requireAuth = false,
   requireGuest = false,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isLoading = useAppSelector(selectAuthLoading);
   const location = useLocation();
 
   // Show loading state while checking auth

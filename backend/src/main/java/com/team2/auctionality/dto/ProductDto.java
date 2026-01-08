@@ -25,7 +25,14 @@ public class ProductDto {
     private LocalDateTime endTime;
     private Boolean autoExtensionEnabled;
 
+    private String description;
+
+    private LocalDateTime createdAt;
+
     private Integer sellerId;
+    private SellerInfoDto sellerInfo;
+
+    private HighestBidderInfoDto highestBidderInfo;
 
     private CategoryDto category;
 

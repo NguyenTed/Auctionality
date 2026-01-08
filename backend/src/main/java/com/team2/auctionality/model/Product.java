@@ -47,6 +47,19 @@ public class Product {
     @Column(name = "auto_extension_enabled")
     private Boolean autoExtensionEnabled;
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
     // ==== RELATIONS ====
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -58,8 +71,10 @@ public class Product {
     private Category category;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<Bid> bids;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @org.hibernate.annotations.BatchSize(size = 20)
     private List<ProductImage> images;
 }

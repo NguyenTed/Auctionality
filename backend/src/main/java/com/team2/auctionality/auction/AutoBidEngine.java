@@ -1,17 +1,21 @@
 package com.team2.auctionality.auction;
 
 import com.team2.auctionality.dto.AutoBidResult;
+import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.model.*;
+import com.team2.auctionality.rabbitmq.BidEventPublisher;
 import com.team2.auctionality.repository.AutoBidConfigRepository;
 import com.team2.auctionality.repository.BidRepository;
 import com.team2.auctionality.repository.ProductRepository;
-import com.team2.auctionality.service.ProductService;
-import com.team2.auctionality.service.SystemAuctionRuleService;
-import com.team2.auctionality.service.UserService;
+import com.team2.auctionality.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Date;
@@ -19,6 +23,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AutoBidEngine {
 
     private final AutoBidConfigRepository autoBidConfigRepository;
@@ -27,10 +32,13 @@ public class AutoBidEngine {
     private final UserService userService;
     private final SystemAuctionRuleService systemAuctionRuleService;
     private final ProductService productService;
+    private final OrderService orderService;
+    private final PaymentService paymentService;
+    private final BidEventPublisher bidEventPublisher;
 
     @Transactional
     public AutoBidResult recalculate(Integer productId) {
-
+        log.debug("Recalculating auto-bid for product: {}", productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
@@ -58,32 +66,69 @@ public class AutoBidEngine {
             newPrice = Math.min(second.getMaxPrice() + product.getBidIncrement(), winnerConfig.getMaxPrice());
 
         }
-
+        Bid bid = null;
         // price not changed -> nothing to do
         if (product.getCurrentPrice() != null &&
-                product.getCurrentPrice().compareTo(newPrice) == 0) {
-            return new AutoBidResult(false, null);
+                product.getCurrentPrice().compareTo(newPrice) != 0) {
+            // Store previous price before updating
+            Float previousPrice = product.getCurrentPrice();
+            
+            // update product
+            product.setCurrentPrice(newPrice);
+            productRepository.save(product);
+
+            // generate bid history
+            bid = Bid.builder()
+                    .product(product)
+                    .bidder(userService.getUserById(winnerConfig.getBidderId()))
+                    .amount(newPrice)
+                    .isAutoBid(true)
+                    .createdAt(new Date())
+                    .build();
+
+            bidRepository.save(bid);
+
+            // Publish price update via RabbitMQ after transaction commit
+            final Float finalPreviousPrice = previousPrice;
+            final Float finalNewPrice = newPrice;
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            bidEventPublisher.publishProductPriceUpdate(
+                                    productId,
+                                    finalNewPrice,
+                                    finalPreviousPrice
+                            );
+                            log.info("Published product price update for product {}: {} -> {}", 
+                                    productId, finalPreviousPrice, finalNewPrice);
+                        }
+                    }
+            );
         }
 
-        // update product
-        product.setCurrentPrice(newPrice);
-        productRepository.save(product);
+        if (product.getBuyNowPrice() != null &&
+                bidders.getFirst().getMaxPrice().compareTo(product.getBuyNowPrice()) >= 0) {
+            // End auction
+            product.setEndTime(LocalDateTime.now());
+            product.setStatus(ProductStatus.ENDED);
+            productRepository.save(product);
 
-        // generate bid history
-        Bid bid = Bid.builder()
-                .product(product)
-                .bidder(userService.getUserById(winnerConfig.getBidderId()))
-                .amount(newPrice)
-                .isAutoBid(true)
-                .createdAt(new Date())
-                .build();
+            // Create order
+            Order order = orderService.createOrderForBuyNow(
+                    product,
+                    winnerConfig.getBidderId(),
+                    bidders.getFirst().getMaxPrice()
+            );
 
-        bidRepository.save(bid);
+
+            return new AutoBidResult(true, bid);
+        }
 
         // If product's endTime <= timeThreshold --> plus extension minutes.
         systemAuctionRuleService.getActiveRule().ifPresent(rule -> {
 
-            long minutesToEnd = java.time.Duration
+            long minutesToEnd = Duration
                     .between(LocalDateTime.now(), product.getEndTime())
                     .toMinutes();
 
@@ -94,6 +139,7 @@ public class AutoBidEngine {
                 productService.save(product);
             }
         });
+
 
         return new AutoBidResult(true, bid);
     }

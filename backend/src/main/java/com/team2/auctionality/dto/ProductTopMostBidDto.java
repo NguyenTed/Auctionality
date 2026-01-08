@@ -2,11 +2,14 @@ package com.team2.auctionality.dto;
 
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.mapper.CategoryMapper;
+import com.team2.auctionality.mapper.ProductImageMapper;
 import com.team2.auctionality.model.Category;
+import com.team2.auctionality.model.ProductImage;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -29,6 +32,8 @@ public class ProductTopMostBidDto {
 
     private CategoryDto category;
 
+    private List<ProductImageDto> images;
+
     private Integer bidCount;
 
     public ProductTopMostBidDto(
@@ -37,6 +42,7 @@ public class ProductTopMostBidDto {
             LocalDateTime startTime, LocalDateTime endTime,
             Boolean autoExtensionEnabled, Integer sellerId,
             Category category,
+            List<ProductImage> images,
             Long bidCount
     ){
         this.id = id;
@@ -53,6 +59,8 @@ public class ProductTopMostBidDto {
         this.sellerId = sellerId;
 
         this.category = CategoryMapper.toDto(category);
+        
+        this.images = images != null ? ProductImageMapper.toListDto(images) : null;
 
         this.bidCount = bidCount.intValue();
     }

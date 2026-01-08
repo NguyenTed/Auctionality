@@ -13,7 +13,7 @@ public class BidHistoryEventListener {
 
     private final SseEmitterManager emitterManager;
 
-    @RabbitListener(queues = RabbitConfig.QUEUE)
+    @RabbitListener(queues = RabbitConfig.BID_HISTORY_QUEUE)
     public void onBidHistoryUpdated(BidHistoryUpdatedEvent event) {
         emitterManager.send(
                 event.getProductId(),
