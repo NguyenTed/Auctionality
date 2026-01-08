@@ -3,6 +3,7 @@ package com.team2.auctionality.auction;
 import com.team2.auctionality.dto.AutoBidResult;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.model.*;
+import com.team2.auctionality.rabbitmq.BidEventPublisher;
 import com.team2.auctionality.repository.AutoBidConfigRepository;
 import com.team2.auctionality.repository.BidRepository;
 import com.team2.auctionality.repository.ProductRepository;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -31,6 +34,7 @@ public class AutoBidEngine {
     private final ProductService productService;
     private final OrderService orderService;
     private final PaymentService paymentService;
+    private final BidEventPublisher bidEventPublisher;
 
     @Transactional
     public AutoBidResult recalculate(Integer productId) {
@@ -66,6 +70,9 @@ public class AutoBidEngine {
         // price not changed -> nothing to do
         if (product.getCurrentPrice() != null &&
                 product.getCurrentPrice().compareTo(newPrice) != 0) {
+            // Store previous price before updating
+            Float previousPrice = product.getCurrentPrice();
+            
             // update product
             product.setCurrentPrice(newPrice);
             productRepository.save(product);
@@ -80,6 +87,24 @@ public class AutoBidEngine {
                     .build();
 
             bidRepository.save(bid);
+
+            // Publish price update via RabbitMQ after transaction commit
+            final Float finalPreviousPrice = previousPrice;
+            final Float finalNewPrice = newPrice;
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            bidEventPublisher.publishProductPriceUpdate(
+                                    productId,
+                                    finalNewPrice,
+                                    finalPreviousPrice
+                            );
+                            log.info("Published product price update for product {}: {} -> {}", 
+                                    productId, finalPreviousPrice, finalNewPrice);
+                        }
+                    }
+            );
         }
 
         if (product.getBuyNowPrice() != null &&

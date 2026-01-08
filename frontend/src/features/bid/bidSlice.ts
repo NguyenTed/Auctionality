@@ -46,9 +46,32 @@ export const placeBidAsync = createAppAsyncThunk(
       const response = await bidService.placeBid(productId, amount);
       return response;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } };
+      const err = error as { 
+        response?: { 
+          data?: { 
+            message?: string | object;
+            error?: string;
+            status?: number;
+          } 
+        } 
+      };
+      
+      // Handle BidPendingApprovalException (status 202)
+      if (err.response?.data?.status === 202) {
+        const message = err.response.data.message;
+        const errorMessage = typeof message === 'string' 
+          ? message 
+          : 'Your bid requires approval before being placed';
+        return rejectWithValue({
+          type: 'BID_PENDING_APPROVAL',
+          message: errorMessage,
+        });
+      }
+      
       return rejectWithValue(
-        err.response?.data?.error || "Failed to place bid"
+        err.response?.data?.message || 
+        err.response?.data?.error || 
+        "Failed to place bid"
       );
     }
   }
@@ -81,15 +104,11 @@ const bidSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(placeBidAsync.fulfilled, (state, action) => {
+      .addCase(placeBidAsync.fulfilled, (state) => {
         state.isLoading = false;
         state.error = null;
-        // Add the new bid to history optimistically
-        const productId = action.payload.productId;
-        if (!state.bidHistory[productId]) {
-          state.bidHistory[productId] = [];
-        }
-        // Note: We'll fetch the full history after, but this provides immediate feedback
+        // Don't optimistically update - wait for real-time updates from backend
+        // Bid history will be updated via SSE
       })
       .addCase(placeBidAsync.rejected, (state, action) => {
         state.isLoading = false;

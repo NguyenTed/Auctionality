@@ -21,6 +21,7 @@ import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import RatingModal from "../../components/RatingModal";
 import ChatWindow from "../../components/ChatWindow";
+import CancelOrderDialog from "../../components/CancelOrderDialog";
 import type { OrderDto, ShipmentDto } from "../../features/order/orderService";
 import { orderService } from "../../features/order/orderService";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +32,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import MessageIcon from "@mui/icons-material/Message";
 import PaymentIcon from "@mui/icons-material/Payment";
+import BlockIcon from "@mui/icons-material/Block";
 
 const getStatusIcon = (status: string) => {
   switch (status) {
@@ -95,6 +97,9 @@ export default function OrderManagementPage() {
   const [orderShipments, setOrderShipments] = useState<
     Record<number, ShipmentDto>
   >({});
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<OrderDto | null>(null);
+  const [isCanceling, setIsCanceling] = useState(false);
 
   useEffect(() => {
     const isSeller = activeTab === "seller";
@@ -162,6 +167,35 @@ export default function OrderManagementPage() {
       const errorMessage =
         err.response?.data?.error || "Failed to submit rating";
       error(errorMessage);
+    }
+  };
+
+  const handleCancelClick = (order: OrderDto) => {
+    setOrderToCancel(order);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async (reason: string) => {
+    if (!orderToCancel) return;
+
+    try {
+      setIsCanceling(true);
+      await orderService.cancelOrder(orderToCancel.id, { reason });
+      success("Order canceled successfully!");
+      setCancelDialogOpen(false);
+      setOrderToCancel(null);
+      // Refresh orders
+      dispatch(
+        fetchOrdersAsync({ isSeller: activeTab === "seller", page, size: 10 })
+      );
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to cancel order";
+      error(errorMessage);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -389,6 +423,17 @@ export default function OrderManagementPage() {
                               Rate {activeTab === "buyer" ? "Seller" : "Buyer"}
                             </button>
                           )}
+                          {/* Cancel Order button - Seller only, PENDING status */}
+                          {activeTab === "seller" &&
+                            order.status === "PENDING" && (
+                              <button
+                                onClick={() => handleCancelClick(order)}
+                                className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 text-sm font-medium"
+                              >
+                                <BlockIcon fontSize="small" />
+                                Cancel Order
+                              </button>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -456,6 +501,21 @@ export default function OrderManagementPage() {
             />
           );
         })()}
+
+      {/* Cancel Order Dialog */}
+      {orderToCancel && (
+        <CancelOrderDialog
+          isOpen={cancelDialogOpen}
+          orderId={orderToCancel.id}
+          productTitle={orderToCancel.product.title}
+          onClose={() => {
+            setCancelDialogOpen(false);
+            setOrderToCancel(null);
+          }}
+          onConfirm={handleCancelConfirm}
+          isLoading={isCanceling}
+        />
+      )}
     </div>
   );
 }

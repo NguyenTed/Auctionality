@@ -19,12 +19,14 @@ import ShippingAddressForm from "../../components/ShippingAddressForm";
 import ShippingAddressDisplay from "../../components/ShippingAddressDisplay";
 import ShipmentDisplay from "../../components/ShipmentDisplay";
 import ChatWindow from "../../components/ChatWindow";
+import CancelOrderDialog from "../../components/CancelOrderDialog";
 import PaymentIcon from "@mui/icons-material/Payment";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MessageIcon from "@mui/icons-material/Message";
+import BlockIcon from "@mui/icons-material/Block";
 import { formatUSD, convertUSDToVND, formatVND } from "../../utils/currencyUtils";
 
 export default function OrderCompletionPage() {
@@ -40,6 +42,8 @@ export default function OrderCompletionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -142,6 +146,31 @@ export default function OrderCompletionPage() {
       error(err.response?.data?.error || "Failed to confirm delivery");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelClick = () => {
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async (reason: string) => {
+    if (!order) return;
+
+    try {
+      setIsCanceling(true);
+      await orderService.cancelOrder(order.id, { reason });
+      success("Order canceled successfully!");
+      setCancelDialogOpen(false);
+      // Navigate back to orders page
+      navigate("/orders");
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to cancel order";
+      error(errorMessage);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -343,6 +372,27 @@ export default function OrderCompletionPage() {
             </div>
           )}
 
+          {/* Cancel Order Section - Seller only, PENDING status */}
+          {isSeller && order.status === "PENDING" && (
+            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Cancel Order
+              </h3>
+              <p className="text-gray-600 mb-4">
+                If the buyer hasn't paid yet, you can cancel this order to make
+                the product available for sale again.
+              </p>
+              <button
+                onClick={handleCancelClick}
+                disabled={isCanceling || isSubmitting}
+                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <BlockIcon />
+                Cancel Order
+              </button>
+            </div>
+          )}
+
           {/* Ship Order Section - Seller only, PAID status */}
           {isSeller && order.status === "PAID" && shippingAddress && (
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -409,6 +459,18 @@ export default function OrderCompletionPage() {
           sellerId={order.seller.id}
           isOpen={showChat}
           onClose={() => setShowChat(false)}
+        />
+      )}
+
+      {/* Cancel Order Dialog */}
+      {order && (
+        <CancelOrderDialog
+          isOpen={cancelDialogOpen}
+          orderId={order.id}
+          productTitle={order.product.title}
+          onClose={() => setCancelDialogOpen(false)}
+          onConfirm={handleCancelConfirm}
+          isLoading={isCanceling}
         />
       )}
     </div>

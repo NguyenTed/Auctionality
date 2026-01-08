@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/bids")
@@ -31,7 +32,11 @@ public class BidController {
 
     @GetMapping("/products/{productId}/history")
     @Operation(summary = "Subscribe to bid history updates via SSE")
-    public SseEmitter subscribeBidHistory(@PathVariable Integer productId) {
+    public SseEmitter subscribeBidHistory(
+            @PathVariable Integer productId,
+            @RequestParam(required = false) String token
+    ) {
+        // Token can be passed as query parameter for SSE (EventSource doesn't support headers)
         SseEmitter emitter = emitterManager.subscribe(productId);
 
         try {
@@ -44,6 +49,17 @@ public class BidController {
         } catch (Exception e) {
             emitter.completeWithError(e);
         }
+        return emitter;
+    }
+
+    @GetMapping("/products/{productId}/price")
+    @Operation(summary = "Subscribe to product price updates via SSE")
+    public SseEmitter subscribeProductPrice(
+            @PathVariable Integer productId,
+            @RequestParam(required = false) String token
+    ) {
+        // Token can be passed as query parameter for SSE (EventSource doesn't support headers)
+        SseEmitter emitter = emitterManager.subscribe(productId);
         return emitter;
     }
 
@@ -133,6 +149,23 @@ public class BidController {
     ) {
         bidService.rejectBidderApproval(approvalId, user.getId());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/products/{productId}/auto-bid-config")
+    @Operation(summary = "Get auto-bid config for current user")
+    public ResponseEntity<AutoBidConfigDto> getAutoBidConfig(
+            @PathVariable Integer productId,
+            @CurrentUser User user
+    ) {
+        return bidService.getAutoBidConfig(productId, user.getId())
+                .map(config -> ResponseEntity.ok(AutoBidConfigDto.builder()
+                        .id(config.getId())
+                        .productId(config.getProductId())
+                        .bidderId(config.getBidderId())
+                        .maxPrice(config.getMaxPrice())
+                        .createdAt(config.getCreatedAt())
+                        .build()))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
 

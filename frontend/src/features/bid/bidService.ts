@@ -9,6 +9,11 @@ export interface PlaceBidRequest {
   amount: number;
 }
 
+export interface ApiResponse<T> {
+  message: string;
+  data: T;
+}
+
 export interface BidResponse {
   id: number;
   productId: number;
@@ -31,6 +36,20 @@ export interface BidHistoryDto {
   createdAt: string;
 }
 
+export interface AutoBidConfig {
+  id: number;
+  productId: number;
+  bidderId: number;
+  maxPrice: number;
+  createdAt: string;
+}
+
+export interface ErrorResponse {
+  message: string | object;
+  status: number;
+  timestamp: string;
+}
+
 export const bidService = {
   getBidHistory: async (productId: number): Promise<BidHistoryDto[]> => {
     const response = await axiosInstance.get<BidHistoryDto[]>(
@@ -39,12 +58,47 @@ export const bidService = {
     return response.data;
   },
 
-  placeBid: async (productId: number, amount: number): Promise<BidResponse> => {
-    const response = await axiosInstance.post<BidResponse>(
+  placeBid: async (productId: number, amount: number): Promise<{ autoBidConfig: AutoBidConfig | null }> => {
+    const response = await axiosInstance.post<ApiResponse<AutoBidConfig> | ErrorResponse>(
       `/bids/products/${productId}`,
       { amount }
     );
-    return response.data;
+    
+    // Check if response is an error response (status 202 for BidPendingApprovalException)
+    if (response.status === 202) {
+      const errorData = response.data as ErrorResponse;
+      const error = new Error(
+        typeof errorData.message === 'string' 
+          ? errorData.message 
+          : 'Your bid requires approval before being placed'
+      );
+      (error as any).response = {
+        data: errorData,
+        status: 202,
+      };
+      throw error;
+    }
+    
+    // Backend returns ApiResponse<AutoBidConfig>
+    // Structure: { message: string, data: AutoBidConfig }
+    const apiResponse = response.data as ApiResponse<AutoBidConfig>;
+    return {
+      autoBidConfig: apiResponse?.data || null,
+    };
+  },
+
+  getAutoBidConfig: async (productId: number): Promise<AutoBidConfig | null> => {
+    try {
+      const response = await axiosInstance.get<AutoBidConfig>(
+        `/bids/products/${productId}/auto-bid-config`
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   },
 };
 

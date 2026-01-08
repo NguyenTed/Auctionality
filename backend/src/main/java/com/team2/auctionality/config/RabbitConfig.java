@@ -15,6 +15,8 @@ public class RabbitConfig {
     public static final String BID_HISTORY_QUEUE = "bid.history.queue";
     public static final String BID_EXCHANGE = "bid.exchange";
     public static final String BID_HISTORY_ROUTING_KEY = "bid.history";
+    public static final String PRODUCT_PRICE_QUEUE = "product.price.queue";
+    public static final String PRODUCT_PRICE_ROUTING_KEY = "product.price";
 
     @Bean
     public MessageConverter jsonConverter() {
@@ -44,6 +46,19 @@ public class RabbitConfig {
                 .bind(bidHistoryQueue())
                 .to(bidExchange())
                 .with(BID_HISTORY_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue productPriceQueue() {
+        return QueueBuilder.durable(PRODUCT_PRICE_QUEUE).build();
+    }
+
+    @Bean
+    public Binding productPriceBinding() {
+        return BindingBuilder
+                .bind(productPriceQueue())
+                .to(bidExchange())
+                .with(PRODUCT_PRICE_ROUTING_KEY);
     }
 }
 

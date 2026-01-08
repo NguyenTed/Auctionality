@@ -33,6 +33,8 @@ import { buyNowAsync, selectBuyingNow } from "../../features/order/orderSlice";
 import { orderService, type OrderDto } from "../../features/order/orderService";
 import { selectUser } from "../../features/auth/authSlice";
 import { connectWebSocket, subscribeToAuctionEnd } from "../../utils/websocket";
+import { subscribeToProductPrice, subscribeToBidHistory } from "../../utils/sse";
+import { bidService, type AutoBidConfig } from "../../features/bid/bidService";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -76,6 +78,7 @@ export default function ProductDetailPage() {
   const [bidAmount, setBidAmount] = useState("");
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [order, setOrder] = useState<OrderDto | null>(null);
+  const [autoBidConfig, setAutoBidConfig] = useState<AutoBidConfig | null>(null);
 
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
@@ -130,6 +133,73 @@ export default function ProductDetailPage() {
 
     fetchOrder();
   }, [product, isAuthenticated, user]);
+
+  // Fetch auto-bid config for current user
+  useEffect(() => {
+    if (!product || !isAuthenticated || !user) {
+      setAutoBidConfig(null);
+      return;
+    }
+
+    bidService.getAutoBidConfig(product.id)
+      .then(setAutoBidConfig)
+      .catch(() => setAutoBidConfig(null));
+  }, [product, isAuthenticated, user]);
+
+  // SSE subscription for product price updates
+  useEffect(() => {
+    if (!product || !isAuthenticated || product.status !== "ACTIVE") {
+      return;
+    }
+
+    const eventSource = subscribeToProductPrice(product.id, (newPrice, previousPrice) => {
+      // Update product price in Redux store from backend real-time update
+      dispatch(
+        updateProductBid({
+          productId: product.id,
+          newPrice: newPrice,
+          bidCount: product.bidCount || 0,
+        })
+      );
+      
+      // Show notification if price increased (but not if user just placed bid - that's handled separately)
+      if (newPrice > (previousPrice || 0)) {
+        // Only show notification if the price actually changed significantly
+        // This prevents duplicate notifications when user places bid
+        const priceDiff = newPrice - (previousPrice || 0);
+        if (priceDiff > 0.01) { // Only notify for meaningful price changes
+          success(`Price updated to ${formatPrice(newPrice)}`);
+        }
+      }
+    });
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [product, isAuthenticated, dispatch, success]);
+
+  // SSE subscription for bid history updates
+  useEffect(() => {
+    if (!product || !isAuthenticated || product.status !== "ACTIVE") {
+      return;
+    }
+
+    const eventSource = subscribeToBidHistory(product.id, (histories) => {
+      // Update bid history in Redux
+      dispatch({
+        type: 'bid/fetchBidHistoryAsync/fulfilled',
+        payload: { productId: product.id, history: histories },
+      });
+    });
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [product, isAuthenticated, dispatch]);
 
   // WebSocket subscription for auction end notifications
   useEffect(() => {
@@ -205,24 +275,45 @@ export default function ProductDetailPage() {
       );
 
       if (placeBidAsync.fulfilled.match(result)) {
-        // Optimistically update product state
-        dispatch(
-          updateProductBid({
-            productId: product.id,
-            newPrice: amount,
-            bidCount: (product.bidCount || 0) + 1,
-          })
-        );
+        // Don't optimistically update price - wait for real-time update from backend
+        // The price will be updated via SSE when autoBidEngine.recalculate() runs
+        
+        // Use the auto-bid config returned from the backend response
+        if (result.payload?.autoBidConfig) {
+          setAutoBidConfig(result.payload.autoBidConfig);
+        } else if (user) {
+          // Fallback: fetch it if not in response
+          bidService.getAutoBidConfig(product.id)
+            .then(setAutoBidConfig)
+            .catch(() => setAutoBidConfig(null));
+        }
+
+        // Refresh product from backend to get latest state (bidCount, etc.)
+        // Price will be updated via SSE
+        dispatch(fetchProductByIdAsync(product.id));
 
         // Refresh bid history in background (non-blocking)
         dispatch(fetchBidHistoryAsync(product.id));
 
         setBidAmount("");
-        success(`Bid of ${formatPrice(amount)} placed successfully!`);
+        success(`Bid of ${formatPrice(amount)} placed successfully! Your auto-bid configuration has been set.`);
       } else {
-        const errorMessage =
-          (result.payload as string) || "Failed to place bid";
-        error(errorMessage);
+        const errorPayload = result.payload as any;
+        
+        if (errorPayload?.type === 'BID_PENDING_APPROVAL') {
+          // Show specific message based on error text
+          const message = errorPayload.message || 'Your bid requires approval';
+          if (message.includes('already been sent')) {
+            error('Your bid approval request has already been sent. Please wait for seller approval.');
+          } else {
+            error('Your bid requires approval before being placed. A request has been sent to the seller.');
+          }
+        } else {
+          const errorMessage = typeof errorPayload === 'string' 
+            ? errorPayload 
+            : errorPayload?.message || "Failed to place bid";
+          error(errorMessage);
+        }
       }
     } catch (err) {
       error("An unexpected error occurred. Please try again.");
@@ -726,6 +817,25 @@ export default function ProductDetailPage() {
                   </div>
                 )}
               </div>
+
+              {/* Auto-Bid Configuration (only visible to user who created it) */}
+              {/*{autoBidConfig && isAuthenticated && user && autoBidConfig.bidderId === user.id && (*/}
+              {autoBidConfig && (
+                <div className="bg-blue-50 rounded-xl shadow-sm p-6 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <GavelIcon className="text-blue-600" fontSize="small" />
+                    <h3 className="text-lg font-semibold text-blue-900">
+                      Your Auto-Bid Configuration
+                    </h3>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    Maximum Bid: <span className="font-bold text-blue-900">{formatPrice(autoBidConfig.maxPrice)}</span>
+                  </p>
+                  <p className="text-xs text-blue-600 mt-2">
+                    Your auto-bid will automatically place bids up to this maximum amount.
+                  </p>
+                </div>
+              )}
 
               {/* Bid History */}
               {bidHistory.length > 0 && (

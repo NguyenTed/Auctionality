@@ -59,6 +59,22 @@ export interface ShippingAddressRequest {
   postalCode: string;
 }
 
+export interface CancelOrderRequest {
+  reason: string;
+}
+
+export interface TransactionCancellationDto {
+  id: number;
+  orderId: number;
+  cancelledByUser: {
+    id: number;
+    email: string;
+    fullName: string;
+  };
+  reason: string;
+  createdAt: string;
+}
+
 export const orderService = {
   buyNow: async (productId: number): Promise<OrderDto> => {
     const response = await axiosInstance.post<OrderDto>(
@@ -120,6 +136,17 @@ export const orderService = {
   getShipment: async (orderId: number): Promise<ShipmentDto> => {
     const response = await axiosInstance.get<ShipmentDto>(
       `/orders/${orderId}/shipment`
+    );
+    return response.data;
+  },
+
+  cancelOrder: async (
+    orderId: number,
+    data: CancelOrderRequest
+  ): Promise<TransactionCancellationDto> => {
+    const response = await axiosInstance.delete<TransactionCancellationDto>(
+      `/orders/${orderId}/cancel`,
+      { data }
     );
     return response.data;
   },

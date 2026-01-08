@@ -315,6 +315,11 @@ public class BidService {
         bidderApprovalRepository.save(approval);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<AutoBidConfig> getAutoBidConfig(Integer productId, Integer userId) {
+        return autoBidConfigRepository.findByProductIdAndBidderId(productId, userId);
+    }
+
     /**
      * Send bid notifications to seller, new highest bidder, and previous highest bidder
      */
