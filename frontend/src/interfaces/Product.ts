@@ -19,6 +19,7 @@ export interface HighestBidderInfo {
   maskedName: string | null;
   avatarUrl: string | null;
   ratingPercent: number | null;
+  bidAmount: number
 }
 
 export interface Product {
