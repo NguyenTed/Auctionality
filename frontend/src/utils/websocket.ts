@@ -75,8 +75,8 @@ export const connectWebSocket = (
       Authorization: `Bearer ${token}`,
     },
     reconnectDelay: 5000,
-    heartbeatIncoming: 4000,
-    heartbeatOutgoing: 4000,
+    heartbeatIncoming: 10000,
+    heartbeatOutgoing: 10000,
     // Disable automatic reconnection for now to debug
     // reconnectDelay: 0 means no auto-reconnect
     debug: (str) => {
