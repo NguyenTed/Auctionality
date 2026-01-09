@@ -4,6 +4,8 @@ import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.exception.AuctionClosedException;
 import com.team2.auctionality.exception.InvalidBidPriceException;
+import com.team2.auctionality.mapper.BidMapper;
+import com.team2.auctionality.mapper.HighestBidderInfoMapper;
 import com.team2.auctionality.mapper.OrderMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.*;
@@ -40,7 +42,19 @@ public class ProductService {
     public List<ProductDto> getTop5EndingSoon() {
         return productRepository.findTop5EndingSoon(PageRequest.of(0, 5))
                 .stream()
-                .map(ProductMapper::toDto)
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                })
                 .toList();
     }
 
@@ -49,11 +63,16 @@ public class ProductService {
         return productRepository.findTop5MostBid(PageRequest.of(0, 5))
                 .stream()
                 .map(product -> {
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(product.getId())
+                            .orElse(null);
                     // Count bids for this product
                     long bidCount = product.getBids() != null ? product.getBids().size() : 0;
                     return new ProductTopMostBidDto(
                             product.getId(),
                             product.getTitle(),
+                            product.getDescription(),
                             product.getStatus(),
                             product.getStartPrice(),
                             product.getCurrentPrice(),
@@ -65,7 +84,8 @@ public class ProductService {
                             product.getSeller() != null ? product.getSeller().getId() : null,
                             product.getCategory(),
                             product.getImages(),
-                            bidCount
+                            bidCount,
+                            HighestBidderInfoMapper.toDto(highestBid)
                     );
                 })
                 .toList();
@@ -75,14 +95,40 @@ public class ProductService {
     public List<ProductDto> getTop5HighestPrice() {
         return productRepository.findTop5HighestPrice(PageRequest.of(0, 5))
                 .stream()
-                .map(ProductMapper::toDto)
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                })
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsByCategory(Integer categoryId, Pageable pageable) {
-        return productRepository.findByCategory(categoryId, pageable)
-                .map(ProductMapper::toDto);
+
+        Page<Product> productPage = productRepository.findByCategory(categoryId, pageable);
+
+        return productPage.map(product -> {
+            Integer id = product.getId();
+
+            // Get the highest bid
+            Bid highestBid = bidRepository
+                    .findHighestBid(id)
+                    .orElse(null);
+
+            return ProductMapper.toDto(
+                    product,
+                    highestBid
+            );
+        });
     }
 
     @Transactional(readOnly = true)
@@ -100,7 +146,19 @@ public class ProductService {
 
         Page<Product> products = productRepository.searchProducts(keyword, categoryId, sortedPageable);
 
-        return products.map(ProductMapper::toDto);
+        return products.map(product -> {
+            Integer id = product.getId();
+
+            // Get the highest bid
+            Bid highestBid = bidRepository
+                    .findHighestBid(id)
+                    .orElse(null);
+
+            return ProductMapper.toDto(
+                    product,
+                    highestBid
+            );
+        });
     }
 
     private Sort getSort(String sortKey) {
@@ -117,7 +175,19 @@ public class ProductService {
     public Page<ProductDto> getAllProducts(Pageable pageable) {
         return productRepository
                 .findAll(pageable)
-                .map(ProductMapper::toDto);
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                });
     }
 
     @Transactional
@@ -211,7 +281,14 @@ public class ProductService {
         }
         
         Product updatedProduct = productRepository.save(product);
-        return productMapper.toDto(updatedProduct);
+
+        // Get highest bid
+        Bid highestBid = bidRepository
+                .findHighestBid(productId)
+                .orElse(null);
+
+
+        return productMapper.toDto(updatedProduct, highestBid);
     }
 
     @Transactional
@@ -285,14 +362,38 @@ public class ProductService {
     public List<ProductDto> getRelatedProducts(Integer productId, Integer categoryId) {
         return productRepository.findRelatedProducts(categoryId, productId, PageRequest.of(0, 5))
                 .stream()
-                .map(ProductMapper::toDto)
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                })
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsBySeller(Integer sellerId, Pageable pageable) {
         return productRepository.findBySellerId(sellerId, pageable)
-                .map(ProductMapper::toDto);
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                });
     }
 
     public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {

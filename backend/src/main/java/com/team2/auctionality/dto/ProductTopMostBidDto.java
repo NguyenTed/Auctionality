@@ -27,6 +27,8 @@ public class ProductTopMostBidDto {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Boolean autoExtensionEnabled;
+    private String description;
+    private HighestBidderInfoDto highestBidderInfo;
 
     private Integer sellerId;
 
@@ -37,16 +39,18 @@ public class ProductTopMostBidDto {
     private Integer bidCount;
 
     public ProductTopMostBidDto(
-            Integer id, String title, ProductStatus status,
+            Integer id, String title, String description, ProductStatus status,
             Float startPrice, Float currentPrice, Float buyNowPrice, Float bidIncrement,
             LocalDateTime startTime, LocalDateTime endTime,
             Boolean autoExtensionEnabled, Integer sellerId,
             Category category,
             List<ProductImage> images,
-            Long bidCount
+            Long bidCount,
+            HighestBidderInfoDto highestBidderInfo
     ){
         this.id = id;
         this.title = title;
+        this.description = description;
         this.status = status;
         this.startPrice = startPrice;
         this.currentPrice = currentPrice;
@@ -63,5 +67,7 @@ public class ProductTopMostBidDto {
         this.images = images != null ? ProductImageMapper.toListDto(images) : null;
 
         this.bidCount = bidCount.intValue();
+
+        this.highestBidderInfo = highestBidderInfo;
     }
 }

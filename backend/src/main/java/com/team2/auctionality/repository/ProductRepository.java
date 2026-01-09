@@ -48,6 +48,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @EntityGraph(attributePaths = {"images", "category"})
     @Query("""
         SELECT p FROM Product p
+        WHERE p.endTime >= CURRENT_TIMESTAMP
         ORDER BY p.currentPrice DESC
         """)
     List<Product> findTop5HighestPrice(Pageable pageable);

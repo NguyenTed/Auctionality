@@ -189,33 +189,37 @@ public class UserService {
 
         UserProfile userProfile = userProfileRepository.findByUserId(toUser.getId());
 
-        // ===== Update counter =====
+        // ===== Calculate new counters using local variables =====
+        int positiveCount = userProfile.getRatingPositiveCount();
+        int negativeCount = userProfile.getRatingNegativeCount();
+
         if (isNewRating) {
             if (newValue == 1) {
-                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() + 1);
+                positiveCount++;
             } else {
-                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() + 1);
+                negativeCount++;
             }
         } else if (!newValue.equals(oldValue)) {
             if (oldValue == 1) {
-                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() - 1);
+                positiveCount--;
             } else {
-                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() - 1);
+                negativeCount--;
             }
 
             if (newValue == 1) {
-                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() + 1);
+                positiveCount++;
             } else {
-                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() + 1);
+                negativeCount++;
             }
         }
 
-        // ===== Caculate ratingPercent =====
-        int positive = userProfile.getRatingPositiveCount();
-        int negative = userProfile.getRatingNegativeCount();
-        int total = positive + negative;
+        // ===== Set back to entity =====
+        userProfile.setRatingPositiveCount(positiveCount);
+        userProfile.setRatingNegativeCount(negativeCount);
 
-        float ratingPercent = total == 0 ? 0f : (float) positive / total;
+        // ===== Calculate ratingPercent =====
+        int total = positiveCount + negativeCount;
+        float ratingPercent = total == 0 ? 0f : (float) positiveCount / total;
         userProfile.setRatingPercent(ratingPercent);
 
         userProfileRepository.save(userProfile);
