@@ -112,7 +112,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     SELECT p
     FROM Product p
     WHERE p.endTime <= :now
-      AND p.status = 'active'
+      AND p.status = 'ACTIVE'
       AND NOT EXISTS (
           SELECT o
           FROM Order o

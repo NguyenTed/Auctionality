@@ -830,7 +830,8 @@ export default function ProductDetailPage() {
                               !bidAmount ||
                               Number(bidAmount) < nextBidAmount ||
                               isPlacingBid ||
-                              bidLoading
+                              bidLoading ||
+                              product?.status === "ENDED"
                             }
                           >
                             {isPlacingBid || bidLoading ? "Placing..." : "Bid"}

@@ -51,8 +51,6 @@ public class BidService {
     private String frontendBaseUrl;
 
 
-
-    @Transactional(readOnly = true)
     public List<BidHistoryDto> getBidHistory(Integer productId) {
         productService.getProductById(productId);
 

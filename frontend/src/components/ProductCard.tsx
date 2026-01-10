@@ -32,13 +32,22 @@ export default function ProductCard({
     }).format(price);
   };
 
+  const isProductEnded = (endTime: string | null | undefined): boolean => {
+    if (!endTime) return true; // If no end time, consider it ended
+    const endDate = new Date(endTime);
+    const now = new Date();
+    return endDate.getTime() <= now.getTime();
+  };
+
   const thumbnailImage =
     product.images?.find((img) => img.isThumbnail)?.url ||
     product.images?.[0]?.url ||
     "https://via.placeholder.com/300x300?text=No+Image";
 
+  const hasEnded = isProductEnded(product.endTime);
+
   return (
-    <div className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
+    <div className={`group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full flex flex-col ${hasEnded ? "opacity-75" : ""}`}>
       {/* Badges */}
       <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
         {/* New Badge */}
@@ -114,10 +123,12 @@ export default function ProductCard({
               )}
             </div>
             <div className="text-right">
-              <p className="text-sm font-semibold text-orange-600">
-                {product.endTime ? getRelativeTime(product.endTime) : "Ended"}
+              <p className={`text-sm font-semibold ${hasEnded ? "text-red-600" : "text-orange-600"}`}>
+                {hasEnded ? "Ended" : (product.endTime ? getRelativeTime(product.endTime) : "Ended")}
               </p>
-              <p className="text-xs text-gray-500">remaining</p>
+              <p className="text-xs text-gray-500">
+                {hasEnded ? "auction closed" : "remaining"}
+              </p>
             </div>
           </div>
         </div>
