@@ -61,6 +61,18 @@ export default function EditListingPage() {
 
   const [hasBids, setHasBids] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(true);
+  const [errors, setErrors] = useState<{
+    title?: string;
+    categoryId?: string;
+    startPrice?: string;
+    bidIncrement?: string;
+    buyNowPrice?: string;
+    startTime?: string;
+    endTime?: string;
+    description?: string;
+    images?: string;
+    [key: string]: string | undefined;
+  }>({});
 
   useEffect(() => {
     dispatch(fetchCategoriesAsync());
@@ -144,6 +156,11 @@ export default function EditListingPage() {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleImageChange = (
@@ -161,6 +178,11 @@ export default function EditListingPage() {
       newImages[index] = { ...newImages[index], [field]: value };
       return newImages;
     });
+
+    // Clear image errors when user starts typing
+    if (errors.images) {
+      setErrors((prev) => ({ ...prev, images: undefined }));
+    }
   };
 
   const addImageField = () => {
@@ -188,81 +210,104 @@ export default function EditListingPage() {
     return result;
   };
 
-  const validateForm = (): string | null => {
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    // Title validation
     if (!formData.title.trim()) {
-      return "Product title is required";
+      newErrors.title = "Product title is required";
+    } else if (
+      formData.title.trim().length < 3 ||
+      formData.title.trim().length > 200
+    ) {
+      newErrors.title = "Product title must be between 3 and 200 characters";
     }
-    if (formData.title.trim().length < 3 || formData.title.trim().length > 200) {
-      return "Product title must be between 3 and 200 characters";
-    }
+
+    // Category validation
     if (!formData.categoryId) {
-      return "Category is required";
+      newErrors.categoryId = "Category is required";
     }
+
+    // Start price validation
     if (!formData.startPrice || parseFloat(formData.startPrice) <= 0) {
-      return "Start price must be greater than 0";
+      newErrors.startPrice = "Start price must be greater than 0";
     }
+
+    // Bid increment validation
     if (!formData.bidIncrement || parseFloat(formData.bidIncrement) <= 0) {
-      return "Bid increment must be greater than 0";
-    }
-    if (!formData.startTime || !formData.endTime) {
-      return "Start time and end time are required";
+      newErrors.bidIncrement = "Bid increment must be greater than 0";
     }
 
-    const startTime = new Date(formData.startTime);
-    const endTime = new Date(formData.endTime);
-
-    if (endTime <= startTime) {
-      return "End time must be after start time";
+    // Start time validation
+    if (!formData.startTime) {
+      newErrors.startTime = "Start time is required";
     }
 
-    const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-    if (durationHours < 1) {
-      return "Auction duration must be at least 1 hour";
+    // End time validation
+    if (!formData.endTime) {
+      newErrors.endTime = "End time is required";
+    } else if (formData.startTime) {
+      const startTime = new Date(formData.startTime);
+      const endTime = new Date(formData.endTime);
+
+      if (endTime <= startTime) {
+        newErrors.endTime = "End time must be after start time";
+      } else {
+        const durationHours =
+          (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+        if (durationHours < 1) {
+          newErrors.endTime = "Auction duration must be at least 1 hour";
+        }
+      }
     }
 
+    // Buy now price validation
     if (formData.buyNowPrice) {
       const buyNowPrice = parseFloat(formData.buyNowPrice);
       const startPrice = parseFloat(formData.startPrice);
       if (buyNowPrice <= 0) {
-        return "Buy now price must be greater than 0";
-      }
-      if (buyNowPrice <= startPrice) {
-        return "Buy now price must be greater than start price";
+        newErrors.buyNowPrice = "Buy now price must be greater than 0";
+      } else if (startPrice && buyNowPrice <= startPrice) {
+        newErrors.buyNowPrice = "Buy now price must be greater than start price";
       }
     }
 
+    // Description validation
     const plainTextDescription = formData.description
       .replace(/<[^>]*>/g, "")
       .trim();
     if (!plainTextDescription || plainTextDescription.length < 10) {
-      return "Description must be at least 10 characters";
-    }
-    if (plainTextDescription.length > 10000) {
-      return "Description must not exceed 10000 characters";
+      newErrors.description = "Description must be at least 10 characters";
+    } else if (plainTextDescription.length > 10000) {
+      newErrors.description = "Description must not exceed 10000 characters";
     }
 
+    // Image validation
     const validImages = images.filter((img) => img.url.trim());
     if (validImages.length < 3) {
-      return "At least 3 images are required";
-    }
-    if (validImages.length > 10) {
-      return "Maximum 10 images allowed";
-    }
+      newErrors.images = "At least 3 images are required";
+    } else if (validImages.length > 10) {
+      newErrors.images = "Maximum 10 images allowed";
+    } else {
+      const urlPattern = /^https?:\/\/.+/i;
+      for (let i = 0; i < validImages.length; i++) {
+        const img = validImages[i];
+        if (!urlPattern.test(img.url.trim())) {
+          newErrors.images = `Image ${i + 1} URL must be a valid HTTP/HTTPS URL`;
+          break;
+        }
+      }
 
-    const urlPattern = /^https?:\/\/.+/i;
-    for (let i = 0; i < validImages.length; i++) {
-      const img = validImages[i];
-      if (!urlPattern.test(img.url.trim())) {
-        return `Image ${i + 1} URL must be a valid HTTP/HTTPS URL`;
+      if (!newErrors.images) {
+        const hasThumbnail = validImages.some((img) => img.isThumbnail);
+        if (!hasThumbnail) {
+          newErrors.images = "At least one image must be marked as thumbnail";
+        }
       }
     }
 
-    const hasThumbnail = validImages.some((img) => img.isThumbnail);
-    if (!hasThumbnail) {
-      return "At least one image must be marked as thumbnail";
-    }
-
-    return null;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,9 +318,18 @@ export default function EditListingPage() {
       return;
     }
 
-    const validationError = validateForm();
-    if (validationError) {
-      toastError(validationError);
+    if (!validateForm()) {
+      // Scroll to first error after state update
+      setTimeout(() => {
+        const firstErrorField = Object.keys(errors)[0];
+        if (firstErrorField) {
+          const element = document.querySelector(`[name="${firstErrorField}"]`) ||
+                         document.querySelector(`#${firstErrorField}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+      }, 100);
       return;
     }
 
@@ -406,11 +460,13 @@ export default function EditListingPage() {
               value={formData.title}
               onChange={handleInputChange}
               disabled={hasBids}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
-              minLength={3}
-              maxLength={200}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                errors.title ? "border-red-500 bg-red-50" : "border-gray-300"
+              }`}
             />
+            {errors.title && (
+              <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+            )}
           </div>
 
           <div>
@@ -426,8 +482,9 @@ export default function EditListingPage() {
               value={formData.categoryId || ""}
               onChange={handleInputChange}
               disabled={hasBids}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                errors.categoryId ? "border-red-500 bg-red-50" : "border-gray-300"
+              }`}
             >
               <option value="">Select a category</option>
               {flattenCategories(categories).map((cat) => (
@@ -436,6 +493,9 @@ export default function EditListingPage() {
                 </option>
               ))}
             </select>
+            {errors.categoryId && (
+              <p className="mt-1 text-sm text-red-600">{errors.categoryId}</p>
+            )}
           </div>
 
           <div>
@@ -445,12 +505,15 @@ export default function EditListingPage() {
             >
               Description <span className="text-red-500">*</span>
             </label>
-            <div className="mt-1">
+            <div className={`mt-1 ${errors.description ? "border-2 border-red-500 rounded-lg p-2" : ""}`}>
               <RichTextEditor
                 value={formData.description}
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, description: value }))
-                }
+                onChange={(value) => {
+                  setFormData((prev) => ({ ...prev, description: value }));
+                  if (errors.description) {
+                    setErrors((prev) => ({ ...prev, description: undefined }));
+                  }
+                }}
                 placeholder="Provide a detailed description of your product..."
               />
             </div>
@@ -458,6 +521,9 @@ export default function EditListingPage() {
               {formData.description.replace(/<[^>]*>/g, "").length}/10000
               characters
             </p>
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+            )}
           </div>
         </div>
 
@@ -484,9 +550,13 @@ export default function EditListingPage() {
                 disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.startPrice ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.startPrice && (
+                <p className="mt-1 text-sm text-red-600">{errors.startPrice}</p>
+              )}
             </div>
 
             <div>
@@ -505,9 +575,13 @@ export default function EditListingPage() {
                 disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.bidIncrement ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.bidIncrement && (
+                <p className="mt-1 text-sm text-red-600">{errors.bidIncrement}</p>
+              )}
             </div>
 
             <div>
@@ -527,8 +601,13 @@ export default function EditListingPage() {
                 disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.buyNowPrice ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.buyNowPrice && (
+                <p className="mt-1 text-sm text-red-600">{errors.buyNowPrice}</p>
+              )}
             </div>
           </div>
         </div>
@@ -554,9 +633,13 @@ export default function EditListingPage() {
                 value={formData.startTime}
                 onChange={handleInputChange}
                 disabled={hasBids}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.startTime ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.startTime && (
+                <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>
+              )}
             </div>
 
             <div>
@@ -573,9 +656,13 @@ export default function EditListingPage() {
                 value={formData.endTime}
                 onChange={handleInputChange}
                 disabled={hasBids}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.endTime ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.endTime && (
+                <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>
+              )}
             </div>
           </div>
 
@@ -621,6 +708,9 @@ export default function EditListingPage() {
             At least 3 images required. Mark one as thumbnail. Maximum 10
             images.
           </p>
+          {errors.images && (
+            <p className="mt-1 text-sm text-red-600">{errors.images}</p>
+          )}
 
           {images.map((image, index) => (
             <div key={index} className="flex gap-4 items-start">

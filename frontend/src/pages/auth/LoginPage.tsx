@@ -115,7 +115,6 @@ function LoginPageContent() {
                   name="email"
                   type="email"
                   autoComplete="email"
-                  required
                   value={formData.email}
                   onChange={handleChange}
                   className={`pl-10 appearance-none relative block w-full px-3 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${
@@ -143,7 +142,6 @@ function LoginPageContent() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  required
                   value={formData.password}
                   onChange={handleChange}
                   className={`pl-10 pr-10 appearance-none relative block w-full px-3 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${

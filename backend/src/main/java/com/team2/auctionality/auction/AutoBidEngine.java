@@ -1,7 +1,9 @@
 package com.team2.auctionality.auction;
 
 import com.team2.auctionality.dto.AutoBidResult;
+import com.team2.auctionality.dto.BidHistoryDto;
 import com.team2.auctionality.enums.ProductStatus;
+import com.team2.auctionality.mapper.BidMapper;
 import com.team2.auctionality.model.*;
 import com.team2.auctionality.rabbitmq.BidEventPublisher;
 import com.team2.auctionality.repository.AutoBidConfigRepository;
@@ -88,20 +90,35 @@ public class AutoBidEngine {
 
             bidRepository.save(bid);
 
-            // Publish price update via RabbitMQ after transaction commit
+            // Publish price update and bid history via RabbitMQ after transaction commit
             final Float finalPreviousPrice = previousPrice;
             final Float finalNewPrice = newPrice;
+            final Integer finalProductId = productId;
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
+                            // Publish product price update
                             bidEventPublisher.publishProductPriceUpdate(
-                                    productId,
+                                    finalProductId,
                                     finalNewPrice,
                                     finalPreviousPrice
                             );
                             log.info("Published product price update for product {}: {} -> {}", 
-                                    productId, finalPreviousPrice, finalNewPrice);
+                                    finalProductId, finalPreviousPrice, finalNewPrice);
+                            
+                            // Publish bid history update so all viewers see the new bid
+                            try {
+                                List<BidHistoryDto> histories = bidRepository.findByProductIdOrderByCreatedAtDesc(finalProductId)
+                                        .stream()
+                                        .map(BidMapper::toDto)
+                                        .toList();
+                                bidEventPublisher.publishBidHistory(finalProductId, histories);
+                                log.info("Published bid history update for product {} with {} bids", 
+                                        finalProductId, histories.size());
+                            } catch (Exception e) {
+                                log.error("Error publishing bid history update for product {}", finalProductId, e);
+                            }
                         }
                     }
             );

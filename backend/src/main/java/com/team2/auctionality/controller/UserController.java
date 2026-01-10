@@ -157,7 +157,7 @@ public class UserController {
                 .filter(Objects::nonNull)
                 .map(product -> {
                     // Get the highest bid for each product
-                    com.team2.auctionality.model.Bid highestBid = bidService.getHighestBidByProductId(product.getId());
+                    Bid highestBid = bidService.getHighestBidByProductId(product.getId());
                     return ProductMapper.toDto(product, highestBid);
                 })
                 .collect(Collectors.toList());

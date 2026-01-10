@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -74,6 +75,16 @@ public class OrderService {
         // Validate price
         if (price == null || price <= 0) {
             throw new IllegalArgumentException("Order price must be greater than 0");
+        }
+
+        Optional<Order> existingOrder =
+                orderRepository.findByBuyerIdAndProductId(buyerId, product.getId());
+
+        if (existingOrder.isPresent()) {
+            log.warn("Order already exists for buyer {} and product {}",
+                    buyerId, product.getId());
+
+            return existingOrder.get();
         }
 
         Order order = Order.builder()
