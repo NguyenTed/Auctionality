@@ -17,15 +17,40 @@ interface AuthState {
   error: string | null;
 }
 
+// Function to get initial state - checks localStorage synchronously for immediate auth state
+// This prevents flicker and redirect loops on page reload
+function getInitialState(): AuthState {
+  // Check if tokens exist in localStorage (synchronous check)
+  // We'll validate them asynchronously in initializeAuthAsync
+  const accessToken = localStorage.getItem("accessToken");
+  const refreshToken = localStorage.getItem("refreshToken");
+  const storedUser = localStorage.getItem("user");
+  
+  let user: User | null = null;
+  try {
+    if (storedUser) {
+      user = JSON.parse(storedUser) as User;
+    }
+  } catch (error) {
+    console.warn("Failed to parse stored user:", error);
+  }
+
+  // If tokens exist, optimistically assume authenticated (will be validated in initializeAuthAsync)
+  // Set isLoading to true so we wait for validation before making redirect decisions
+  const hasTokens = accessToken !== null && refreshToken !== null && user !== null;
+  
+  return {
+    user: hasTokens ? user : null,
+    accessToken: accessToken,
+    refreshToken: refreshToken,
+    isAuthenticated: hasTokens, // Optimistically set to true if tokens exist
+    isLoading: true, // Always start as true to wait for validation
+    error: null,
+  };
+}
+
 // Initial state
-const initialState: AuthState = {
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-};
+const initialState: AuthState = getInitialState();
 
 // Typed async thunk creator
 const createAppAsyncThunk = createAsyncThunk.withTypes<{
