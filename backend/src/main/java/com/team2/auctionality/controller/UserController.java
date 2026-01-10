@@ -29,13 +29,26 @@ public class UserController {
     private final UserService userService;
     private final WatchListItemMapper watchListItemMapper;
     private final ProductMapper productMapper;
+    private final com.team2.auctionality.service.BidService bidService;
 
     @GetMapping("/watchlist")
     @Operation(summary = "Get user's watchlist")
-    public ResponseEntity<List<WatchListItemDto>> getWatchlist(@CurrentUser User user) {
-        log.debug("Getting watchlist for user: {}", user.getId());
-        List<WatchListItemDto> watchlist = userService.getWatchList(user);
-        return ResponseEntity.ok(watchlist);
+    public ResponseEntity<PagedResponse<WatchListItemDto>> getWatchlist(
+            @CurrentUser User user,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        log.debug("Getting watchlist for user: {}, keyword: {}, categoryId: {}, page: {}, size: {}", 
+                user.getId(), keyword, categoryId, page, size);
+        var watchlistPage = userService.getWatchListWithFilters(
+                user, 
+                keyword, 
+                categoryId, 
+                com.team2.auctionality.util.PaginationUtils.createPageable(page, size)
+        );
+        return ResponseEntity.ok(com.team2.auctionality.mapper.PaginationMapper.from(watchlistPage));
     }
 
     @PostMapping("/watchlist/{productId}")
@@ -142,7 +155,11 @@ public class UserController {
         List<Product> products = userService.getAuctionProducts(user);
         List<ProductDto> productDtos = products.stream()
                 .filter(Objects::nonNull)
-                .map(ProductMapper::toDto)
+                .map(product -> {
+                    // Get the highest bid for each product
+                    com.team2.auctionality.model.Bid highestBid = bidService.getHighestBidByProductId(product.getId());
+                    return ProductMapper.toDto(product, highestBid);
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(productDtos);
     }
@@ -179,5 +196,16 @@ public class UserController {
         log.info("User {} changing password", user.getId());
         userService.changePassword(user, request);
         return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+    }
+
+    @GetMapping("/{userId}/profile")
+    @Operation(summary = "Get user profile by ID")
+    public ResponseEntity<UserDto> getUserProfile(
+            @PathVariable Integer userId,
+            @RequestParam(required = false, defaultValue = "false") boolean masked
+    ) {
+        log.debug("Getting profile for user: {}, masked: {}", userId, masked);
+        UserDto userProfile = userService.getUserProfileById(userId, masked);
+        return ResponseEntity.ok(userProfile);
     }
 }

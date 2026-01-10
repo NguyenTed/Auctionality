@@ -13,12 +13,14 @@ interface ProductCardProps {
   product: Product;
   isInWatchlist?: boolean;
   onToggleWatchlist?: (productId: number) => void;
+  isHighestBidder?: boolean;
 }
 
 export default function ProductCard({
   product,
   isInWatchlist = false,
   onToggleWatchlist,
+  isHighestBidder = false,
 }: ProductCardProps) {
   const formatPrice = (price: number | null | undefined) => {
     if (!price) return "€0";
@@ -37,12 +39,22 @@ export default function ProductCard({
 
   return (
     <div className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
-      {/* New Badge */}
-      {product.createdAt && isNewProduct(product.createdAt) && (
-        <div className="absolute top-2 left-2 z-10 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
-          NEW
-        </div>
-      )}
+      {/* Badges */}
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
+        {/* New Badge */}
+        {product.createdAt && isNewProduct(product.createdAt, 2) && (
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+            🆕 NEW
+          </div>
+        )}
+        {/* Highest Bidder Badge */}
+        {isHighestBidder && (
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
+            <span>👑</span>
+            <span>Highest Bidder</span>
+          </div>
+        )}
+      </div>
       <Link to={`/products/${product.id}`} className="flex-1 flex flex-col">
         {/* Image */}
         <div className="relative aspect-square bg-gray-100 overflow-hidden">

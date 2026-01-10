@@ -232,6 +232,14 @@ public class UserService {
         return watchListItemService.getWatchList(user);
     }
 
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<WatchListItemDto> getWatchListWithFilters(
+            User user, String keyword, Integer categoryId, org.springframework.data.domain.Pageable pageable) {
+        log.debug("Getting watchlist with filters for user: {}, keyword: {}, categoryId: {}", 
+                user.getId(), keyword, categoryId);
+        return watchListItemService.getWatchListWithFilters(user, keyword, categoryId, pageable);
+    }
+
     @Transactional
     public UserDto updateProfile(User user, UpdateProfileRequest request) {
         log.info("User {} updating profile", user.getId());
@@ -278,6 +286,13 @@ public class UserService {
         // Update password
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getUserProfileById(Integer userId, boolean maskName) {
+        log.debug("Getting user profile for userId: {}, maskName: {}", userId, maskName);
+        User user = getUserById(userId);
+        return UserMapper.toDto(user, maskName);
     }
 
 }

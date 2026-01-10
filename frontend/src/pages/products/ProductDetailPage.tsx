@@ -51,6 +51,16 @@ import ExtraDescriptionSection from "../../components/ExtraDescriptionSection";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import DOMPurify from "dompurify";
+import { isNewProduct } from "../../utils/dateUtils";
+
+// Slideshow Timer Component
+function SlideshowTimer({ interval, onNext }: { interval: number; onNext: () => void }) {
+  useEffect(() => {
+    const timer = setInterval(onNext, interval);
+    return () => clearInterval(timer);
+  }, [interval, onNext]);
+  return null;
+}
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -79,6 +89,7 @@ export default function ProductDetailPage() {
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [autoBidConfig, setAutoBidConfig] = useState<AutoBidConfig | null>(null);
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
 
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
@@ -298,7 +309,7 @@ export default function ProductDetailPage() {
         setBidAmount("");
         success(`Bid of ${formatPrice(amount)} placed successfully! Your auto-bid configuration has been set.`);
       } else {
-        const errorPayload = result.payload as any;
+        const errorPayload = result.payload as { type?: string; message?: string };
         
         if (errorPayload?.type === 'BID_PENDING_APPROVAL') {
           // Show specific message based on error text
@@ -389,9 +400,6 @@ export default function ProductDetailPage() {
   }
 
   const images = product.images || [];
-  const mainImage =
-    images[selectedImageIndex]?.url ||
-    "https://via.placeholder.com/600x600?text=No+Image";
   const nextBidAmount =
     (product.currentPrice || product.startPrice || 0) +
     (product.bidIncrement || 0);
@@ -433,19 +441,85 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Images */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {/* Main Image */}
-              <div className="relative bg-gray-50 aspect-square flex items-center justify-center">
-                <img
-                  src={mainImage}
-                  alt={product.title}
-                  className="w-full h-full object-contain p-4"
-                />
+            <div className="relative bg-white rounded-xl shadow-sm overflow-hidden">
+              {/* New Badge */}
+              {product.createdAt && isNewProduct(product.createdAt, 2) && (
+                <div className="absolute top-4 left-4 z-20 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                  🆕 NEW
+                </div>
+              )}
+              
+              {/* Main Image Slideshow */}
+              <div className="relative bg-gray-50 aspect-square flex items-center justify-center overflow-hidden group">
+                {/* Slideshow Container */}
+                <div className="relative w-full h-full">
+                  {images.map((img, index) => (
+                    <img
+                      key={img.id}
+                      src={img.url}
+                      alt={`${product.title} ${index + 1}`}
+                      className={`absolute inset-0 w-full h-full object-contain p-4 transition-opacity duration-700 ${
+                        index === selectedImageIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+                      }`}
+                    />
+                  ))}
+                  
+                  {/* Navigation Arrows */}
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length);
+                          setIsSlideshowPlaying(false);
+                        }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                        aria-label="Previous image"
+                      >
+                        <ArrowBackIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedImageIndex((prev) => (prev + 1) % images.length);
+                          setIsSlideshowPlaying(false);
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 rotate-180"
+                        aria-label="Next image"
+                      >
+                        <ArrowBackIcon />
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Slideshow Controls */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsSlideshowPlaying(!isSlideshowPlaying);
+                        }}
+                        className="px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={isSlideshowPlaying ? "Pause slideshow" : "Play slideshow"}
+                      >
+                        {isSlideshowPlaying ? "Pause" : "Play"}
+                      </button>
+                      <div className="px-3 py-1 bg-black/50 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                        {selectedImageIndex + 1} / {images.length}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
                 {/* Watchlist Button - Floating */}
                 <button
                   type="button"
                   onClick={handleToggleWatchlist}
-                  className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 z-10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 z-30 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label={
                     isInWatchlist ? "Remove from watchlist" : "Add to watchlist"
                   }
@@ -460,6 +534,16 @@ export default function ProductDetailPage() {
                   )}
                 </button>
               </div>
+              
+              {/* Auto-advance slideshow */}
+              {images.length > 1 && isSlideshowPlaying && (
+                <SlideshowTimer
+                  interval={3000}
+                  onNext={() => {
+                    setSelectedImageIndex((prev) => (prev + 1) % images.length);
+                  }}
+                />
+              )}
 
               {/* Thumbnail Gallery */}
               {images.length > 1 && (
@@ -497,12 +581,26 @@ export default function ProductDetailPage() {
               </div>
               <div className="prose max-w-none">
                 {product.description ? (
-                  <div
-                    className="text-gray-700 leading-relaxed text-lg"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(product.description),
-                    }}
-                  />
+                  (() => {
+                    // Check if description contains HTML tags
+                    const hasHtml = /<[a-z][\s\S]*>/i.test(product.description);
+                    if (hasHtml) {
+                      return (
+                        <div
+                          className="text-gray-700 leading-relaxed text-lg"
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(product.description),
+                          }}
+                        />
+                      );
+                    } else {
+                      return (
+                        <p className="text-gray-700 leading-relaxed text-lg whitespace-pre-wrap">
+                          {product.description}
+                        </p>
+                      );
+                    }
+                  })()
                 ) : (
                   <p className="text-gray-500 italic">
                     No description available for this product.
@@ -520,7 +618,10 @@ export default function ProductDetailPage() {
                     Seller Information
                   </h2>
                 </div>
-                <div className="flex items-center gap-4">
+                <Link
+                  to={`/users/${product.sellerId}/profile`}
+                  className="flex items-center gap-4 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors cursor-pointer"
+                >
                   {product.sellerInfo.avatarUrl ? (
                     <img
                       src={product.sellerInfo.avatarUrl}
@@ -546,7 +647,7 @@ export default function ProductDetailPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                </Link>
               </div>
             )}
 
@@ -559,7 +660,10 @@ export default function ProductDetailPage() {
                     Current Highest Bidder
                   </h2>
                 </div>
-                <div className="flex items-center gap-4">
+                <Link
+                  to={`/users/${product.highestBidderInfo.id}/profile?masked=true`}
+                  className="flex items-center gap-4 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors cursor-pointer"
+                >
                   {product.highestBidderInfo.avatarUrl ? (
                     <img
                       src={product.highestBidderInfo.avatarUrl}
@@ -598,7 +702,7 @@ export default function ProductDetailPage() {
                     </p>
                   </div>
                 </div>
-                </div>
+                </Link>
               </div>
             )}
 

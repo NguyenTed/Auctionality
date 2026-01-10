@@ -36,13 +36,13 @@ export interface ChangePasswordRequest {
 
 export interface UserDto {
   id: number;
-  email: string;
-  fullName: string;
-  phoneNumber?: string;
-  avatarUrl?: string;
-  isEmailVerified: boolean;
+  email?: string | null; // Can be null if masked
+  fullName?: string | null;
+  phoneNumber?: string | null;
+  avatarUrl?: string | null;
+  isEmailVerified?: boolean | null; // Can be null if masked
   status: string;
-  ratingPercent?: number;
+  ratingPercent?: number | null;
   createdAt: string;
   roles?: string[];
 }
@@ -79,6 +79,13 @@ export const userService = {
 
   createRating: async (request: RatingRequest): Promise<OrderRating> => {
     const response = await axiosInstance.post<OrderRating>("/users/rates", request);
+    return response.data;
+  },
+
+  getUserProfile: async (userId: number, masked: boolean = false): Promise<UserDto> => {
+    const response = await axiosInstance.get<UserDto>(`/users/${userId}/profile`, {
+      params: { masked },
+    });
     return response.data;
   },
 };

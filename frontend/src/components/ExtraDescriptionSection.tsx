@@ -168,10 +168,24 @@ export default function ExtraDescriptionSection({
                   Update #{index + 1} • {formatDate(desc.createdAt)}
                 </span>
               </div>
-              <div
-                className="text-gray-700 prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: desc.content }}
-              />
+              {(() => {
+                // Check if content contains HTML tags
+                const hasHtml = /<[a-z][\s\S]*>/i.test(desc.content);
+                if (hasHtml) {
+                  return (
+                    <div
+                      className="text-gray-700 prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: desc.content }}
+                    />
+                  );
+                } else {
+                  return (
+                    <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                      {desc.content}
+                    </p>
+                  );
+                }
+              })()}
             </div>
           ))}
         </div>
