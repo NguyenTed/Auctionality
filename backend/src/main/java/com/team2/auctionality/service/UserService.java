@@ -219,7 +219,7 @@ public class UserService {
 
         // ===== Calculate ratingPercent =====
         int total = positiveCount + negativeCount;
-        float ratingPercent = total == 0 ? 0f : (float) positiveCount / total;
+        float ratingPercent = total == 0 ? 0f : ((float) positiveCount / total) * 100;
         userProfile.setRatingPercent(ratingPercent);
 
         userProfileRepository.save(userProfile);

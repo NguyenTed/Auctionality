@@ -4,12 +4,14 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Entity
 @Data
+@EqualsAndHashCode(exclude = {"product", "bidder"})
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

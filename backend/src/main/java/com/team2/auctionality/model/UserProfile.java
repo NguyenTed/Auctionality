@@ -3,12 +3,14 @@ package com.team2.auctionality.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
 @Table(name = "user_profile")
 @Data
+@EqualsAndHashCode(exclude = {"user"})
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString(exclude = {"user"})

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -14,10 +15,11 @@ import java.util.Set;
 @Entity
 @Table(name = "\"user\"")
 @Data
+@EqualsAndHashCode(exclude = {"profile", "roles", "refreshTokens", "emailVerificationTokens", "passwordResetTokens", "socialLoginAccounts"})
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@ToString(exclude = {"profile"})
+@ToString(exclude = {"profile", "roles", "refreshTokens", "emailVerificationTokens", "passwordResetTokens", "socialLoginAccounts"})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
