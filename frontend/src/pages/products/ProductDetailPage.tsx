@@ -28,6 +28,7 @@ import {
   fetchBidHistoryAsync,
   selectBidHistory,
   selectBidLoading,
+  updateBidHistoryFromSSE,
 } from "../../features/bid/bidSlice";
 import { buyNowAsync, selectBuyingNow } from "../../features/order/orderSlice";
 import { orderService, type OrderDto } from "../../features/order/orderService";
@@ -186,31 +187,36 @@ export default function ProductDetailPage() {
 
     return () => {
       if (eventSource) {
+        console.log("Closing event source for product price updates");
         eventSource.close();
       }
     };
   }, [product, isAuthenticated, dispatch, success]);
 
-  // SSE subscription for bid history updates
+  // SSE subscription for bid history updates (works for both authenticated and unauthenticated users)
   useEffect(() => {
-    if (!product || !isAuthenticated || product.status !== "ACTIVE") {
+    if (!product || product.status !== "ACTIVE") {
       return;
     }
 
     const eventSource = subscribeToBidHistory(product.id, (histories) => {
+      console.log("Received bid history updates:", histories);
       // Update bid history in Redux
-      dispatch({
-        type: 'bid/fetchBidHistoryAsync/fulfilled',
-        payload: { productId: product.id, history: histories },
-      });
+      dispatch(
+        updateBidHistoryFromSSE({
+          productId: product.id,
+          history: histories,
+        })
+      );
     });
 
     return () => {
       if (eventSource) {
+        console.log("Closing event source for bid history updates");
         eventSource.close();
       }
     };
-  }, [product, isAuthenticated, dispatch]);
+  }, [product, dispatch]);
 
   // WebSocket subscription for auction end notifications
   useEffect(() => {

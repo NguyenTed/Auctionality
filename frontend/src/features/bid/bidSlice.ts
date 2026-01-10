@@ -3,7 +3,7 @@
  * Redux Toolkit slice for bid state management
  */
 
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState, AppDispatch } from "../../app/store";
 import { bidService, type BidHistoryDto } from "./bidService";
 
@@ -84,6 +84,15 @@ const bidSlice = createSlice({
     clearBidHistory: (state, action: { payload: number }) => {
       delete state.bidHistory[action.payload];
     },
+
+    updateBidHistoryFromSSE: (
+      state,
+      action: PayloadAction<{ productId: number; history: BidHistoryDto[] }>
+    ) => {
+      state.bidHistory[action.payload.productId] = [
+        ...action.payload.history,
+      ];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -117,7 +126,7 @@ const bidSlice = createSlice({
   },
 });
 
-export const { clearBidHistory } = bidSlice.actions;
+export const { clearBidHistory, updateBidHistoryFromSSE } = bidSlice.actions;
 
 // Selectors
 export const selectBidHistory = (productId: number) => (state: RootState) =>
