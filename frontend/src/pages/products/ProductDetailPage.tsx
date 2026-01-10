@@ -53,6 +53,7 @@ import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import DOMPurify from "dompurify";
 import { isNewProduct } from "../../utils/dateUtils";
+import BidConfirmDialog from "../../components/BidConfirmDialog";
 
 // Slideshow Timer Component
 function SlideshowTimer({ interval, onNext }: { interval: number; onNext: () => void }) {
@@ -91,6 +92,8 @@ export default function ProductDetailPage() {
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [autoBidConfig, setAutoBidConfig] = useState<AutoBidConfig | null>(null);
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
+  const [showBidConfirmDialog, setShowBidConfirmDialog] = useState(false);
+  const [bidError, setBidError] = useState<string | null>(null);
 
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
@@ -267,13 +270,16 @@ export default function ProductDetailPage() {
     }).format(price);
   };
 
-  const handlePlaceBid = async () => {
+  const handleBidButtonClick = () => {
     if (!isAuthenticated) {
       error("Please log in to place a bid");
       navigate("/login");
       return;
     }
-    if (!product || !bidAmount) return;
+    if (!product || !bidAmount) {
+      error("Please enter a bid amount");
+      return;
+    }
 
     const amount = Number(bidAmount);
     const minBid =
@@ -285,7 +291,18 @@ export default function ProductDetailPage() {
       return;
     }
 
+    // Show confirmation dialog
+    setBidError(null);
+    setShowBidConfirmDialog(true);
+  };
+
+  const handleConfirmBid = async () => {
+    if (!product || !bidAmount) return;
+
+    const amount = Number(bidAmount);
     setIsPlacingBid(true);
+    setBidError(null);
+
     try {
       const result = await dispatch(
         placeBidAsync({ productId: product.id, amount })
@@ -313,6 +330,7 @@ export default function ProductDetailPage() {
         dispatch(fetchBidHistoryAsync(product.id));
 
         setBidAmount("");
+        setShowBidConfirmDialog(false);
         success(`Bid of ${formatPrice(amount)} placed successfully! Your auto-bid configuration has been set.`);
       } else {
         const errorPayload = result.payload as { type?: string; message?: string };
@@ -321,23 +339,35 @@ export default function ProductDetailPage() {
           // Show specific message based on error text
           const message = errorPayload.message || 'Your bid requires approval';
           if (message.includes('already been sent')) {
-            error('Your bid approval request has already been sent. Please wait for seller approval.');
+            const errorMsg = 'Your bid approval request has already been sent. Please wait for seller approval.';
+            setBidError(errorMsg);
+            error(errorMsg);
           } else {
-            error('Your bid requires approval before being placed. A request has been sent to the seller.');
+            const errorMsg = 'Your bid requires approval before being placed. A request has been sent to the seller.';
+            setBidError(errorMsg);
+            error(errorMsg);
           }
         } else {
           const errorMessage = typeof errorPayload === 'string' 
             ? errorPayload 
             : errorPayload?.message || "Failed to place bid";
+          setBidError(errorMessage);
           error(errorMessage);
         }
       }
     } catch (err) {
-      error("An unexpected error occurred. Please try again.");
+      const errorMsg = "An unexpected error occurred. Please try again.";
+      setBidError(errorMsg);
+      error(errorMsg);
       console.error("Failed to place bid:", err);
     } finally {
       setIsPlacingBid(false);
     }
+  };
+
+  const handleCancelBid = () => {
+    setShowBidConfirmDialog(false);
+    setBidError(null);
   };
 
   const handleToggleWatchlist = async (e?: React.MouseEvent) => {
@@ -414,6 +444,20 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      
+      {/* Bid Confirmation Dialog */}
+      {product && (
+        <BidConfirmDialog
+          open={showBidConfirmDialog}
+          bidAmount={Number(bidAmount) || 0}
+          minBid={nextBidAmount}
+          productTitle={product.title}
+          errorMessage={bidError}
+          loading={isPlacingBid}
+          onConfirm={handleConfirmBid}
+          onCancel={handleCancelBid}
+        />
+      )}
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Breadcrumb Navigation */}
@@ -824,7 +868,7 @@ export default function ProductDetailPage() {
                             />
                           </div>
                           <button
-                            onClick={handlePlaceBid}
+                            onClick={handleBidButtonClick}
                             className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md cursor-pointer"
                             disabled={
                               !bidAmount ||

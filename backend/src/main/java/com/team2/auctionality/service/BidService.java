@@ -371,6 +371,46 @@ public class BidService {
     }
 
     public Bid getHighestBidByProductId(Integer productId) {
+        // Check if product has only one autobid config
+        List<AutoBidConfig> autobidConfigs = autoBidConfigRepository.findByProductId(productId);
+        
+        if (autobidConfigs.size() == 1) {
+            // Only one autobid config - that bidder is the highest bidder
+            AutoBidConfig config = autobidConfigs.get(0);
+            User bidder = userRepository.findById(config.getBidderId())
+                    .orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
+            
+            // Try to find existing bid from this bidder for this product
+            List<Bid> bidsByBidder = bidRepository.findByProductIdOrderByCreatedAtDesc(productId)
+                    .stream()
+                    .filter(bid -> bid.getBidder().getId().equals(config.getBidderId()))
+                    .sorted((b1, b2) -> Float.compare(b2.getAmount(), b1.getAmount()))
+                    .toList();
+            
+            if (!bidsByBidder.isEmpty()) {
+                // Return the highest bid from this bidder
+                return bidsByBidder.get(0);
+            }
+            
+            // No existing bid - create a representative Bid object
+            // Use the product's current price as the bid amount
+            Product product = productService.getProductById(productId);
+            Float bidAmount = product.getCurrentPrice() != null 
+                    ? product.getCurrentPrice() 
+                    : product.getStartPrice();
+            
+            // Create a transient Bid object (not persisted) for representation
+            Bid bid = new Bid();
+            bid.setProduct(product);
+            bid.setBidder(bidder);
+            bid.setAmount(bidAmount);
+            bid.setIsAutoBid(true);
+            bid.setCreatedAt(new Date());
+            
+            return bid;
+        }
+        
+        // If 2 or more autobid configs (or 0), use the existing logic
         return bidRepository.findHighestBid(productId).orElse(null);
     }
 }
