@@ -284,5 +284,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Void> handleAsyncClosed(AsyncRequestNotUsableException ex) {
         return ResponseEntity.noContent().build();
     }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex) {
+        log.warn("RateLimitExceededException: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ErrorResponse(
+                        ex.getMessage() != null ? ex.getMessage() : "Too many requests. Please try again later.",
+                        HttpStatus.TOO_MANY_REQUESTS.value(),
+                        Instant.now()
+                ));
+    }
 }
 

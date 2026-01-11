@@ -80,23 +80,15 @@ public class AuthController {
 
     @PostMapping("/resend-verification")
     @Operation(summary = "Resend email verification OTP")
-    public ResponseEntity<Map<String, String>> resendVerification(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        if (email == null || email.isBlank()) {
-            throw new AuthException("Email is required");
-        }
-        authService.resendVerificationEmail(email);
+    public ResponseEntity<Map<String, String>> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        authService.resendVerificationEmail(request.getEmail());
         return ResponseEntity.ok(Map.of("message", "Verification email sent"));
     }
 
     @PostMapping("/forgot-password")
     @Operation(summary = "Request password reset")
-    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        if (email == null || email.isBlank()) {
-            throw new AuthException("Email is required");
-        }
-        authService.forgotPassword(email);
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
         return ResponseEntity.ok(Map.of("message", "Password reset email sent"));
     }
 

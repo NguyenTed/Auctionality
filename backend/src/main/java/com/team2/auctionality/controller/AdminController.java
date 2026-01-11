@@ -99,10 +99,10 @@ public class AdminController {
     @Operation(summary = "Take down a product (suspend)")
     public ResponseEntity<Void> takeDownProduct(
             @PathVariable Integer id,
-            @RequestBody(required = false) Map<String, String> request,
+            @Valid @RequestBody(required = false) TakeDownProductRequest request,
             @CurrentUser User admin
     ) {
-        String reason = request != null ? request.get("reason") : null;
+        String reason = request != null ? request.getReason() : null;
         log.info("Admin {} taking down product: {}", admin.getId(), id);
         adminService.takeDownProduct(id, admin, reason);
         return ResponseEntity.ok().build();
@@ -130,13 +130,9 @@ public class AdminController {
     @Operation(summary = "Update user status")
     public ResponseEntity<UserDto> updateUserStatus(
             @PathVariable Integer id,
-            @RequestBody Map<String, String> request
+            @Valid @RequestBody UpdateUserStatusRequest request
     ) {
-        String status = request.get("status");
-        if (status == null || status.isBlank()) {
-            throw new IllegalArgumentException("Status is required");
-        }
-        return ResponseEntity.ok(adminService.updateUserStatus(id, status));
+        return ResponseEntity.ok(adminService.updateUserStatus(id, request.getStatus()));
     }
 
     @DeleteMapping("/users/{id}")
