@@ -179,12 +179,14 @@ public class ProductController {
     @Operation(summary = "Get current seller's products")
     public PagedResponse<ProductDto> getMyProducts(
             @CurrentUser User user,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         return PaginationMapper.from(
                 productService.getProductsBySeller(
                         user.getId(),
+                        keyword,
                         PaginationUtils.createPageable(page, size)
                 )
         );

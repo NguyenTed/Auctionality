@@ -21,9 +21,13 @@ export interface BidderApproval {
 }
 
 export const sellerService = {
-  getMyProducts: async (page = 1, size = 10): Promise<{ items: Product[]; pagination: any }> => {
+  getMyProducts: async (page = 1, size = 10, keyword?: string): Promise<{ items: Product[]; pagination: any }> => {
+    const params: any = { page, size };
+    if (keyword && keyword.trim()) {
+      params.keyword = keyword.trim();
+    }
     const response = await axiosInstance.get<{ items: Product[]; pagination: any }>("/products/seller/my-products", {
-      params: { page, size },
+      params,
     });
     return response.data;
   },

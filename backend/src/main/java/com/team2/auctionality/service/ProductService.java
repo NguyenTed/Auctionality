@@ -402,21 +402,27 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductDto> getProductsBySeller(Integer sellerId, Pageable pageable) {
-        return productRepository.findBySellerId(sellerId, pageable)
-                .map(product -> {
-                    Integer id = product.getId();
+    public Page<ProductDto> getProductsBySeller(Integer sellerId, String keyword, Pageable pageable) {
+        Page<Product> productPage;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            productPage = productRepository.findBySellerIdAndTitleContaining(sellerId, keyword.trim(), pageable);
+        } else {
+            productPage = productRepository.findBySellerId(sellerId, pageable);
+        }
+        
+        return productPage.map(product -> {
+            Integer id = product.getId();
 
-                    // Get the highest bid
-                    Bid highestBid = bidRepository
-                            .findHighestBid(id)
-                            .orElse(null);
+            // Get the highest bid
+            Bid highestBid = bidRepository
+                    .findHighestBid(id)
+                    .orElse(null);
 
-                    return ProductMapper.toDto(
-                            product,
-                            highestBid
-                    );
-                });
+            return ProductMapper.toDto(
+                    product,
+                    highestBid
+            );
+        });
     }
 
     public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {

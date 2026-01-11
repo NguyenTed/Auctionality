@@ -146,9 +146,9 @@ public class AutoBidEngine {
                             log.info("Published product price update for product {}: {} -> {}", 
                                     finalProductId, finalPreviousPrice, finalNewPrice);
                             
-                            // Publish bid history update so all viewers see the new bid
+                            // Publish bid history update so all viewers see the new bid (exclude rejected bidders)
                             try {
-                                List<BidHistoryDto> histories = bidRepository.findByProductIdOrderByCreatedAtDesc(finalProductId)
+                                List<BidHistoryDto> histories = bidRepository.findValidBidsOrderByCreatedAtDesc(finalProductId)
                                         .stream()
                                         .map(BidMapper::toDto)
                                         .toList();

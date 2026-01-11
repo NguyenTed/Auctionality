@@ -54,7 +54,8 @@ public class BidService {
     public List<BidHistoryDto> getBidHistory(Integer productId) {
         productService.getProductById(productId);
 
-        return bidRepository.findByProductIdOrderByCreatedAtDesc(productId)
+        // Filter out bids from rejected bidders
+        return bidRepository.findValidBidsOrderByCreatedAtDesc(productId)
                 .stream()
                 .map(BidMapper::toDto)
                 .toList();
@@ -183,10 +184,17 @@ public class BidService {
     public RejectedBidder rejectBidder(
             Integer productId,
             Integer bidderId,
-            String reason
+            String reason,
+            Integer sellerId
     ) {
-        log.info("Rejecting bidder {} from product {}", bidderId, productId);
+        log.info("Seller {} rejecting bidder {} from product {}", sellerId, bidderId, productId);
         Product product = productService.getProductById(productId);
+        
+        // Verify seller ownership
+        if (product.getSeller() == null || !product.getSeller().getId().equals(sellerId)) {
+            throw new BidNotAllowedException("You are not authorized to reject bidders from this product");
+        }
+        
         User bidder = userRepository.findById(bidderId)
                 .orElseThrow(() -> new EntityNotFoundException("Bidder not found"));
 

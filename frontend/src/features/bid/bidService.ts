@@ -31,6 +31,7 @@ export interface BidResponse {
 }
 
 export interface BidHistoryDto {
+  bidderId: number;
   bidderName: string;
   amount: number;
   createdAt: string;
@@ -99,6 +100,12 @@ export const bidService = {
       }
       throw error;
     }
+  },
+
+  rejectBidder: async (productId: number, bidderId: number, reason?: string): Promise<void> => {
+    await axiosInstance.delete(`/bids/products/${productId}/bidders/${bidderId}`, {
+      data: reason ? { reason } : undefined,
+    });
   },
 };
 

@@ -19,6 +19,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import InventoryIcon from "@mui/icons-material/Inventory";
+import SearchIcon from "@mui/icons-material/Search";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import type { Product } from "../../interfaces/Product";
 
@@ -31,13 +32,27 @@ export default function ManageListingsPage() {
 
   const [page, setPage] = useState(1);
   const size = 10;
+  const [keyword, setKeyword] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   useEffect(() => {
-    dispatch(fetchMyProductsAsync({ page, size }));
-  }, [dispatch, page]);
+    dispatch(fetchMyProductsAsync({ page, size, keyword: keyword || undefined }));
+  }, [dispatch, page, keyword]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setKeyword(searchInput);
+    setPage(1); // Reset to first page when searching
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setKeyword("");
+    setPage(1);
+  };
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
@@ -49,7 +64,7 @@ export default function ManageListingsPage() {
       const result = await dispatch(deleteProductAsync(productToDelete.id));
       if (deleteProductAsync.fulfilled.match(result)) {
         success(`Product "${productToDelete.title}" deleted successfully`);
-        dispatch(fetchMyProductsAsync({ page, size }));
+        dispatch(fetchMyProductsAsync({ page, size, keyword: keyword || undefined }));
       } else {
         toastError(result.payload as string || "Failed to delete product");
       }
@@ -105,8 +120,38 @@ export default function ManageListingsPage() {
         </Link>
       </div>
 
-      {/* Status Filter */}
-      <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
+      {/* Search and Status Filter */}
+      <div className="mb-6 bg-white rounded-lg shadow-sm p-4 space-y-4">
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="relative">
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search products by name..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-20 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-16 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-4 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+            >
+              Search
+            </button>
+          </div>
+        </form>
+
+        {/* Status Filter */}
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-gray-700">Filter by Status:</span>
           <div className="flex gap-2">

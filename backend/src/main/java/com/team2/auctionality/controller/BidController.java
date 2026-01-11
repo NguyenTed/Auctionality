@@ -102,7 +102,8 @@ public class BidController {
         RejectedBidder rejectedBidder = bidService.rejectBidder(
                 productId,
                 bidderId,
-                request != null ? request.getReason() : null
+                request != null ? request.getReason() : null,
+                user.getId()
         );
 
         return ResponseEntity.ok(RejectedBidderMapper.toDto(rejectedBidder));

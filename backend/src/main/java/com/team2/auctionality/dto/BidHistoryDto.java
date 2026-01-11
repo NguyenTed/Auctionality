@@ -12,6 +12,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BidHistoryDto {
+    private Integer bidderId; // For seller to reject bidders
     private String bidderName; //masked
     private float amount;
     private Date createdAt;

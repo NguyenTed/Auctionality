@@ -144,6 +144,21 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @EntityGraph(attributePaths = {"images", "category"})
     Page<Product> findBySellerId(Integer sellerId, Pageable pageable);
 
+    // Find products by seller with search by title
+    @Query("""
+        SELECT p FROM Product p
+        WHERE p.seller.id = :sellerId
+            AND (
+                :keyword IS NULL 
+                OR LOWER(FUNCTION('unaccent', p.title)) LIKE LOWER(CONCAT('%', FUNCTION('unaccent', CAST(:keyword AS string)), '%'))
+            )
+        """)
+    Page<Product> findBySellerIdAndTitleContaining(
+            @Param("sellerId") Integer sellerId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
     /**
      * Count products by seller ID
      */

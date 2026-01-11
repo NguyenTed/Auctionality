@@ -45,6 +45,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
 import StarIcon from "@mui/icons-material/Star";
 import PaymentIcon from "@mui/icons-material/Payment";
+import BlockIcon from "@mui/icons-material/Block";
 import CountdownClock from "../../components/CountdownClock";
 import ProductCard from "../../components/ProductCard";
 import QASection from "../../components/QASection";
@@ -93,6 +94,7 @@ export default function ProductDetailPage() {
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
   const [showBidConfirmDialog, setShowBidConfirmDialog] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
+  const [rejectingBidderId, setRejectingBidderId] = useState<number | null>(null);
 
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
@@ -1076,29 +1078,89 @@ export default function ProductDetailPage() {
                     </span>
                   </div>
                   <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {bidHistory.slice(0, 10).map((bid, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-start py-3 border-b border-gray-100 last:border-0"
-                      >
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
-                            {bid.bidderName}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(bid.createdAt).toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
+                    {bidHistory.slice(0, 10).map((bid, index) => {
+                      // Check if current user is the seller - use both sellerId and sellerInfo.id as fallback
+                      const isSeller = user && product && (
+                        Number(product.sellerId) === Number(user.id) || 
+                        Number(product.sellerInfo?.id) === Number(user.id)
+                      );
+                      const isRejecting = rejectingBidderId === bid.bidderId;
+                      // Only show reject button if: user is seller, product is active, and bidderId exists
+                      const canReject = isSeller && product && product.status === "ACTIVE" && bid.bidderId && user;
+                      
+                      // Debug logging (remove in production)
+                      if (user && product) {
+                        console.log('Bid reject check:', {
+                          bidderId: bid.bidderId,
+                          isSeller,
+                          productStatus: product.status,
+                          productSellerId: product.sellerId,
+                          userId: user.id,
+                          sellerInfoId: product.sellerInfo?.id,
+                          canReject
+                        });
+                      }
+                      
+                      return (
+                        <div
+                          key={index}
+                          className="flex justify-between items-start py-3 border-b border-gray-100 last:border-0"
+                        >
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">
+                              {bid.bidderName}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(bid.createdAt).toLocaleString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 ml-4">
+                            <p className="font-bold text-primary text-lg">
+                              {formatPrice(bid.amount)}
+                            </p>
+                            {canReject ? (
+                              <button
+                                onClick={async () => {
+                                  if (!product || !bid.bidderId) return;
+                                  
+                                  if (!window.confirm(`Are you sure you want to reject ${bid.bidderName} from this auction? This action cannot be undone.`)) {
+                                    return;
+                                  }
+                                  
+                                  setRejectingBidderId(bid.bidderId);
+                                  try {
+                                    await bidService.rejectBidder(product.id, bid.bidderId);
+                                    success(`Bidder ${bid.bidderName} has been rejected from the auction`);
+                                    // Refresh bid history and product
+                                    dispatch(fetchBidHistoryAsync(product.id));
+                                    dispatch(fetchProductByIdAsync(product.id));
+                                  } catch (err: any) {
+                                    const errorMessage = err.response?.data?.error || err.message || "Failed to reject bidder";
+                                    error(errorMessage);
+                                  } finally {
+                                    setRejectingBidderId(null);
+                                  }
+                                }}
+                                disabled={isRejecting}
+                                className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 border border-red-200"
+                                title="Reject bidder from auction"
+                              >
+                                {isRejecting ? (
+                                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <BlockIcon fontSize="small" className="text-red-600" />
+                                )}
+                              </button>
+                            ) : null}
+                          </div>
                         </div>
-                        <p className="font-bold text-primary text-lg ml-4">
-                          {formatPrice(bid.amount)}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {bidHistory.length > 10 && (
                       <p className="text-sm text-gray-500 text-center pt-2">
                         +{bidHistory.length - 10} more bids
