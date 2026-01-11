@@ -88,6 +88,7 @@ public class UserService {
 
     @Transactional
     public SellerUpgradeRequest approveSellerUpgradeRequest(User admin, Integer requestId) {
+        log.info("Admin approving seller upgrade request: {}", requestId);
         SellerUpgradeRequest request =
                 sellerUpgradeRequestRepository.findById(requestId)
                         .orElseThrow(() -> new EntityNotFoundException("Request not found"));

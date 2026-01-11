@@ -4,6 +4,7 @@ import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ApproveStatus;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.exception.AuthException;
+import com.team2.auctionality.exception.SellerUpgradeBadRequestException;
 import com.team2.auctionality.mapper.CategoryMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.mapper.SellerUpgradeRequestMapper;
@@ -203,26 +204,32 @@ public class AdminService {
     }
 
     @Transactional
-    public SellerUpgradeRequestDto approveSellerUpgradeRequest(Integer requestId) {
+    public SellerUpgradeRequestDto approveSellerUpgradeRequest(User admin, Integer requestId) {
         log.info("Admin approving seller upgrade request: {}", requestId);
-        SellerUpgradeRequest request = sellerUpgradeRequestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("Seller upgrade request not found"));
-        
+        SellerUpgradeRequest request =
+                sellerUpgradeRequestRepository.findById(requestId)
+                        .orElseThrow(() -> new EntityNotFoundException("Request not found"));
+
         if (request.getStatus() != ApproveStatus.PENDING) {
-            throw new IllegalArgumentException("Request is not pending");
+            throw new SellerUpgradeBadRequestException(
+                    "Request already processed"
+            );
         }
-        
+
         request.setStatus(ApproveStatus.APPROVED);
-        request = sellerUpgradeRequestRepository.save(request);
-        
-        // Add SELLER role to user
+        request.setProcessedAt(new Date());
+        request.setProcessedByAdmin(admin);
+
         User user = request.getUser();
         Role sellerRole = roleRepository.findByName("SELLER")
-                .orElseThrow(() -> new AuthException("SELLER role not found"));
-        user.getRoles().add(sellerRole);
-        userRepository.save(user);
-        
-        return SellerUpgradeRequestMapper.toDto(request);
+                .orElseThrow(() -> new EntityNotFoundException("Seller role not found"));
+
+        if (!user.getRoles().contains(sellerRole)) {
+            user.getRoles().add(sellerRole);
+        }
+
+
+        return SellerUpgradeRequestMapper.toDto(sellerUpgradeRequestRepository.save(request));
     }
 
     @Transactional

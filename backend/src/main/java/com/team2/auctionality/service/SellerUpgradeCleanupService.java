@@ -30,19 +30,19 @@ public class SellerUpgradeCleanupService {
     @Transactional
     public void cleanupExpiredApprovals() {
 
-//        Date expiredTime = Date.from(
-//                LocalDateTime.now()
-//                        .minusMinutes(1)
-//                        .atZone(ZoneId.systemDefault())
-//                        .toInstant()
-//        );
-
         Date expiredTime = Date.from(
                 LocalDateTime.now()
-                        .minusDays(7)
+                        .minusMinutes(1)
                         .atZone(ZoneId.systemDefault())
                         .toInstant()
         );
+
+//        Date expiredTime = Date.from(
+//                LocalDateTime.now()
+//                        .minusDays(7)
+//                        .atZone(ZoneId.systemDefault())
+//                        .toInstant()
+//        );
 
         List<SellerUpgradeRequest> expiredRequests =
                 requestRepository.findExpiredApprovedRequests(

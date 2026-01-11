@@ -157,9 +157,9 @@ public class AdminController {
 
     @PostMapping("/seller-upgrade-requests/{id}/approve")
     @Operation(summary = "Approve a seller upgrade request")
-    public ResponseEntity<SellerUpgradeRequestDto> approveSellerUpgradeRequest(@PathVariable Integer id) {
+    public ResponseEntity<SellerUpgradeRequestDto> approveSellerUpgradeRequest(@PathVariable Integer id, @CurrentUser User admin) {
         log.info("Admin approving seller upgrade request: {}", id);
-        return ResponseEntity.ok(adminService.approveSellerUpgradeRequest(id));
+        return ResponseEntity.ok(adminService.approveSellerUpgradeRequest(admin, id));
     }
 
     @PostMapping("/seller-upgrade-requests/{id}/reject")

@@ -991,7 +991,8 @@ export default function ProductDetailPage() {
                               Number(bidAmount) < nextBidAmount ||
                               isPlacingBid ||
                               bidLoading ||
-                              product?.status === "ENDED"
+                              product?.status === "ENDED" ||
+                              product?.endTime <= Date.now()
                             }
                           >
                             {isPlacingBid || bidLoading ? "Placing..." : "Bid"}
@@ -1149,8 +1150,8 @@ export default function ProductDetailPage() {
                           Number(product.sellerInfo?.id) === Number(user.id));
                       const isRejecting = rejectingBidderId === bid.bidderId;
                       // Only show reject button if: user is seller, product is active, and bidderId exists
-                      // const canReject = isSeller && product && product.status === "ACTIVE" && user;
-                      const canReject = true;
+                      const canReject = isSeller && product && product.status === "ACTIVE" && user;
+                      // const canReject = true;
 
                       // Debug logging (remove in production)
                       if (user && product) {
