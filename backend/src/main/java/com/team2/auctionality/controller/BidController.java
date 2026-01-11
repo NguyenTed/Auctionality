@@ -74,10 +74,10 @@ public class BidController {
     @Operation(summary = "Place bid")
     public ResponseEntity<ApiResponse<AutoBidConfig>> placeBid(
             @PathVariable Integer productId,
-            @RequestBody PlaceBidRequest bidRequest,
+            @Valid @RequestBody PlaceBidRequest bidRequest,
             @CurrentUser User user
     ) {
-
+        // Rate limiting is now handled globally by RateLimitFilter
         AutoBidConfig bidConfig = bidService.placeBid(user, productId, bidRequest);
 
         URI location = URI.create("/api/bids/products/" + productId);
@@ -95,7 +95,7 @@ public class BidController {
     public ResponseEntity<RejectedBidderDto> rejectBidder(
             @PathVariable Integer productId,
             @PathVariable Integer bidderId,
-            @RequestBody(required = false) RejectBidderRequest request,
+            @Valid @RequestBody(required = false) RejectBidderRequest request,
             @CurrentUser User user
     ) {
         log.info("User {} rejecting bidder {} from product {}", user.getId(), bidderId, productId);
