@@ -46,5 +46,10 @@ public interface EmailService {
      * Send answer notification to question asker
      */
     void sendAnswerNotification(AnswerNotificationEmailRequest request);
+
+    /**
+     * Send product description update notification to bidders
+     */
+    void sendDescriptionUpdateNotification(DescriptionUpdateEmailRequest request);
 }
 

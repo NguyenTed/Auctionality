@@ -88,4 +88,23 @@ public interface BidRepository extends JpaRepository<Bid,Integer> {
             nativeQuery = true
     )
     Optional<Bid> findHighestBid(@Param("productId") Integer productId);
+
+    /**
+     * Find distinct bidders (users) who have placed bids on a product, excluding rejected bidders
+     */
+    @Query(
+            value = """
+        SELECT DISTINCT b.bidder_id
+        FROM bid b
+        WHERE b.product_id = :productId
+          AND NOT EXISTS (
+              SELECT 1
+              FROM rejected_bidder r
+              WHERE r.product_id = :productId
+                AND r.bidder_id = b.bidder_id
+          )
+    """,
+            nativeQuery = true
+    )
+    List<Integer> findDistinctBidderIdsByProductId(@Param("productId") Integer productId);
 }

@@ -1,6 +1,8 @@
 package com.team2.auctionality.service;
 
 import com.team2.auctionality.dto.*;
+import com.team2.auctionality.email.EmailService;
+import com.team2.auctionality.email.dto.DescriptionUpdateEmailRequest;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.exception.AuctionClosedException;
 import com.team2.auctionality.exception.InvalidBidPriceException;
@@ -13,6 +15,7 @@ import com.team2.auctionality.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +40,11 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final OrderService orderService;
     private final com.team2.auctionality.repository.ProductImageRepository productImageRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
     @Transactional(readOnly = true)
     public List<ProductDto> getTop5EndingSoon() {
@@ -297,6 +305,44 @@ public class ProductService {
                         .createdAt(LocalDateTime.now())
                         .build();
                 productExtraDescriptionRepository.save(extraDescription);
+
+                // Send email notifications to all bidders (excluding rejected ones)
+                try {
+                    List<Integer> bidderIds = bidRepository.findDistinctBidderIdsByProductId(productId);
+                    String productTitle = product.getTitle();
+                    String productUrl = frontendBaseUrl + "/products/" + productId;
+
+                    log.info("Sending description update notifications to {} bidders for product {} (via updateProduct)", bidderIds.size(), productId);
+
+                    for (Integer bidderId : bidderIds) {
+                        try {
+                            User bidder = userRepository.findById(bidderId).orElse(null);
+                            if (bidder != null && bidder.getEmail() != null) {
+                                String bidderName = bidder.getProfile() != null && bidder.getProfile().getFullName() != null
+                                        ? bidder.getProfile().getFullName()
+                                        : bidder.getEmail();
+
+                                emailService.sendDescriptionUpdateNotification(
+                                        new DescriptionUpdateEmailRequest(
+                                                bidder.getEmail(),
+                                                productTitle,
+                                                productUrl,
+                                                bidderName
+                                        )
+                                );
+                            }
+                        } catch (Exception e) {
+                            log.error("Failed to send description update notification to bidder {} for product {}: {}",
+                                    bidderId, productId, e.getMessage(), e);
+                            // Continue with other bidders even if one fails
+                        }
+                    }
+
+                    log.info("Successfully sent description update notifications for product {} (via updateProduct)", productId);
+                } catch (Exception e) {
+                    log.error("Error sending description update notifications for product {}: {}", productId, e.getMessage(), e);
+                    // Don't throw - email failures shouldn't break the product update
+                }
             }
         }
         
@@ -370,7 +416,47 @@ public class ProductService {
                 .content(dto.getContent())
                 .createdAt(LocalDateTime.now())
                 .build();
-        return productExtraDescriptionRepository.save(description);
+        ProductExtraDescription savedDescription = productExtraDescriptionRepository.save(description);
+
+        // Send email notifications to all bidders (excluding rejected ones)
+        try {
+            List<Integer> bidderIds = bidRepository.findDistinctBidderIdsByProductId(productId);
+            String productTitle = product.getTitle();
+            String productUrl = frontendBaseUrl + "/products/" + productId;
+
+            log.info("Sending description update notifications to {} bidders for product {}", bidderIds.size(), productId);
+
+            for (Integer bidderId : bidderIds) {
+                try {
+                    User bidder = userRepository.findById(bidderId).orElse(null);
+                    if (bidder != null && bidder.getEmail() != null) {
+                        String bidderName = bidder.getProfile() != null && bidder.getProfile().getFullName() != null
+                                ? bidder.getProfile().getFullName()
+                                : bidder.getEmail();
+
+                        emailService.sendDescriptionUpdateNotification(
+                                new DescriptionUpdateEmailRequest(
+                                        bidder.getEmail(),
+                                        productTitle,
+                                        productUrl,
+                                        bidderName
+                                )
+                        );
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to send description update notification to bidder {} for product {}: {}",
+                            bidderId, productId, e.getMessage(), e);
+                    // Continue with other bidders even if one fails
+                }
+            }
+
+            log.info("Successfully sent description update notifications for product {}", productId);
+        } catch (Exception e) {
+            log.error("Error sending description update notifications for product {}: {}", productId, e.getMessage(), e);
+            // Don't throw - email failures shouldn't break the description update
+        }
+
+        return savedDescription;
     }
 
     @Transactional(readOnly = true)

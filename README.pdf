@@ -1,0 +1,686 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 7 /Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 17 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 2607 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 750 Td
+(# Auctionality) Tj
+T*
+() Tj
+T*
+(Auctionality is a full-stack auction platform composed of a Spring Boot backend, a PostgreSQL +) Tj
+T*
+( RabbitMQ infrastructure layer, and a React/Vite frontend. This guide explains how to bootstrap) Tj
+T*
+( every piece locally—from configuring secrets and databases to running the monitoring stack—so ) Tj
+T*
+(you can start developing or demoing the product quickly.) Tj
+T*
+() Tj
+T*
+(## Repository Structure) Tj
+T*
+() Tj
+T*
+(- `backend/` – Spring Boot 4.0 project \\(Java 25, Maven Wrapper\\) exposing REST, WebSocket, SSE, ) Tj
+T*
+(OAuth2, email, and payment integrations.) Tj
+T*
+(- `frontend/` – React 19 + TypeScript + Vite client, Tailwind + MUI UI, Redux toolkit state.) Tj
+T*
+(- `monitoring/` & `docker-compose.monitoring.yml` – Prometheus + Grafana stack wired to Spring ) Tj
+T*
+(Boot Actuator metrics.) Tj
+T*
+(- `docs/` – Product proposal, diagrams, and integration notes.) Tj
+T*
+(- `logs/` – Default target for backend logback appenders \\(rotated daily\\).) Tj
+T*
+(- `GOOGLE_OAUTH2_SETUP.md`, `MONITORING_SETUP.md`, `MONITORING_AND_LOGGING.md` – Deep-dive ) Tj
+T*
+(guides referenced throughout this README.) Tj
+T*
+() Tj
+T*
+(## Prerequisites) Tj
+T*
+() Tj
+T*
+(| Tool / Service | Required Version | Notes |) Tj
+T*
+(| --- | --- | --- |) Tj
+T*
+(| Java Development Kit | 25 \\(Temurin or Oracle\\) | Backend uses preview features; runtime must ) Tj
+T*
+(accept `--enable-preview`. |) Tj
+T*
+(| Maven Wrapper \\(`./mvnw`\\) | Bundled | No global Maven installation needed. |) Tj
+T*
+(| Node.js / npm | Node 20+ / npm 10+ | For Vite dev server and builds. |) Tj
+T*
+(| PostgreSQL | 14+ | Stores all domain data; auto-seeding SQL runs on app startup. |) Tj
+T*
+(| RabbitMQ | 3.13+ \\(with management plugin\\) | Powers real-time bid notifications via AMQP ) Tj
+T*
+(queues. |) Tj
+T*
+(| Docker + Docker Compose | Latest | Optional but recommended for Postgres/RabbitMQ containers ) Tj
+T*
+(and the monitoring stack. |) Tj
+T*
+(| SendGrid account | Optional | Needed to send transactional emails. |) Tj
+T*
+(| Google Cloud project | Optional | Required for Google OAuth2 login. |) Tj
+T*
+(| VNPAY sandbox credentials | Optional | Needed only when testing VNPAY checkout. |) Tj
+T*
+() Tj
+T*
+(> **Tip:** macOS developers can install the basics with Homebrew \\(`brew install temurin ) Tj
+T*
+(rabbitmq postgresql node`\\) and Docker Desktop.) Tj
+T*
+() Tj
+T*
+(## Quick Start \\(Local Development\\)) Tj
+T*
+() Tj
+T*
+(1. **Clone and enter the repo**  ) Tj
+T*
+(   ```bash) Tj
+T*
+(   git clone <your-fork-url>) Tj
+T*
+(   cd Auctionality) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 17 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 1967 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 750 Td
+(   ```) Tj
+T*
+(2. **Start local infrastructure** \\(use Docker or your preferred services\\):) Tj
+T*
+(   ```bash) Tj
+T*
+(   docker run --name auctionality-postgres -e POSTGRES_DB=auctionality \\\\) Tj
+T*
+(     -e POSTGRES_USER=auctionality -e POSTGRES_PASSWORD=auctionality \\\\) Tj
+T*
+(     -p 5432:5432 -d postgres:15) Tj
+T*
+() Tj
+T*
+(   docker run --name auctionality-rabbit -p 5672:5672 -p 15672:15672 \\\\) Tj
+T*
+(     -d rabbitmq:3.13-management) Tj
+T*
+(   ```) Tj
+T*
+(3. **Configure backend secrets** – populate `backend/src/main/resources/secrets.properties` ) Tj
+T*
+(\\(see [Backend configuration]\\(#backend-spring-boot\\)\\).) Tj
+T*
+(4. **Run the backend**  ) Tj
+T*
+(   ```bash) Tj
+T*
+(   cd backend) Tj
+T*
+(   ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments=--enable-preview) Tj
+T*
+(   ```) Tj
+T*
+(   API root: `http://localhost:8081/api`, Swagger: `http://localhost:8081/swagger-ui.html`.) Tj
+T*
+(5. **Configure the frontend env** – create `frontend/.env.local` with API/WS URLs \\(see ) Tj
+T*
+([Frontend setup]\\(#frontend-react--vite\\)\\).) Tj
+T*
+(6. **Run the frontend**  ) Tj
+T*
+(   ```bash) Tj
+T*
+(   cd frontend) Tj
+T*
+(   npm install) Tj
+T*
+(   npm run dev) Tj
+T*
+(   ```) Tj
+T*
+(   App served at `http://localhost:5173`.) Tj
+T*
+(7. **\\(Optional\\) Start monitoring**  ) Tj
+T*
+(   ```bash) Tj
+T*
+(   docker-compose -f docker-compose.monitoring.yml up -d) Tj
+T*
+(   ```) Tj
+T*
+(   Prometheus: `http://localhost:9090`, Grafana: `http://localhost:3000`.) Tj
+T*
+() Tj
+T*
+(## Backend \\(Spring Boot\\)) Tj
+T*
+() Tj
+T*
+(### Configuration & Secrets) Tj
+T*
+() Tj
+T*
+(The backend loads configuration from `application.yml` and overlays secrets via either ) Tj
+T*
+(environment variables or `backend/src/main/resources/secrets.properties` \\(ignored by Git\\). ) Tj
+T*
+(Create that file if it does not exist:) Tj
+T*
+() Tj
+T*
+(```properties) Tj
+T*
+(# Database) Tj
+T*
+(DB_HOST=localhost) Tj
+T*
+(DB_PORT=5432) Tj
+T*
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 17 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 1924 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 750 Td
+(DB_NAME=auctionality) Tj
+T*
+(DB_USERNAME=auctionality) Tj
+T*
+(DB_PASSWORD=super-secret) Tj
+T*
+() Tj
+T*
+(# Security) Tj
+T*
+(JWT_SECRET=replace-with-32-char-minimum-value) Tj
+T*
+(FRONTEND_BASE_URL=http://localhost:5173) Tj
+T*
+() Tj
+T*
+(# Integrations) Tj
+T*
+(GOOGLE_CLIENT_ID=...) Tj
+T*
+(GOOGLE_CLIENT_SECRET=...) Tj
+T*
+(SENDGRID_API_KEY=...) Tj
+T*
+(SENDGRID_FROM_EMAIL=no-reply@auctionality.local) Tj
+T*
+(SENDGRID_FROM_NAME=Auctionality) Tj
+T*
+(RECAPTCHA_SITE_KEY=...) Tj
+T*
+(RECAPTCHA_SECRET_KEY=...) Tj
+T*
+(VNPAY_TMN_CODE=...) Tj
+T*
+(VNPAY_SECRET_KEY=...) Tj
+T*
+(```) Tj
+T*
+() Tj
+T*
+(Core required variables:) Tj
+T*
+() Tj
+T*
+(| Key | Description | Default |) Tj
+T*
+(| --- | --- | --- |) Tj
+T*
+(| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | PostgreSQL connection details) Tj
+T*
+( | None |) Tj
+T*
+(| `JWT_SECRET` | 32+ char signing key for access/refresh tokens | Placeholder in ) Tj
+T*
+(`application.yml` \\(replace immediately\\) |) Tj
+T*
+(| `FRONTEND_BASE_URL` | Used when generating email links and OAuth redirects | ) Tj
+T*
+(`http://localhost:5173` |) Tj
+T*
+(| `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD` | RabbitMQ ) Tj
+T*
+(connection \\(defaults to `localhost:5672`, `guest/guest`\\) | Provided in `application.yml` |) Tj
+T*
+() Tj
+T*
+(Optional integrations:) Tj
+T*
+() Tj
+T*
+(| Key | Purpose |) Tj
+T*
+(| --- | --- |) Tj
+T*
+(| `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME` | Email verification and ) Tj
+T*
+(transactional notifications. |) Tj
+T*
+(| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Enables Google OAuth2 login \\(see ) Tj
+T*
+(`GOOGLE_OAUTH2_SETUP.md`\\). |) Tj
+T*
+(| `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY`, `RECAPTCHA_ENABLED` | reCAPTCHA guard on ) Tj
+T*
+(signup. |) Tj
+T*
+(| `VNPAY_URL`, `VNPAY_TMN_CODE`, `VNPAY_SECRET_KEY`, `VNPAY_USD_TO_VND_RATE` | Payment gateway ) Tj
+T*
+(integration. |) Tj
+T*
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 17 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 1796 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 750 Td
+(| `SENDGRID_API_KEY`, `app.frontend.base-url` | Used in rich email templates. |) Tj
+T*
+() Tj
+T*
+(> Need a walkthrough for Google OAuth? Follow `GOOGLE_OAUTH2_SETUP.md`.) Tj
+T*
+() Tj
+T*
+(### Database & Seed Data) Tj
+T*
+() Tj
+T*
+(- First-time startup automatically executes every SQL file in `backend/src/main/resources/sql/`) Tj
+T*
+( \\(schema creation, extensions, seed data\\).) Tj
+T*
+(- To reset the data, drop/recreate the Postgres database and restart the backend \\(because ) Tj
+T*
+(`spring.sql.init.mode=always`\\).) Tj
+T*
+(- If you manage Postgres manually, create a dedicated database/user:) Tj
+T*
+(  ```bash) Tj
+T*
+(  psql postgres) Tj
+T*
+(  CREATE DATABASE auctionality;) Tj
+T*
+(  CREATE USER auctionality WITH PASSWORD 'super-secret';) Tj
+T*
+(  GRANT ALL PRIVILEGES ON DATABASE auctionality TO auctionality;) Tj
+T*
+(  ```) Tj
+T*
+() Tj
+T*
+(### Running & Testing) Tj
+T*
+() Tj
+T*
+(```bash) Tj
+T*
+(cd backend) Tj
+T*
+(# Compile & verify) Tj
+T*
+(./mvnw clean verify) Tj
+T*
+() Tj
+T*
+(# Run with live reload + preview features enabled) Tj
+T*
+(./mvnw spring-boot:run -Dspring-boot.run.jvmArguments=--enable-preview) Tj
+T*
+() Tj
+T*
+(# Package runnable jar) Tj
+T*
+(./mvnw -DskipTests package) Tj
+T*
+(java --enable-preview -jar target/auctionality-0.0.1-SNAPSHOT.jar) Tj
+T*
+(```) Tj
+T*
+() Tj
+T*
+(- Backend listens on `http://localhost:8081`.) Tj
+T*
+(- REST endpoints live under `/api/**`.) Tj
+T*
+(- Swagger UI: `http://localhost:8081/swagger-ui.html`.) Tj
+T*
+(- Actuator/health endpoints enabled at `/actuator/**` \\(see `MONITORING_AND_LOGGING.md` for ) Tj
+T*
+(details\\).) Tj
+T*
+() Tj
+T*
+(### Messaging \\(RabbitMQ\\)) Tj
+T*
+() Tj
+T*
+(The backend declares:) Tj
+T*
+() Tj
+T*
+(| Exchange | Queues | Routing keys | Purpose |) Tj
+T*
+(| --- | --- | --- | --- |) Tj
+T*
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 12 0 R /Resources << /Font << /F1 17 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 1871 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 750 Td
+(| `bid.exchange` | `bid.history.queue`, `product.price.queue` | `bid.history`, `product.price` ) Tj
+T*
+(| Broadcasts bid history updates and price changes to listeners \\(SSE/WebSocket\\). |) Tj
+T*
+() Tj
+T*
+(Start RabbitMQ before running the backend; the default credentials `guest/guest` must match ) Tj
+T*
+(your environment variables.) Tj
+T*
+() Tj
+T*
+(### Logging & Files) Tj
+T*
+() Tj
+T*
+(- Default log files: `logs/auctionality.log` and `logs/auctionality-error.log` \\(rotated daily +) Tj
+T*
+( by size\\).) Tj
+T*
+(- Adjust log settings in `backend/src/main/resources/logback-spring.xml`.) Tj
+T*
+(- For monitoring/alerting guidance, read `MONITORING_AND_LOGGING.md`.) Tj
+T*
+() Tj
+T*
+(## Frontend \\(React + Vite\\)) Tj
+T*
+() Tj
+T*
+(### Install & Run) Tj
+T*
+() Tj
+T*
+(```bash) Tj
+T*
+(cd frontend) Tj
+T*
+(npm install) Tj
+T*
+(npm run dev        # starts http://localhost:5173) Tj
+T*
+(npm run build      # outputs to dist/) Tj
+T*
+(npm run preview    # serves the production build on http://localhost:4173) Tj
+T*
+(npm run lint       # ESLint checks) Tj
+T*
+(```) Tj
+T*
+() Tj
+T*
+(### Environment Variables) Tj
+T*
+() Tj
+T*
+(Create `frontend/.env.local` \\(ignored by Git\\) to decouple dev/prod URLs:) Tj
+T*
+() Tj
+T*
+(```dotenv) Tj
+T*
+(VITE_API_BASE_URL=http://localhost:8081/api) Tj
+T*
+(VITE_API_URL=http://localhost:8081) Tj
+T*
+(VITE_WS_URL=http://localhost:8081/ws-chat) Tj
+T*
+(VITE_RECAPTCHA_SITE_KEY=your-site-key) Tj
+T*
+(```) Tj
+T*
+() Tj
+T*
+(- `VITE_API_BASE_URL` drives Axios REST calls.) Tj
+T*
+(- `VITE_API_URL` is used by SSE helpers.) Tj
+T*
+(- `VITE_WS_URL` configures the WebSocket endpoint \\(STOMP chat/bidding\\).) Tj
+T*
+(- `VITE_RECAPTCHA_SITE_KEY` must match the backend’s `RECAPTCHA_SITE_KEY`.) Tj
+T*
+() Tj
+T*
+(Restart the Vite dev server whenever you change `.env.local`.) Tj
+T*
+() Tj
+T*
+(### Talking to the Backend) Tj
+T*
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 14 0 R /Resources << /Font << /F1 17 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 2459 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 750 Td
+() Tj
+T*
+(- The frontend assumes backend APIs are available on `http://localhost:8081`. Update the ) Tj
+T*
+(`.env.local` file if you proxy or deploy elsewhere.) Tj
+T*
+(- OAuth redirect URLs point at the backend; ensure `FRONTEND_BASE_URL` matches your running ) Tj
+T*
+(frontend to complete the login redirect loop.) Tj
+T*
+() Tj
+T*
+(## Monitoring & Observability) Tj
+T*
+() Tj
+T*
+(- Spring Boot Actuator is enabled by default. Check health via `curl ) Tj
+T*
+(http://localhost:8081/actuator/health`.) Tj
+T*
+(- Prometheus scrapes `http://localhost:8081/actuator/prometheus`.) Tj
+T*
+(- Use the prebuilt stack:) Tj
+T*
+(  ```bash) Tj
+T*
+(  docker-compose -f docker-compose.monitoring.yml up -d) Tj
+T*
+(  ```) Tj
+T*
+(  - **Prometheus** → `http://localhost:9090`) Tj
+T*
+(  - **Grafana** → `http://localhost:3000` \\(admin/admin on first login\\)) Tj
+T*
+(- See `MONITORING_SETUP.md` for provisioning details, dashboards, and troubleshooting tips.) Tj
+T*
+() Tj
+T*
+(## Full-Stack Workflow Checklist) Tj
+T*
+() Tj
+T*
+(1. **Start PostgreSQL & RabbitMQ** \\(local install or Docker\\).) Tj
+T*
+(2. **Set backend environment/secrets**.) Tj
+T*
+(3. **Run backend** \\(`./mvnw spring-boot:run -Dspring-boot.run.jvmArguments=--enable-preview`\\).) Tj
+T*
+(4. **Populate frontend `.env.local`**.) Tj
+T*
+(5. **Run frontend** \\(`npm run dev`\\) and verify `http://localhost:5173`.) Tj
+T*
+(6. **Exercise features** – login/register \\(with reCAPTCHA and optional Google OAuth\\), bid on ) Tj
+T*
+(products, test notifications.) Tj
+T*
+(7. **Monitor logs/metrics** via `logs/` and Grafana as needed.) Tj
+T*
+() Tj
+T*
+(## Supporting Documentation) Tj
+T*
+() Tj
+T*
+(- `docs/Proposal.md` – business and functional overview.) Tj
+T*
+(- `GOOGLE_OAUTH2_SETUP.md` – end-to-end Google OAuth2 instructions.) Tj
+T*
+(- `MONITORING_SETUP.md` & `MONITORING_AND_LOGGING.md` – observability and logging reference ) Tj
+T*
+(material.) Tj
+T*
+() Tj
+T*
+(## Troubleshooting) Tj
+T*
+() Tj
+T*
+(- **`ClassNotFoundException` or preview warnings** – ensure you are using JDK 25 and pass ) Tj
+T*
+(`--enable-preview` when running the app or tests.) Tj
+T*
+(- **Database connection failures** – verify Postgres is listening on the host/port defined in ) Tj
+T*
+(your secrets and that the user has privileges. Use `psql -h localhost -U auctionality -d ) Tj
+T*
+(auctionality`.) Tj
+T*
+(- **RabbitMQ errors** – confirm the service is running and credentials align with ) Tj
+T*
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 16 0 R /Resources << /Font << /F1 17 0 R >> >> >>
+endobj
+16 0 obj
+<< /Length 803 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 750 Td
+(`application.yml`. Visit `http://localhost:15672` for the management UI.) Tj
+T*
+(- **OAuth redirect mismatches** – double-check redirect URIs in Google Cloud and update ) Tj
+T*
+(`FRONTEND_BASE_URL`.) Tj
+T*
+(- **reCAPTCHA failing locally** – Google provides global test keys shown in ) Tj
+T*
+(`secrets.properties`; replace with production keys before deploying.) Tj
+T*
+(- **Frontend can’t reach backend** – set `VITE_API_BASE_URL` and `VITE_API_URL` explicitly, or ) Tj
+T*
+(run Vite with `npm run dev -- --host 0.0.0.0` if you access from another device.) Tj
+T*
+() Tj
+T*
+(With the steps above you can go from a bare clone to a fully working Auctionality stack in ) Tj
+T*
+(minutes while keeping secrets, dependencies, and tooling organized. Happy building!) Tj
+T*
+ET
+endstream
+endobj
+17 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000154 00000 n 
+0000000281 00000 n 
+0000002939 00000 n 
+0000003066 00000 n 
+0000005084 00000 n 
+0000005211 00000 n 
+0000007186 00000 n 
+0000007314 00000 n 
+0000009162 00000 n 
+0000009291 00000 n 
+0000011214 00000 n 
+0000011343 00000 n 
+0000013854 00000 n 
+0000013983 00000 n 
+0000014837 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R >>
+startxref
+14906
+%%EOF
