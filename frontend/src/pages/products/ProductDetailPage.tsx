@@ -48,7 +48,6 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import CountdownClock from "../../components/CountdownClock";
 import ProductCard from "../../components/ProductCard";
 import QASection from "../../components/QASection";
-import ExtraDescriptionSection from "../../components/ExtraDescriptionSection";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import DOMPurify from "dompurify";
@@ -621,7 +620,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Description Section */}
+            {/* Description Section - Shows original description + all versions */}
             <div className="mt-6 bg-white rounded-xl shadow-sm p-8">
               <div className="flex items-center gap-2 mb-6">
                 <InfoIcon className="text-primary" />
@@ -629,32 +628,98 @@ export default function ProductDetailPage() {
                   Description
                 </h2>
               </div>
-              <div className="prose max-w-none">
-                {product.description ? (
-                  (() => {
-                    // Check if description contains HTML tags
-                    const hasHtml = /<[a-z][\s\S]*>/i.test(product.description);
-                    if (hasHtml) {
-                      return (
+              <div className="space-y-6">
+                {/* Original Description */}
+                <div className="border-l-4 border-primary pl-4 py-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 font-medium">
+                      Original Description
+                    </span>
+                    {product.createdAt && (
+                      <span className="text-xs text-gray-400">
+                        {new Date(product.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  <div className="product-description-content">
+                    {product.description ? (
+                      (() => {
+                        const hasHtml = /<[a-z][\s\S]*>/i.test(product.description);
+                        if (hasHtml) {
+                          return (
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(product.description),
+                              }}
+                            />
+                          );
+                        } else {
+                          return (
+                            <p className="whitespace-pre-wrap">
+                              {product.description}
+                            </p>
+                          );
+                        }
+                      })()
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        No description available for this product.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Information Versions */}
+                {product.extraDescriptions && product.extraDescriptions.length > 0 && (
+                  <div className="space-y-4">
+                    {[...product.extraDescriptions]
+                      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                      .map((extraDesc, index) => (
                         <div
-                          className="text-gray-700 leading-relaxed text-lg"
-                          dangerouslySetInnerHTML={{
-                            __html: DOMPurify.sanitize(product.description),
-                          }}
-                        />
-                      );
-                    } else {
-                      return (
-                        <p className="text-gray-700 leading-relaxed text-lg whitespace-pre-wrap">
-                          {product.description}
-                        </p>
-                      );
-                    }
-                  })()
-                ) : (
-                  <p className="text-gray-500 italic">
-                    No description available for this product.
-                  </p>
+                          key={extraDesc.id}
+                          className="border-l-4 border-blue-400 pl-4 py-2 bg-gray-50 rounded-r-lg"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-gray-500 font-medium">
+                              Update #{index + 1} • Additional Information
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(extraDesc.createdAt).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          <div className="product-description-content">
+                            {(() => {
+                              const hasHtml = /<[a-z][\s\S]*>/i.test(extraDesc.content);
+                              if (hasHtml) {
+                                return (
+                                  <div
+                                    dangerouslySetInnerHTML={{
+                                      __html: DOMPurify.sanitize(extraDesc.content),
+                                    }}
+                                  />
+                                );
+                              } else {
+                                return (
+                                  <p className="whitespace-pre-wrap">
+                                    {extraDesc.content}
+                                  </p>
+                                );
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 )}
               </div>
             </div>
@@ -777,12 +842,6 @@ export default function ProductDetailPage() {
             )}
 
             {/* Q&A Section */}
-            {/* Extra Description Section */}
-            <ExtraDescriptionSection
-              productId={product.id}
-              isSeller={user?.id === product.sellerId}
-            />
-
             <QASection productId={product.id} sellerId={product.sellerId} />
           </div>
 

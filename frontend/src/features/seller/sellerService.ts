@@ -77,7 +77,7 @@ export const sellerService = {
     return response.data;
   },
 
-  updateProduct: async (id: number, payload: ProductRequest): Promise<Product> => {
+  updateProduct: async (id: number, payload: ProductRequest & { additionalInformation?: string }): Promise<Product> => {
     // Transform frontend payload to backend DTO format (same as createProduct)
     const backendPayload: any = {
       title: payload.title,
@@ -85,12 +85,17 @@ export const sellerService = {
       startPrice: payload.startPrice,
       bidIncrement: payload.bidIncrement,
       autoExtensionEnabled: payload.autoExtensionEnabled,
-      description: payload.description || "",
+      description: payload.description || "", // Original description (read-only, but required by backend)
       images: payload.images || [],
     };
     
     if (payload.buyNowPrice) {
       backendPayload.buyNowPrice = payload.buyNowPrice;
+    }
+    
+    // Include additionalInformation if provided (for description versioning)
+    if ((payload as any).additionalInformation) {
+      backendPayload.additionalInformation = (payload as any).additionalInformation;
     }
     
     // Convert Date to ISO string format (YYYY-MM-DDTHH:mm:ss) for LocalDateTime

@@ -9,6 +9,7 @@ import RichTextEditor from "./RichTextEditor";
 import { useToast } from "../hooks/useToast";
 import AddIcon from "@mui/icons-material/Add";
 import DescriptionIcon from "@mui/icons-material/Description";
+import DOMPurify from "dompurify";
 
 interface ExtraDescription {
   id: number;
@@ -175,7 +176,7 @@ export default function ExtraDescriptionSection({
                   return (
                     <div
                       className="text-gray-700 prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: desc.content }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(desc.content) }}
                     />
                   );
                 } else {

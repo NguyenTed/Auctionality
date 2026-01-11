@@ -22,6 +22,13 @@ export interface HighestBidderInfo {
   bidAmount: number
 }
 
+export interface ProductExtraDescription {
+  id: number;
+  productId: number;
+  content: string;
+  createdAt: string; // ISO string from backend
+}
+
 export interface Product {
   id: number;
   title: string;
@@ -41,6 +48,7 @@ export interface Product {
   category?: Category | null;
   images?: ProductImage[];
   bidCount?: number; // For top products
+  extraDescriptions?: ProductExtraDescription[]; // Description versions
 }
 
 export interface ProductImageRequest {

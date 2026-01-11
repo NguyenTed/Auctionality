@@ -45,9 +45,14 @@ public class UpdateProductDto {
 
     private Boolean autoExtensionEnabled;
 
-    @NotBlank(message = "Description is required")
-    @Size(min = 10, max = 10000, message = "Description must be between 10 and 10000 characters")
+    // Description is read-only when editing (original description from creation)
+    // This field is only used for validation/display purposes, not for updating
+    @Size(max = 10000, message = "Description must not exceed 10000 characters")
     private String description;
+
+    // Additional Information - creates a new description version when provided
+    @Size(max = 10000, message = "Additional information must not exceed 10000 characters")
+    private String additionalInformation;
 
     @NotNull(message = "Images are required")
     @Size(min = 3, max = 10, message = "Must have between 3 and 10 images")

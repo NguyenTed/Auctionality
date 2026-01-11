@@ -101,8 +101,8 @@ export default function ProfilePage() {
       );
       setWatchlistItems(response.items);
       setWatchlistPagination(response.pagination);
-    } catch (error) {
-      console.error("Failed to load watchlist:", error);
+    } catch (err) {
+      console.error("Failed to load watchlist:", err);
       error("Failed to load watchlist");
     } finally {
       setWatchlistLoading(false);

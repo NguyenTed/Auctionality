@@ -14,7 +14,6 @@ import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
-import { getRelativeTime } from "../../utils/dateUtils";
 
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>();

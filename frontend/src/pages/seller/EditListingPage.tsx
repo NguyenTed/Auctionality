@@ -15,7 +15,7 @@ import {
   updateProductAsync,
   selectSellerLoading,
 } from "../../features/seller/sellerSlice";
-import { fetchProductByIdAsync } from "../../features/product/productSlice";
+import { fetchProductByIdAsync, selectCurrentProduct, selectProductLoading, selectProductError } from "../../features/product/productSlice";
 import { selectUser } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
@@ -23,6 +23,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
+import DOMPurify from "dompurify";
 
 interface ProductImageInput {
   url: string;
@@ -36,9 +37,9 @@ export default function EditListingPage() {
   const categories = useAppSelector(selectCategories);
   const isLoading = useAppSelector(selectSellerLoading);
   const user = useAppSelector(selectUser);
-  const product = useAppSelector((state) =>
-    id ? state.product.products.find((p) => p.id === parseInt(id)) : null
-  );
+  const product = useAppSelector(selectCurrentProduct);
+  const productLoading = useAppSelector(selectProductLoading);
+  const productError = useAppSelector(selectProductError);
   const { toasts, success, error: toastError, removeToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -51,6 +52,7 @@ export default function EditListingPage() {
     endTime: "",
     autoExtensionEnabled: true,
     description: "",
+    additionalInformation: "", // For description versioning
   });
 
   const [images, setImages] = useState<ProductImageInput[]>([
@@ -70,6 +72,7 @@ export default function EditListingPage() {
     startTime?: string;
     endTime?: string;
     description?: string;
+    additionalInformation?: string;
     images?: string;
     [key: string]: string | undefined;
   }>({});
@@ -78,12 +81,34 @@ export default function EditListingPage() {
     dispatch(fetchCategoriesAsync());
     
     if (id) {
-      dispatch(fetchProductByIdAsync(parseInt(id)));
+      const productId = parseInt(id);
+      // Only fetch if the current product doesn't match the requested ID
+      if (!product || product.id !== productId) {
+        setLoadingProduct(true);
+        dispatch(fetchProductByIdAsync(productId));
+      } else {
+        setLoadingProduct(false);
+      }
+    } else {
+      setLoadingProduct(false);
     }
-  }, [dispatch, id]);
+  }, [dispatch, id, product]);
+
+  // Handle product loading state and errors
+  useEffect(() => {
+    if (productError) {
+      setLoadingProduct(false);
+      toastError(productError || "Failed to load product");
+      setTimeout(() => {
+        navigate("/seller/listings");
+      }, 2000);
+    } else if (product && id && product.id === parseInt(id) && productLoading === false) {
+      setLoadingProduct(false);
+    }
+  }, [product, productError, productLoading, id, toastError, navigate]);
 
   useEffect(() => {
-    if (product) {
+    if (product && id && product.id === parseInt(id)) {
       // Check if user is the seller
       if (product.sellerId !== user?.id) {
         toastError("You can only edit your own products");
@@ -116,6 +141,7 @@ export default function EditListingPage() {
         endTime: formatDateForInput(product.endTime),
         autoExtensionEnabled: product.autoExtensionEnabled ?? true,
         description: product.description || "",
+        additionalInformation: "", // Additional information is always empty when editing
       });
 
       // Set images
@@ -136,7 +162,7 @@ export default function EditListingPage() {
 
       setLoadingProduct(false);
     }
-  }, [product, user, navigate, toastError]);
+  }, [product, user, navigate, toastError, id]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -272,14 +298,17 @@ export default function EditListingPage() {
       }
     }
 
-    // Description validation
-    const plainTextDescription = formData.description
-      .replace(/<[^>]*>/g, "")
-      .trim();
-    if (!plainTextDescription || plainTextDescription.length < 10) {
-      newErrors.description = "Description must be at least 10 characters";
-    } else if (plainTextDescription.length > 10000) {
-      newErrors.description = "Description must not exceed 10000 characters";
+    // Description validation - description is read-only, so we skip validation
+    // Additional Information validation (optional but if provided must be valid)
+    if (formData.additionalInformation) {
+      const plainTextAdditionalInfo = formData.additionalInformation
+        .replace(/<[^>]*>/g, "")
+        .trim();
+      if (plainTextAdditionalInfo.length < 10) {
+        newErrors.additionalInformation = "Additional information must be at least 10 characters if provided";
+      } else if (plainTextAdditionalInfo.length > 10000) {
+        newErrors.additionalInformation = "Additional information must not exceed 10000 characters";
+      }
     }
 
     // Image validation
@@ -358,7 +387,8 @@ export default function EditListingPage() {
             sellerId: user?.id || 0,
             categoryId: formData.categoryId,
             subcategoryId: null,
-            description: formData.description,
+            description: formData.description, // Original description (required by backend, but won't be updated)
+            additionalInformation: formData.additionalInformation || undefined, // Optional additional info
             images: imageDtos,
           } as any,
         })
@@ -398,7 +428,7 @@ export default function EditListingPage() {
     }
   };
 
-  if (loadingProduct) {
+  if (loadingProduct || productLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
@@ -409,13 +439,16 @@ export default function EditListingPage() {
     );
   }
 
-  if (!product) {
+  if (productError || !product || (id && product.id !== parseInt(id))) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Product not found</p>
+        <ToastContainer toasts={toasts} onClose={removeToast} />
+        <p className="text-gray-600 mb-4">
+          {productError || "Product not found"}
+        </p>
         <button
           onClick={() => navigate("/seller/listings")}
-          className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
         >
           Back to Listings
         </button>
@@ -503,26 +536,63 @@ export default function EditListingPage() {
               htmlFor="description"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Description <span className="text-red-500">*</span>
+              Description <span className="text-gray-500 text-xs">(Read-only - Original description)</span>
             </label>
-            <div className={`mt-1 ${errors.description ? "border-2 border-red-500 rounded-lg p-2" : ""}`}>
+            <div className="mt-1 border border-gray-300 rounded-lg p-4 bg-gray-50 min-h-[200px]">
+              {formData.description ? (
+                (() => {
+                  const hasHtml = /<[a-z][\s\S]*>/i.test(formData.description);
+                  if (hasHtml) {
+                    return (
+                      <div
+                        className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(formData.description),
+                        }}
+                      />
+                    );
+                  } else {
+                    return (
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {formData.description}
+                      </p>
+                    );
+                  }
+                })()
+              ) : (
+                <p className="text-gray-400 italic">No description available</p>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Original description cannot be edited. Use "Additional Information" below to add updates.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="additionalInformation"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Additional Information <span className="text-gray-500 text-xs">(Optional)</span>
+            </label>
+            <div className={`mt-1 ${errors.additionalInformation ? "border-2 border-red-500 rounded-lg p-2" : ""}`}>
               <RichTextEditor
-                value={formData.description}
+                value={formData.additionalInformation}
                 onChange={(value) => {
-                  setFormData((prev) => ({ ...prev, description: value }));
-                  if (errors.description) {
-                    setErrors((prev) => ({ ...prev, description: undefined }));
+                  setFormData((prev) => ({ ...prev, additionalInformation: value }));
+                  if (errors.additionalInformation) {
+                    setErrors((prev) => ({ ...prev, additionalInformation: undefined }));
                   }
                 }}
-                placeholder="Provide a detailed description of your product..."
+                placeholder="Add additional information or updates to the product description..."
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {formData.description.replace(/<[^>]*>/g, "").length}/10000
-              characters
+              {formData.additionalInformation.replace(/<[^>]*>/g, "").length}/10000
+              characters (if provided)
             </p>
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+            {errors.additionalInformation && (
+              <p className="mt-1 text-sm text-red-600">{errors.additionalInformation}</p>
             )}
           </div>
         </div>
