@@ -14,8 +14,8 @@ public class SellerUpgradeScheduler {
     private final SellerUpgradeCleanupService cleanupService;
 
     // Run  everyday at 02:00 AM
-//    @Scheduled(fixedRate = 60000)
-    @Scheduled(cron = "0 0 2 * * ?")
+    @Scheduled(fixedRate = 60000)
+//    @Scheduled(cron = "0 0 2 * * ?")
     public void cleanupExpiredSellerUpgradeRequests() {
         log.info("Start cleanup expired seller upgrade requests");
         cleanupService.cleanupExpiredApprovals();

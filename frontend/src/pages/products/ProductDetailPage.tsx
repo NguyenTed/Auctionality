@@ -34,7 +34,10 @@ import { buyNowAsync, selectBuyingNow } from "../../features/order/orderSlice";
 import { orderService, type OrderDto } from "../../features/order/orderService";
 import { selectUser } from "../../features/auth/authSlice";
 import { connectWebSocket, subscribeToAuctionEnd } from "../../utils/websocket";
-import { subscribeToProductPrice, subscribeToBidHistory } from "../../utils/sse";
+import {
+  subscribeToProductPrice,
+  subscribeToBidHistory,
+} from "../../utils/sse";
 import { bidService, type AutoBidConfig } from "../../features/bid/bidService";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -45,6 +48,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
 import StarIcon from "@mui/icons-material/Star";
 import PaymentIcon from "@mui/icons-material/Payment";
+import BlockIcon from "@mui/icons-material/Block";
 import CountdownClock from "../../components/CountdownClock";
 import ProductCard from "../../components/ProductCard";
 import QASection from "../../components/QASection";
@@ -55,7 +59,13 @@ import { isNewProduct } from "../../utils/dateUtils";
 import BidConfirmDialog from "../../components/BidConfirmDialog";
 
 // Slideshow Timer Component
-function SlideshowTimer({ interval, onNext }: { interval: number; onNext: () => void }) {
+function SlideshowTimer({
+  interval,
+  onNext,
+}: {
+  interval: number;
+  onNext: () => void;
+}) {
   useEffect(() => {
     const timer = setInterval(onNext, interval);
     return () => clearInterval(timer);
@@ -89,10 +99,15 @@ export default function ProductDetailPage() {
   const [bidAmount, setBidAmount] = useState("");
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [order, setOrder] = useState<OrderDto | null>(null);
-  const [autoBidConfig, setAutoBidConfig] = useState<AutoBidConfig | null>(null);
+  const [autoBidConfig, setAutoBidConfig] = useState<AutoBidConfig | null>(
+    null
+  );
   const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
   const [showBidConfirmDialog, setShowBidConfirmDialog] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
+  const [rejectingBidderId, setRejectingBidderId] = useState<number | null>(
+    null
+  );
 
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
@@ -155,7 +170,8 @@ export default function ProductDetailPage() {
       return;
     }
 
-    bidService.getAutoBidConfig(product.id)
+    bidService
+      .getAutoBidConfig(product.id)
       .then(setAutoBidConfig)
       .catch(() => setAutoBidConfig(null));
   }, [product, isAuthenticated, user]);
@@ -166,26 +182,30 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const eventSource = subscribeToProductPrice(product.id, (newPrice, previousPrice) => {
-      // Update product price in Redux store from backend real-time update
-      dispatch(
-        updateProductBid({
-          productId: product.id,
-          newPrice: newPrice,
-          bidCount: product.bidCount || 0,
-        })
-      );
-      
-      // Show notification if price increased (but not if user just placed bid - that's handled separately)
-      if (newPrice > (previousPrice || 0)) {
-        // Only show notification if the price actually changed significantly
-        // This prevents duplicate notifications when user places bid
-        const priceDiff = newPrice - (previousPrice || 0);
-        if (priceDiff > 0.01) { // Only notify for meaningful price changes
-          success(`Price updated to ${formatPrice(newPrice)}`);
+    const eventSource = subscribeToProductPrice(
+      product.id,
+      (newPrice, previousPrice) => {
+        // Update product price in Redux store from backend real-time update
+        dispatch(
+          updateProductBid({
+            productId: product.id,
+            newPrice: newPrice,
+            bidCount: product.bidCount || 0,
+          })
+        );
+
+        // Show notification if price increased (but not if user just placed bid - that's handled separately)
+        if (newPrice > (previousPrice || 0)) {
+          // Only show notification if the price actually changed significantly
+          // This prevents duplicate notifications when user places bid
+          const priceDiff = newPrice - (previousPrice || 0);
+          if (priceDiff > 0.01) {
+            // Only notify for meaningful price changes
+            success(`Price updated to ${formatPrice(newPrice)}`);
+          }
         }
       }
-    });
+    );
 
     return () => {
       if (eventSource) {
@@ -310,13 +330,14 @@ export default function ProductDetailPage() {
       if (placeBidAsync.fulfilled.match(result)) {
         // Don't optimistically update price - wait for real-time update from backend
         // The price will be updated via SSE when autoBidEngine.recalculate() runs
-        
+
         // Use the auto-bid config returned from the backend response
         if (result.payload?.autoBidConfig) {
           setAutoBidConfig(result.payload.autoBidConfig);
         } else if (user) {
           // Fallback: fetch it if not in response
-          bidService.getAutoBidConfig(product.id)
+          bidService
+            .getAutoBidConfig(product.id)
             .then(setAutoBidConfig)
             .catch(() => setAutoBidConfig(null));
         }
@@ -330,26 +351,36 @@ export default function ProductDetailPage() {
 
         setBidAmount("");
         setShowBidConfirmDialog(false);
-        success(`Bid of ${formatPrice(amount)} placed successfully! Your auto-bid configuration has been set.`);
+        success(
+          `Bid of ${formatPrice(
+            amount
+          )} placed successfully! Your auto-bid configuration has been set.`
+        );
       } else {
-        const errorPayload = result.payload as { type?: string; message?: string };
-        
-        if (errorPayload?.type === 'BID_PENDING_APPROVAL') {
+        const errorPayload = result.payload as {
+          type?: string;
+          message?: string;
+        };
+
+        if (errorPayload?.type === "BID_PENDING_APPROVAL") {
           // Show specific message based on error text
-          const message = errorPayload.message || 'Your bid requires approval';
-          if (message.includes('already been sent')) {
-            const errorMsg = 'Your bid approval request has already been sent. Please wait for seller approval.';
+          const message = errorPayload.message || "Your bid requires approval";
+          if (message.includes("already been sent")) {
+            const errorMsg =
+              "Your bid approval request has already been sent. Please wait for seller approval.";
             setBidError(errorMsg);
             error(errorMsg);
           } else {
-            const errorMsg = 'Your bid requires approval before being placed. A request has been sent to the seller.';
+            const errorMsg =
+              "Your bid requires approval before being placed. A request has been sent to the seller.";
             setBidError(errorMsg);
             error(errorMsg);
           }
         } else {
-          const errorMessage = typeof errorPayload === 'string' 
-            ? errorPayload 
-            : errorPayload?.message || "Failed to place bid";
+          const errorMessage =
+            typeof errorPayload === "string"
+              ? errorPayload
+              : errorPayload?.message || "Failed to place bid";
           setBidError(errorMessage);
           error(errorMessage);
         }
@@ -443,7 +474,7 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      
+
       {/* Bid Confirmation Dialog */}
       {product && (
         <BidConfirmDialog
@@ -497,7 +528,7 @@ export default function ProductDetailPage() {
                   🆕 NEW
                 </div>
               )}
-              
+
               {/* Main Image Slideshow */}
               <div className="relative bg-gray-50 aspect-square flex items-center justify-center overflow-hidden group">
                 {/* Slideshow Container */}
@@ -508,11 +539,13 @@ export default function ProductDetailPage() {
                       src={img.url}
                       alt={`${product.title} ${index + 1}`}
                       className={`absolute inset-0 w-full h-full object-contain p-4 transition-opacity duration-700 ${
-                        index === selectedImageIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+                        index === selectedImageIndex
+                          ? "opacity-100 z-10"
+                          : "opacity-0 z-0"
                       }`}
                     />
                   ))}
-                  
+
                   {/* Navigation Arrows */}
                   {images.length > 1 && (
                     <>
@@ -520,7 +553,9 @@ export default function ProductDetailPage() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length);
+                          setSelectedImageIndex(
+                            (prev) => (prev - 1 + images.length) % images.length
+                          );
                           setIsSlideshowPlaying(false);
                         }}
                         className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
@@ -532,7 +567,9 @@ export default function ProductDetailPage() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedImageIndex((prev) => (prev + 1) % images.length);
+                          setSelectedImageIndex(
+                            (prev) => (prev + 1) % images.length
+                          );
                           setIsSlideshowPlaying(false);
                         }}
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 rotate-180"
@@ -542,7 +579,7 @@ export default function ProductDetailPage() {
                       </button>
                     </>
                   )}
-                  
+
                   {/* Slideshow Controls */}
                   {images.length > 1 && (
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
@@ -553,7 +590,11 @@ export default function ProductDetailPage() {
                           setIsSlideshowPlaying(!isSlideshowPlaying);
                         }}
                         className="px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label={isSlideshowPlaying ? "Pause slideshow" : "Play slideshow"}
+                        aria-label={
+                          isSlideshowPlaying
+                            ? "Pause slideshow"
+                            : "Play slideshow"
+                        }
                       >
                         {isSlideshowPlaying ? "Pause" : "Play"}
                       </button>
@@ -563,7 +604,7 @@ export default function ProductDetailPage() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Watchlist Button - Floating */}
                 <button
                   type="button"
@@ -583,7 +624,7 @@ export default function ProductDetailPage() {
                   )}
                 </button>
               </div>
-              
+
               {/* Auto-advance slideshow */}
               {images.length > 1 && isSlideshowPlaying && (
                 <SlideshowTimer
@@ -637,18 +678,23 @@ export default function ProductDetailPage() {
                     </span>
                     {product.createdAt && (
                       <span className="text-xs text-gray-400">
-                        {new Date(product.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {new Date(product.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </span>
                     )}
                   </div>
                   <div className="product-description-content">
                     {product.description ? (
                       (() => {
-                        const hasHtml = /<[a-z][\s\S]*>/i.test(product.description);
+                        const hasHtml = /<[a-z][\s\S]*>/i.test(
+                          product.description
+                        );
                         if (hasHtml) {
                           return (
                             <div
@@ -674,53 +720,64 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Additional Information Versions */}
-                {product.extraDescriptions && product.extraDescriptions.length > 0 && (
-                  <div className="space-y-4">
-                    {[...product.extraDescriptions]
-                      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                      .map((extraDesc, index) => (
-                        <div
-                          key={extraDesc.id}
-                          className="border-l-4 border-blue-400 pl-4 py-2 bg-gray-50 rounded-r-lg"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-gray-500 font-medium">
-                              Update #{index + 1} • Additional Information
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(extraDesc.createdAt).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          </div>
-                          <div className="product-description-content">
-                            {(() => {
-                              const hasHtml = /<[a-z][\s\S]*>/i.test(extraDesc.content);
-                              if (hasHtml) {
-                                return (
-                                  <div
-                                    dangerouslySetInnerHTML={{
-                                      __html: DOMPurify.sanitize(extraDesc.content),
-                                    }}
-                                  />
+                {product.extraDescriptions &&
+                  product.extraDescriptions.length > 0 && (
+                    <div className="space-y-4">
+                      {[...product.extraDescriptions]
+                        .sort(
+                          (a, b) =>
+                            new Date(a.createdAt).getTime() -
+                            new Date(b.createdAt).getTime()
+                        )
+                        .map((extraDesc, index) => (
+                          <div
+                            key={extraDesc.id}
+                            className="border-l-4 border-blue-400 pl-4 py-2 bg-gray-50 rounded-r-lg"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs text-gray-500 font-medium">
+                                Update #{index + 1} • Additional Information
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {new Date(
+                                  extraDesc.createdAt
+                                ).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                            <div className="product-description-content">
+                              {(() => {
+                                const hasHtml = /<[a-z][\s\S]*>/i.test(
+                                  extraDesc.content
                                 );
-                              } else {
-                                return (
-                                  <p className="whitespace-pre-wrap">
-                                    {extraDesc.content}
-                                  </p>
-                                );
-                              }
-                            })()}
+                                if (hasHtml) {
+                                  return (
+                                    <div
+                                      dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(
+                                          extraDesc.content
+                                        ),
+                                      }}
+                                    />
+                                  );
+                                } else {
+                                  return (
+                                    <p className="whitespace-pre-wrap">
+                                      {extraDesc.content}
+                                    </p>
+                                  );
+                                }
+                              })()}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
+                        ))}
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -790,33 +847,33 @@ export default function ProductDetailPage() {
                       <PersonIcon className="text-gray-400 text-2xl" />
                     </div>
                   )}
-                 <div className="flex items-center justify-between flex-1">
-                  {/* Left: bidder info */}
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900">
-                      {product.highestBidderInfo.maskedName || "Unknown Bidder"}
-                    </p>
+                  <div className="flex items-center justify-between flex-1">
+                    {/* Left: bidder info */}
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">
+                        {product.highestBidderInfo.maskedName ||
+                          "Unknown Bidder"}
+                      </p>
 
-                    {product.highestBidderInfo.ratingPercent !== null && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <StarIcon className="text-yellow-400 text-sm" />
-                        <span className="text-sm font-medium text-gray-700">
-                          {product.highestBidderInfo.ratingPercent.toFixed(1)}% positive
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                      {product.highestBidderInfo.ratingPercent !== null && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <StarIcon className="text-yellow-400 text-sm" />
+                          <span className="text-sm font-medium text-gray-700">
+                            {product.highestBidderInfo.ratingPercent.toFixed(1)}
+                            % positive
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Right: bid amount */}
-                  <div className="text-right ml-4">
-                    <p className="text-lg font-bold text-green-600">
-                      ${product.highestBidderInfo.bidAmount.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Highest bid
-                    </p>
+                    {/* Right: bid amount */}
+                    <div className="text-right ml-4">
+                      <p className="text-lg font-bold text-green-600">
+                        ${product.highestBidderInfo.bidAmount.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-500">Highest bid</p>
+                    </div>
                   </div>
-                </div>
                 </Link>
               </div>
             )}
@@ -934,7 +991,8 @@ export default function ProductDetailPage() {
                               Number(bidAmount) < nextBidAmount ||
                               isPlacingBid ||
                               bidLoading ||
-                              product?.status === "ENDED"
+                              product?.status === "ENDED" ||
+                              product?.endTime <= Date.now()
                             }
                           >
                             {isPlacingBid || bidLoading ? "Placing..." : "Bid"}
@@ -1046,22 +1104,29 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Auto-Bid Configuration (only visible to user who created it) */}
-              {autoBidConfig && isAuthenticated && user && autoBidConfig.bidderId === user.id && (
-                <div className="bg-blue-50 rounded-xl shadow-sm p-6 border border-blue-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <GavelIcon className="text-blue-600" fontSize="small" />
-                    <h3 className="text-lg font-semibold text-blue-900">
-                      Your Auto-Bid Configuration
-                    </h3>
+              {autoBidConfig &&
+                isAuthenticated &&
+                user &&
+                autoBidConfig.bidderId === user.id && (
+                  <div className="bg-blue-50 rounded-xl shadow-sm p-6 border border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <GavelIcon className="text-blue-600" fontSize="small" />
+                      <h3 className="text-lg font-semibold text-blue-900">
+                        Your Auto-Bid Configuration
+                      </h3>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      Maximum Bid:{" "}
+                      <span className="font-bold text-blue-900">
+                        {formatPrice(autoBidConfig.maxPrice)}
+                      </span>
+                    </p>
+                    <p className="text-xs text-blue-600 mt-2">
+                      Your auto-bid will automatically place bids up to this
+                      maximum amount.
+                    </p>
                   </div>
-                  <p className="text-sm text-blue-700">
-                    Maximum Bid: <span className="font-bold text-blue-900">{formatPrice(autoBidConfig.maxPrice)}</span>
-                  </p>
-                  <p className="text-xs text-blue-600 mt-2">
-                    Your auto-bid will automatically place bids up to this maximum amount.
-                  </p>
-                </div>
-              )}
+                )}
 
               {/* Bid History */}
               {bidHistory.length > 0 && (
@@ -1076,29 +1141,106 @@ export default function ProductDetailPage() {
                     </span>
                   </div>
                   <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {bidHistory.slice(0, 10).map((bid, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-start py-3 border-b border-gray-100 last:border-0"
-                      >
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
-                            {bid.bidderName}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(bid.createdAt).toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
+                    {bidHistory.slice(0, 10).map((bid, index) => {
+                      // Check if current user is the seller - use both sellerId and sellerInfo.id as fallback
+                      const isSeller =
+                        user &&
+                        product &&
+                        (Number(product.sellerId) === Number(user.id) ||
+                          Number(product.sellerInfo?.id) === Number(user.id));
+                      const isRejecting = rejectingBidderId === bid.bidderId;
+                      // Only show reject button if: user is seller, product is active, and bidderId exists
+                      const canReject = isSeller && product && product.status === "ACTIVE" && user;
+                      // const canReject = true;
+
+                      // Debug logging (remove in production)
+                      if (user && product) {
+                        console.log("Bid reject check:", {
+                          bidderId: bid.bidderId,
+                          isSeller,
+                          productStatus: product.status,
+                          productSellerId: product.sellerId,
+                          userId: user.id,
+                          sellerInfoId: product.sellerInfo?.id,
+                          canReject,
+                        });
+                      }
+
+                      return (
+                        <div
+                          key={index}
+                          className="flex justify-between items-start py-3 border-b border-gray-100 last:border-0"
+                        >
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">
+                              {bid.bidderName}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(bid.createdAt).toLocaleString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 ml-4">
+                            <p className="font-bold text-primary text-lg">
+                              {formatPrice(bid.amount)}
+                            </p>
+                            {canReject ? (
+                              <button
+                                onClick={async () => {
+                                  if (!product || !bid.bidderId) return;
+
+                                  if (
+                                    !window.confirm(
+                                      `Are you sure you want to reject ${bid.bidderName} from this auction? This action cannot be undone.`
+                                    )
+                                  ) {
+                                    return;
+                                  }
+
+                                  setRejectingBidderId(bid.bidderId);
+                                  try {
+                                    await bidService.rejectBidder(
+                                      product.id,
+                                      bid.bidderId
+                                    );
+                                    success(
+                                      `Bidder ${bid.bidderName} has been rejected from the auction`
+                                    );
+                                    // Refresh bid history and product
+                                    dispatch(fetchBidHistoryAsync(product.id));
+                                    dispatch(fetchProductByIdAsync(product.id));
+                                  } catch (err: any) {
+                                    const errorMessage =
+                                      err.response?.data?.error ||
+                                      err.message ||
+                                      "Failed to reject bidder";
+                                    error(errorMessage);
+                                  } finally {
+                                    setRejectingBidderId(null);
+                                  }
+                                }}
+                                disabled={isRejecting}
+                                className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 border border-red-200"
+                                title="Reject bidder from auction"
+                              >
+                                {isRejecting ? (
+                                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <BlockIcon
+                                    fontSize="small"
+                                    className="text-red-600"
+                                  />
+                                )}
+                              </button>
+                            ) : null}
+                          </div>
                         </div>
-                        <p className="font-bold text-primary text-lg ml-4">
-                          {formatPrice(bid.amount)}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {bidHistory.length > 10 && (
                       <p className="text-sm text-gray-500 text-center pt-2">
                         +{bidHistory.length - 10} more bids

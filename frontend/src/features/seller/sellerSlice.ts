@@ -35,9 +35,9 @@ const createAppAsyncThunk = createAsyncThunk.withTypes<{
 // Async thunks
 export const fetchMyProductsAsync = createAppAsyncThunk(
   "seller/fetchMyProducts",
-  async ({ page = 1, size = 10 }: { page?: number; size?: number } = {}, { rejectWithValue }) => {
+  async ({ page = 1, size = 10, keyword }: { page?: number; size?: number; keyword?: string } = {}, { rejectWithValue }) => {
     try {
-      return await sellerService.getMyProducts(page, size);
+      return await sellerService.getMyProducts(page, size, keyword);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
       return rejectWithValue(

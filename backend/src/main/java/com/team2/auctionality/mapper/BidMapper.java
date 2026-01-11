@@ -9,6 +9,7 @@ public class BidMapper {
 
     public static BidHistoryDto toDto(Bid bid){
         return BidHistoryDto.builder()
+                .bidderId(bid.getBidder().getId())
                 .bidderName(maskName(bid.getBidder().getProfile() != null ? bid.getBidder().getProfile().getFullName() : "****"))
                 .amount(bid.getAmount())
                 .createdAt(bid.getCreatedAt())

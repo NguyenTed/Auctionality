@@ -89,7 +89,7 @@ public class OrderController {
     @Operation(summary = "Cancel order when buyer have not paid yet.")
     public ResponseEntity<TransactionCancellationDto> cancelOrder(
             @PathVariable Integer orderId,
-            @RequestBody CancelOrderRequestDto cancelOrderRequestDto,
+            @Valid @RequestBody CancelOrderRequestDto cancelOrderRequestDto,
             @CurrentUser User user
     ) {
         log.info("Called cancel order");

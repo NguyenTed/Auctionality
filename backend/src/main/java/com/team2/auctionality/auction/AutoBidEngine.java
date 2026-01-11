@@ -101,7 +101,7 @@ public class AutoBidEngine {
                 previousBidderEmail = null;
                 previousBidderName = null;
             }
-            
+
             // update product
             product.setCurrentPrice(newPrice);
             productRepository.save(product);
@@ -143,9 +143,9 @@ public class AutoBidEngine {
                                     finalNewPrice,
                                     finalPreviousPrice
                             );
-                            log.info("Published product price update for product {}: {} -> {}", 
+                            log.info("Published product price update for product {}: {} -> {}",
                                     finalProductId, finalPreviousPrice, finalNewPrice);
-                            
+
                             // Publish bid history update so all viewers see the new bid
                             try {
                                 List<BidHistoryDto> histories = bidRepository.findByProductIdOrderByCreatedAtDesc(finalProductId)
@@ -153,17 +153,17 @@ public class AutoBidEngine {
                                         .map(BidMapper::toDto)
                                         .toList();
                                 bidEventPublisher.publishBidHistory(finalProductId, histories);
-                                log.info("Published bid history update for product {} with {} bids", 
+                                log.info("Published bid history update for product {} with {} bids",
                                         finalProductId, histories.size());
                             } catch (Exception e) {
                                 log.error("Error publishing bid history update for product {}", finalProductId, e);
                             }
-                            
+
                             // Send email notifications
                             try {
-                                log.info("Sending bid notification emails for product {} bid {} to seller {} and bidder {}", 
+                                log.info("Sending bid notification emails for product {} bid {} to seller {} and bidder {}",
                                         finalProductId, bidId, sellerEmail, bidderEmail);
-                                
+
                                 // 1. Notify seller
                                 emailService.sendBidSuccessNotification(
                                         new BidNotificationEmailRequest(
@@ -175,7 +175,7 @@ public class AutoBidEngine {
                                                 BidNotificationEmailRequest.NotificationType.SELLER
                                         )
                                 );
-                                
+
                                 // 2. Notify new highest bidder (the one who just placed the bid)
                                 emailService.sendBidSuccessNotification(
                                         new BidNotificationEmailRequest(
@@ -187,10 +187,10 @@ public class AutoBidEngine {
                                                 BidNotificationEmailRequest.NotificationType.NEW_HIGHEST_BIDDER
                                         )
                                 );
-                                
+
                                 // 3. Notify previous highest bidder if they exist and are different from the new bidder
                                 if (previousBidderEmail != null && previousBidderId != null && !previousBidderId.equals(newBidderId)) {
-                                    log.info("Sending outbid notification to previous highest bidder {} for product {}", 
+                                    log.info("Sending outbid notification to previous highest bidder {} for product {}",
                                             previousBidderEmail, finalProductId);
                                     emailService.sendBidSuccessNotification(
                                             new BidNotificationEmailRequest(
@@ -203,7 +203,7 @@ public class AutoBidEngine {
                                             )
                                     );
                                 }
-                                
+
                                 log.info("Successfully sent bid notification emails for product {} bid {}", finalProductId, bidId);
                             } catch (Exception e) {
                                 log.error("Error sending bid notification emails for product {}: {}", finalProductId, e.getMessage(), e);

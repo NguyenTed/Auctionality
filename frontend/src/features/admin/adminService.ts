@@ -46,8 +46,8 @@ export interface User {
 export interface SellerUpgradeRequest {
   id: number;
   userId: number;
-  userName: string;
-  userEmail: string;
+  fullName: string;
+  email: string;
   status: string;
   requestedAt: string;
 }
@@ -114,6 +114,7 @@ export const adminService = {
   // Seller Upgrade Requests
   getPendingSellerUpgradeRequests: async (): Promise<SellerUpgradeRequest[]> => {
     const response = await axiosInstance.get<SellerUpgradeRequest[]>("/admin/seller-upgrade-requests");
+    console.log(response.data)
     return response.data;
   },
 

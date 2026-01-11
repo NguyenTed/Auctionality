@@ -7,6 +7,7 @@ import com.team2.auctionality.model.ChatThread;
 import com.team2.auctionality.model.User;
 import com.team2.auctionality.service.ChatMessageService;
 import com.team2.auctionality.service.ChatThreadService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +35,7 @@ public class ChatController {
 
     @PostMapping("/messages")
     public ChatMessage sendMessage(
-            @RequestBody ChatMessageRequest request,
+            @Valid @RequestBody ChatMessageRequest request,
             @CurrentUser User user
     ) {
         // request.getThreadId() is actually the orderId

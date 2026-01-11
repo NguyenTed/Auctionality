@@ -109,5 +109,16 @@ public class EmailTemplateService {
         context.setVariable("responderName", request.getResponderName());
         return templateEngine.process("email/answer-notification", context);
     }
+
+    /**
+     * Render description update notification template
+     */
+    public String renderDescriptionUpdateNotification(DescriptionUpdateEmailRequest request) {
+        Context context = new Context();
+        context.setVariable("productTitle", request.getProductTitle());
+        context.setVariable("productUrl", request.getProductUrl());
+        context.setVariable("bidderName", request.getBidderName());
+        return templateEngine.process("email/description-update", context);
+    }
 }
 

@@ -114,6 +114,28 @@ management:
       export:
         enabled: true
 
+# Rate Limiting Configuration
+rate-limit:
+  enabled: true
+  default-limit: "100:60"  # 100 requests per 60 seconds (default for all endpoints)
+  user-based: true  # Use user ID for authenticated users, IP for anonymous
+  exclude-paths:
+    - "/actuator/**"
+    - "/swagger-ui/**"
+    - "/v3/api-docs/**"
+    - "/swagger-ui.html"
+  # Per-endpoint rate limits (more specific patterns override default)
+  endpoints:
+    "/api/auth/**": "10:60"  # 10 requests per minute for auth endpoints
+    "/api/bids/**": "50:60"  # 50 requests per minute for bid endpoints
+    "/api/products/**": "200:60"  # 200 requests per minute for product endpoints
+  # Per-method rate limits
+  methods:
+    POST: "50:60"  # 50 POST requests per minute
+    PUT: "30:60"   # 30 PUT requests per minute
+    DELETE: "20:60"  # 20 DELETE requests per minute
+    GET: "200:60"  # 200 GET requests per minute
+
 logging:
   level:
     org:

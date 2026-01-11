@@ -41,23 +41,70 @@ public interface BidRepository extends JpaRepository<Bid,Integer> {
     )
     List<Bid> findValidBids(@Param("productId") Integer productId);
 
+    @Query(
+            value = """
+        SELECT b.*
+        FROM bid b
+        WHERE b.product_id = :productId
+          AND NOT EXISTS (
+              SELECT 1
+              FROM rejected_bidder r
+              WHERE r.product_id = :productId
+                AND r.bidder_id = b.bidder_id
+          )
+        ORDER BY b.created_at DESC
+        """,
+            nativeQuery = true
+    )
+    List<Bid> findValidBidsOrderByCreatedAtDesc(@Param("productId") Integer productId);
+
     @Query("""
     SELECT b
     FROM Bid b
     WHERE b.product.id = :productId
     ORDER BY b.amount DESC, b.createdAt ASC
     """)
-    Optional<Bid> findTopBidByProductId(Integer productId);
+    List<Bid> findTopBidsByProductId(Integer productId);
+    
+    default Optional<Bid> findTopBidByProductId(Integer productId) {
+        List<Bid> bids = findTopBidsByProductId(productId);
+        return bids.isEmpty() ? Optional.empty() : Optional.of(bids.get(0));
+    }
 
     @Query(
             value = """
         SELECT *
         FROM bid b
         WHERE b.product_id = :productId
+             AND NOT EXISTS (
+              SELECT 1
+              FROM rejected_bidder r
+              WHERE r.product_id = :productId
+                AND r.bidder_id = b.bidder_id
+          )
         ORDER BY b.amount DESC, b.created_at ASC
         LIMIT 1
     """,
             nativeQuery = true
     )
     Optional<Bid> findHighestBid(@Param("productId") Integer productId);
+
+    /**
+     * Find distinct bidders (users) who have placed bids on a product, excluding rejected bidders
+     */
+    @Query(
+            value = """
+        SELECT DISTINCT b.bidder_id
+        FROM bid b
+        WHERE b.product_id = :productId
+          AND NOT EXISTS (
+              SELECT 1
+              FROM rejected_bidder r
+              WHERE r.product_id = :productId
+                AND r.bidder_id = b.bidder_id
+          )
+    """,
+            nativeQuery = true
+    )
+    List<Integer> findDistinctBidderIdsByProductId(@Param("productId") Integer productId);
 }

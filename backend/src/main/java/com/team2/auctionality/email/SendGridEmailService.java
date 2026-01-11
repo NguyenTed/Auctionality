@@ -130,6 +130,18 @@ public class SendGridEmailService implements EmailService {
         }
     }
 
+    @Override
+    @Async
+    public void sendDescriptionUpdateNotification(DescriptionUpdateEmailRequest request) {
+        try {
+            String htmlContent = templateService.renderDescriptionUpdateNotification(request);
+            sendEmail(request.getToEmail(), request.getSubject(), htmlContent);
+            log.info("Description update notification sent to: {} for product: {}", request.getToEmail(), request.getProductTitle());
+        } catch (Exception e) {
+            log.error("Failed to send description update notification to {}: {}", request.getToEmail(), e.getMessage(), e);
+        }
+    }
+
     /**
      * Core method to send email via SendGrid
      */

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Description Updated</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0168FF;
+        }
+        .content {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .product-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0168FF;
+            margin-bottom: 15px;
+        }
+        .message {
+            margin-bottom: 20px;
+            color: #555;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #0168FF;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #0156d3;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Auctionality</div>
+        </div>
+        <div class="content">
+            <p class="message">Hello <span th:text="${bidderName}">Bidder</span>,</p>
+            <p class="message">
+                The seller has updated the description for the product you're bidding on:
+            </p>
+            <div class="product-title" th:text="${productTitle}">Product Title</div>
+            <p class="message">
+                Please review the updated information to ensure you have all the details about this auction.
+            </p>
+            <div style="text-align: center;">
+                <a th:href="${productUrl}" class="button">View Updated Product</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from Auctionality.</p>
+            <p>You received this email because you have placed a bid on this product.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -77,10 +77,10 @@ export default function AdminSellerRequestsPage() {
             >
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  User ID: {request.userId}
+                  User ID: {request.id}
                 </h3>
-                <p className="text-sm text-gray-600">Email: {request.userEmail}</p>
-                <p className="text-sm text-gray-600">Name: {request.userName}</p>
+                <p className="text-sm text-gray-600">Email: {request.user.email}</p>
+                <p className="text-sm text-gray-600">Name: {request.user.fullName}</p>
               </div>
               <div className="mb-4">
                 <p className="text-xs text-gray-500">
