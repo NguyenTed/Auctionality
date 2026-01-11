@@ -54,6 +54,12 @@ public interface BidRepository extends JpaRepository<Bid,Integer> {
         SELECT *
         FROM bid b
         WHERE b.product_id = :productId
+             AND NOT EXISTS (
+              SELECT 1
+              FROM rejected_bidder r
+              WHERE r.product_id = :productId
+                AND r.bidder_id = b.bidder_id
+          )
         ORDER BY b.amount DESC, b.created_at ASC
         LIMIT 1
     """,
