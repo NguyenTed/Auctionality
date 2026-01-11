@@ -90,8 +90,9 @@ const watchlistSlice = createSlice({
       })
       .addCase(fetchWatchlistAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.items = action.payload;
-        state.productIds = action.payload.map((item) => item.product.id);
+        const items = Array.isArray(action.payload) ? action.payload : [];
+        state.items = items;
+        state.productIds = items.map((item) => item.product.id);
         state.error = null;
       })
       .addCase(fetchWatchlistAsync.rejected, (state, action) => {

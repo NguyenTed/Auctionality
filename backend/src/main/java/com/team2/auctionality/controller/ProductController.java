@@ -7,6 +7,7 @@ import com.team2.auctionality.mapper.PaginationMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.mapper.RejectedBidderMapper;
 import com.team2.auctionality.model.*;
+import com.team2.auctionality.repository.ProductExtraDescriptionRepository;
 import com.team2.auctionality.service.BidService;
 import com.team2.auctionality.service.ProductService;
 import com.team2.auctionality.util.PaginationUtils;
@@ -31,6 +32,7 @@ public class ProductController {
     private final ProductService productService;
     private final BidService bidService;
     private final ProductMapper productMapper;
+    private final ProductExtraDescriptionRepository productExtraDescriptionRepository;
 
     @GetMapping("/category/{categoryId}")
     @Operation(summary = "Get products by category")
@@ -92,7 +94,10 @@ public class ProductController {
     @GetMapping("/{id}")
     @Operation(summary = "Get product by id")
     public ResponseEntity<ProductDto> getProductById(@PathVariable Integer id) {
-        ProductDto product = productMapper.toDto(productService.getProductById(id));
+        Bid highestBid = bidService.getHighestBidByProductId(id);
+        List<ProductExtraDescription> extraDescriptions = productExtraDescriptionRepository
+                .getProductExtraDescriptionByProductId(id);
+        ProductDto product = productMapper.toDto(productService.getProductById(id), highestBid, extraDescriptions);
         return ResponseEntity.ok(product);
     }
 

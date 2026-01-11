@@ -4,6 +4,8 @@ import com.team2.auctionality.dto.*;
 import com.team2.auctionality.enums.ProductStatus;
 import com.team2.auctionality.exception.AuctionClosedException;
 import com.team2.auctionality.exception.InvalidBidPriceException;
+import com.team2.auctionality.mapper.BidMapper;
+import com.team2.auctionality.mapper.HighestBidderInfoMapper;
 import com.team2.auctionality.mapper.OrderMapper;
 import com.team2.auctionality.mapper.ProductMapper;
 import com.team2.auctionality.model.*;
@@ -20,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -35,12 +36,25 @@ public class ProductService {
     private final CategoryService categoryService;
     private final ProductMapper productMapper;
     private final OrderService orderService;
+    private final com.team2.auctionality.repository.ProductImageRepository productImageRepository;
 
     @Transactional(readOnly = true)
     public List<ProductDto> getTop5EndingSoon() {
         return productRepository.findTop5EndingSoon(PageRequest.of(0, 5))
                 .stream()
-                .map(ProductMapper::toDto)
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                })
                 .toList();
     }
 
@@ -49,11 +63,16 @@ public class ProductService {
         return productRepository.findTop5MostBid(PageRequest.of(0, 5))
                 .stream()
                 .map(product -> {
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(product.getId())
+                            .orElse(null);
                     // Count bids for this product
                     long bidCount = product.getBids() != null ? product.getBids().size() : 0;
                     return new ProductTopMostBidDto(
                             product.getId(),
                             product.getTitle(),
+                            product.getDescription(),
                             product.getStatus(),
                             product.getStartPrice(),
                             product.getCurrentPrice(),
@@ -65,7 +84,8 @@ public class ProductService {
                             product.getSeller() != null ? product.getSeller().getId() : null,
                             product.getCategory(),
                             product.getImages(),
-                            bidCount
+                            bidCount,
+                            HighestBidderInfoMapper.toDto(highestBid)
                     );
                 })
                 .toList();
@@ -75,14 +95,40 @@ public class ProductService {
     public List<ProductDto> getTop5HighestPrice() {
         return productRepository.findTop5HighestPrice(PageRequest.of(0, 5))
                 .stream()
-                .map(ProductMapper::toDto)
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                })
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsByCategory(Integer categoryId, Pageable pageable) {
-        return productRepository.findByCategory(categoryId, pageable)
-                .map(ProductMapper::toDto);
+
+        Page<Product> productPage = productRepository.findByCategory(categoryId, pageable);
+
+        return productPage.map(product -> {
+            Integer id = product.getId();
+
+            // Get the highest bid
+            Bid highestBid = bidRepository
+                    .findHighestBid(id)
+                    .orElse(null);
+
+            return ProductMapper.toDto(
+                    product,
+                    highestBid
+            );
+        });
     }
 
     @Transactional(readOnly = true)
@@ -100,7 +146,19 @@ public class ProductService {
 
         Page<Product> products = productRepository.searchProducts(keyword, categoryId, sortedPageable);
 
-        return products.map(ProductMapper::toDto);
+        return products.map(product -> {
+            Integer id = product.getId();
+
+            // Get the highest bid
+            Bid highestBid = bidRepository
+                    .findHighestBid(id)
+                    .orElse(null);
+
+            return ProductMapper.toDto(
+                    product,
+                    highestBid
+            );
+        });
     }
 
     private Sort getSort(String sortKey) {
@@ -117,7 +175,19 @@ public class ProductService {
     public Page<ProductDto> getAllProducts(Pageable pageable) {
         return productRepository
                 .findAll(pageable)
-                .map(ProductMapper::toDto);
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                });
     }
 
     @Transactional
@@ -170,23 +240,25 @@ public class ProductService {
         // Check if product has bids - if so, only allow certain fields to be updated
         long bidCount = bidRepository.countByProductId(productId);
         if (bidCount > 0) {
-            // If there are bids, only allow updating description and images
-            product.setDescription(productDto.getDescription());
-            // Update images
+            // If there are bids, only allow updating images and additional information (description versioning)
+            // Description is locked - cannot be updated directly
+            // Update images - explicitly delete old images, then set new ones
             if (productDto.getImages() != null && !productDto.getImages().isEmpty()) {
-                // Remove existing images
-                product.getImages().clear();
-                // Add new images
+                // Explicitly delete all existing images using JPQL
+                productImageRepository.deleteByProductId(productId);
+                // Create and set new images (safe now since we're using explicit deletion, not orphanRemoval)
+                List<ProductImage> newImages = new ArrayList<>();
                 for (CreateProductImageDto imageDto : productDto.getImages()) {
                     ProductImage image = new ProductImage();
                     image.setUrl(imageDto.getUrl());
                     image.setIsThumbnail(imageDto.getIsThumbnail() != null ? imageDto.getIsThumbnail() : false);
                     image.setProduct(product);
-                    product.getImages().add(image);
+                    newImages.add(image);
                 }
+                product.setImages(newImages);
             }
         } else {
-            // No bids yet, allow full update
+            // No bids yet, allow full update (except description - description is locked and versioned)
             product.setTitle(productDto.getTitle());
             product.setCategory(categoryService.getCategoryById(productDto.getCategoryId()));
             product.setStartPrice(productDto.getStartPrice());
@@ -195,23 +267,51 @@ public class ProductService {
             product.setStartTime(productDto.getStartTime());
             product.setEndTime(productDto.getEndTime());
             product.setAutoExtensionEnabled(productDto.getAutoExtensionEnabled() != null ? productDto.getAutoExtensionEnabled() : true);
-            product.setDescription(productDto.getDescription());
+            // Description is NOT updated - it's locked and can only be versioned via additionalInformation
             
-            // Update images
+            // Update images - explicitly delete old images, then set new ones
             if (productDto.getImages() != null && !productDto.getImages().isEmpty()) {
-                product.getImages().clear();
+                // Explicitly delete all existing images using JPQL
+                productImageRepository.deleteByProductId(productId);
+                // Create and set new images (safe now since we're using explicit deletion, not orphanRemoval)
+                List<ProductImage> newImages = new ArrayList<>();
                 for (CreateProductImageDto imageDto : productDto.getImages()) {
                     ProductImage image = new ProductImage();
                     image.setUrl(imageDto.getUrl());
                     image.setIsThumbnail(imageDto.getIsThumbnail() != null ? imageDto.getIsThumbnail() : false);
                     image.setProduct(product);
-                    product.getImages().add(image);
+                    newImages.add(image);
                 }
+                product.setImages(newImages);
+            }
+        }
+        
+        // Handle additional information - creates a new description version if provided
+        // This is allowed for both products with bids and without bids
+        if (productDto.getAdditionalInformation() != null && !productDto.getAdditionalInformation().trim().isEmpty()) {
+            String plainText = productDto.getAdditionalInformation().replaceAll("<[^>]*>", "").trim();
+            if (plainText.length() >= 10 && plainText.length() <= 10000) {
+                ProductExtraDescription extraDescription = ProductExtraDescription.builder()
+                        .productId(productId)
+                        .content(productDto.getAdditionalInformation())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                productExtraDescriptionRepository.save(extraDescription);
             }
         }
         
         Product updatedProduct = productRepository.save(product);
-        return productMapper.toDto(updatedProduct);
+
+        // Get highest bid
+        Bid highestBid = bidRepository
+                .findHighestBid(productId)
+                .orElse(null);
+
+        // Get extra descriptions (description versions)
+        List<ProductExtraDescription> extraDescriptions = productExtraDescriptionRepository
+                .getProductExtraDescriptionByProductId(productId);
+
+        return productMapper.toDto(updatedProduct, highestBid, extraDescriptions);
     }
 
     @Transactional
@@ -268,7 +368,7 @@ public class ProductService {
         ProductExtraDescription description = ProductExtraDescription.builder()
                 .productId(productId)
                 .content(dto.getContent())
-                .createdAt(new Date())
+                .createdAt(LocalDateTime.now())
                 .build();
         return productExtraDescriptionRepository.save(description);
     }
@@ -285,14 +385,38 @@ public class ProductService {
     public List<ProductDto> getRelatedProducts(Integer productId, Integer categoryId) {
         return productRepository.findRelatedProducts(categoryId, productId, PageRequest.of(0, 5))
                 .stream()
-                .map(ProductMapper::toDto)
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                })
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsBySeller(Integer sellerId, Pageable pageable) {
         return productRepository.findBySellerId(sellerId, pageable)
-                .map(ProductMapper::toDto);
+                .map(product -> {
+                    Integer id = product.getId();
+
+                    // Get the highest bid
+                    Bid highestBid = bidRepository
+                            .findHighestBid(id)
+                            .orElse(null);
+
+                    return ProductMapper.toDto(
+                            product,
+                            highestBid
+                    );
+                });
     }
 
     public static void checkIsAmountAvailable(Float amount, Float step, Float currentPrice) {

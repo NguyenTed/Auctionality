@@ -38,5 +38,7 @@ public class ProductDto {
 
     private List<ProductImageDto> images;
 
+    private List<ProductExtraDescriptionDto> extraDescriptions;
+
 }
 

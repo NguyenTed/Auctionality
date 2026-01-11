@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:with="titleText=${type.name() == 'SELLER' ? 'New Bid on Your Auction' : (type.name() == 'NEW_HIGHEST_BIDDER' ? 'You are the Highest Bidder' : 'You have Been Outbid')}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${type == T(com.team2.auctionality.email.dto.BidNotificationEmailRequest.NotificationType).SELLER ? 'New Bid on Your Auction' : (type == T(com.team2.auctionality.email.dto.BidNotificationEmailRequest.NotificationType).NEW_HIGHEST_BIDDER ? 'You\'re the Highest Bidder!' : 'You\'ve Been Outbid')}">Bid Notification</title>
+    <title th:text="${titleText}">Bid Notification</title>
     <style>
         body {
             font-family: Arial, sans-serif;

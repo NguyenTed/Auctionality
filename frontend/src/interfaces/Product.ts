@@ -16,9 +16,17 @@ export interface SellerInfo {
 
 export interface HighestBidderInfo {
   id: number;
-  fullName: string | null;
+  maskedName: string | null;
   avatarUrl: string | null;
   ratingPercent: number | null;
+  bidAmount: number
+}
+
+export interface ProductExtraDescription {
+  id: number;
+  productId: number;
+  content: string;
+  createdAt: string; // ISO string from backend
 }
 
 export interface Product {
@@ -40,6 +48,7 @@ export interface Product {
   category?: Category | null;
   images?: ProductImage[];
   bidCount?: number; // For top products
+  extraDescriptions?: ProductExtraDescription[]; // Description versions
 }
 
 export interface ProductImageRequest {

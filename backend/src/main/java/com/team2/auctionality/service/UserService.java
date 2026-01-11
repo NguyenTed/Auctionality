@@ -189,33 +189,37 @@ public class UserService {
 
         UserProfile userProfile = userProfileRepository.findByUserId(toUser.getId());
 
-        // ===== Update counter =====
+        // ===== Calculate new counters using local variables =====
+        int positiveCount = userProfile.getRatingPositiveCount();
+        int negativeCount = userProfile.getRatingNegativeCount();
+
         if (isNewRating) {
             if (newValue == 1) {
-                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() + 1);
+                positiveCount++;
             } else {
-                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() + 1);
+                negativeCount++;
             }
         } else if (!newValue.equals(oldValue)) {
             if (oldValue == 1) {
-                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() - 1);
+                positiveCount--;
             } else {
-                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() - 1);
+                negativeCount--;
             }
 
             if (newValue == 1) {
-                userProfile.setRatingPositiveCount(userProfile.getRatingPositiveCount() + 1);
+                positiveCount++;
             } else {
-                userProfile.setRatingNegativeCount(userProfile.getRatingNegativeCount() + 1);
+                negativeCount++;
             }
         }
 
-        // ===== Caculate ratingPercent =====
-        int positive = userProfile.getRatingPositiveCount();
-        int negative = userProfile.getRatingNegativeCount();
-        int total = positive + negative;
+        // ===== Set back to entity =====
+        userProfile.setRatingPositiveCount(positiveCount);
+        userProfile.setRatingNegativeCount(negativeCount);
 
-        float ratingPercent = total == 0 ? 0f : (float) positive / total;
+        // ===== Calculate ratingPercent =====
+        int total = positiveCount + negativeCount;
+        float ratingPercent = total == 0 ? 0f : ((float) positiveCount / total) * 100;
         userProfile.setRatingPercent(ratingPercent);
 
         userProfileRepository.save(userProfile);
@@ -226,6 +230,14 @@ public class UserService {
     public List<WatchListItemDto> getWatchList(User user) {
         log.debug("Getting watchlist for user: {}", user.getId());
         return watchListItemService.getWatchList(user);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<WatchListItemDto> getWatchListWithFilters(
+            User user, String keyword, Integer categoryId, org.springframework.data.domain.Pageable pageable) {
+        log.debug("Getting watchlist with filters for user: {}, keyword: {}, categoryId: {}", 
+                user.getId(), keyword, categoryId);
+        return watchListItemService.getWatchListWithFilters(user, keyword, categoryId, pageable);
     }
 
     @Transactional
@@ -274,6 +286,13 @@ public class UserService {
         // Update password
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getUserProfileById(Integer userId, boolean maskName) {
+        log.debug("Getting user profile for userId: {}, maskName: {}", userId, maskName);
+        User user = getUserById(userId);
+        return UserMapper.toDto(user, maskName);
     }
 
 }

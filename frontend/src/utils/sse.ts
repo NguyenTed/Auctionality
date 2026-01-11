@@ -44,15 +44,13 @@ export const subscribeToBidHistory = (
   onBidHistoryUpdate: (histories: BidHistoryDto[]) => void
 ): EventSource | null => {
   const token = localStorage.getItem("accessToken");
-  if (!token) {
-    console.error("No access token found");
-    return null;
-  }
+  
+  // Build URL with optional token (endpoint allows anonymous access)
+  const url = token 
+    ? `${API_URL}/api/bids/products/${productId}/history?token=${encodeURIComponent(token)}`
+    : `${API_URL}/api/bids/products/${productId}/history`;
 
-  // EventSource doesn't support custom headers, so we pass token as query parameter
-  const eventSource = new EventSource(
-    `${API_URL}/api/bids/products/${productId}/history?token=${encodeURIComponent(token)}`
-  );
+  const eventSource = new EventSource(url);
 
   eventSource.addEventListener("bid-history", (event: MessageEvent) => {
     try {
@@ -65,7 +63,8 @@ export const subscribeToBidHistory = (
 
   eventSource.onerror = (error) => {
     console.error("SSE error for bid history:", error);
-    eventSource.close();
+    // Don't close on first error - SSE may reconnect automatically
+    // Only log the error for debugging
   };
 
   return eventSource;

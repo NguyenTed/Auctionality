@@ -15,7 +15,7 @@ import {
   updateProductAsync,
   selectSellerLoading,
 } from "../../features/seller/sellerSlice";
-import { fetchProductByIdAsync } from "../../features/product/productSlice";
+import { fetchProductByIdAsync, selectCurrentProduct, selectProductLoading, selectProductError } from "../../features/product/productSlice";
 import { selectUser } from "../../features/auth/authSlice";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
@@ -23,6 +23,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
+import DOMPurify from "dompurify";
 
 interface ProductImageInput {
   url: string;
@@ -36,9 +37,9 @@ export default function EditListingPage() {
   const categories = useAppSelector(selectCategories);
   const isLoading = useAppSelector(selectSellerLoading);
   const user = useAppSelector(selectUser);
-  const product = useAppSelector((state) =>
-    id ? state.product.products.find((p) => p.id === parseInt(id)) : null
-  );
+  const product = useAppSelector(selectCurrentProduct);
+  const productLoading = useAppSelector(selectProductLoading);
+  const productError = useAppSelector(selectProductError);
   const { toasts, success, error: toastError, removeToast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -51,6 +52,7 @@ export default function EditListingPage() {
     endTime: "",
     autoExtensionEnabled: true,
     description: "",
+    additionalInformation: "", // For description versioning
   });
 
   const [images, setImages] = useState<ProductImageInput[]>([
@@ -61,17 +63,52 @@ export default function EditListingPage() {
 
   const [hasBids, setHasBids] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(true);
+  const [errors, setErrors] = useState<{
+    title?: string;
+    categoryId?: string;
+    startPrice?: string;
+    bidIncrement?: string;
+    buyNowPrice?: string;
+    startTime?: string;
+    endTime?: string;
+    description?: string;
+    additionalInformation?: string;
+    images?: string;
+    [key: string]: string | undefined;
+  }>({});
 
   useEffect(() => {
     dispatch(fetchCategoriesAsync());
     
     if (id) {
-      dispatch(fetchProductByIdAsync(parseInt(id)));
+      const productId = parseInt(id);
+      // Only fetch if the current product doesn't match the requested ID
+      if (!product || product.id !== productId) {
+        setLoadingProduct(true);
+        dispatch(fetchProductByIdAsync(productId));
+      } else {
+        setLoadingProduct(false);
+      }
+    } else {
+      setLoadingProduct(false);
     }
-  }, [dispatch, id]);
+  }, [dispatch, id, product]);
+
+  // Handle product loading state and errors
+  useEffect(() => {
+    if (productError) {
+      setLoadingProduct(false);
+      toastError(productError || "Failed to load product");
+      setTimeout(() => {
+        navigate("/seller/listings");
+      }, 2000);
+    } else if (product && id && product.id === parseInt(id) && productLoading === false) {
+      setLoadingProduct(false);
+    }
+  }, [product, productError, productLoading, id, toastError, navigate]);
 
   useEffect(() => {
-    if (product) {
+    if (product && id && product.id === parseInt(id)) {
       // Check if user is the seller
       if (product.sellerId !== user?.id) {
         toastError("You can only edit your own products");
@@ -104,6 +141,7 @@ export default function EditListingPage() {
         endTime: formatDateForInput(product.endTime),
         autoExtensionEnabled: product.autoExtensionEnabled ?? true,
         description: product.description || "",
+        additionalInformation: "", // Additional information is always empty when editing
       });
 
       // Set images
@@ -124,7 +162,7 @@ export default function EditListingPage() {
 
       setLoadingProduct(false);
     }
-  }, [product, user, navigate, toastError]);
+  }, [product, user, navigate, toastError, id]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -144,6 +182,11 @@ export default function EditListingPage() {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleImageChange = (
@@ -161,6 +204,11 @@ export default function EditListingPage() {
       newImages[index] = { ...newImages[index], [field]: value };
       return newImages;
     });
+
+    // Clear image errors when user starts typing
+    if (errors.images) {
+      setErrors((prev) => ({ ...prev, images: undefined }));
+    }
   };
 
   const addImageField = () => {
@@ -188,81 +236,107 @@ export default function EditListingPage() {
     return result;
   };
 
-  const validateForm = (): string | null => {
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    // Title validation
     if (!formData.title.trim()) {
-      return "Product title is required";
+      newErrors.title = "Product title is required";
+    } else if (
+      formData.title.trim().length < 3 ||
+      formData.title.trim().length > 200
+    ) {
+      newErrors.title = "Product title must be between 3 and 200 characters";
     }
-    if (formData.title.trim().length < 3 || formData.title.trim().length > 200) {
-      return "Product title must be between 3 and 200 characters";
-    }
+
+    // Category validation
     if (!formData.categoryId) {
-      return "Category is required";
+      newErrors.categoryId = "Category is required";
     }
+
+    // Start price validation
     if (!formData.startPrice || parseFloat(formData.startPrice) <= 0) {
-      return "Start price must be greater than 0";
+      newErrors.startPrice = "Start price must be greater than 0";
     }
+
+    // Bid increment validation
     if (!formData.bidIncrement || parseFloat(formData.bidIncrement) <= 0) {
-      return "Bid increment must be greater than 0";
-    }
-    if (!formData.startTime || !formData.endTime) {
-      return "Start time and end time are required";
+      newErrors.bidIncrement = "Bid increment must be greater than 0";
     }
 
-    const startTime = new Date(formData.startTime);
-    const endTime = new Date(formData.endTime);
-
-    if (endTime <= startTime) {
-      return "End time must be after start time";
+    // Start time validation
+    if (!formData.startTime) {
+      newErrors.startTime = "Start time is required";
     }
 
-    const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-    if (durationHours < 1) {
-      return "Auction duration must be at least 1 hour";
+    // End time validation
+    if (!formData.endTime) {
+      newErrors.endTime = "End time is required";
+    } else if (formData.startTime) {
+      const startTime = new Date(formData.startTime);
+      const endTime = new Date(formData.endTime);
+
+      if (endTime <= startTime) {
+        newErrors.endTime = "End time must be after start time";
+      } else {
+        const durationHours =
+          (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+        if (durationHours < 1) {
+          newErrors.endTime = "Auction duration must be at least 1 hour";
+        }
+      }
     }
 
+    // Buy now price validation
     if (formData.buyNowPrice) {
       const buyNowPrice = parseFloat(formData.buyNowPrice);
       const startPrice = parseFloat(formData.startPrice);
       if (buyNowPrice <= 0) {
-        return "Buy now price must be greater than 0";
-      }
-      if (buyNowPrice <= startPrice) {
-        return "Buy now price must be greater than start price";
+        newErrors.buyNowPrice = "Buy now price must be greater than 0";
+      } else if (startPrice && buyNowPrice <= startPrice) {
+        newErrors.buyNowPrice = "Buy now price must be greater than start price";
       }
     }
 
-    const plainTextDescription = formData.description
-      .replace(/<[^>]*>/g, "")
-      .trim();
-    if (!plainTextDescription || plainTextDescription.length < 10) {
-      return "Description must be at least 10 characters";
-    }
-    if (plainTextDescription.length > 10000) {
-      return "Description must not exceed 10000 characters";
+    // Description validation - description is read-only, so we skip validation
+    // Additional Information validation (optional but if provided must be valid)
+    if (formData.additionalInformation) {
+      const plainTextAdditionalInfo = formData.additionalInformation
+        .replace(/<[^>]*>/g, "")
+        .trim();
+      if (plainTextAdditionalInfo.length < 10) {
+        newErrors.additionalInformation = "Additional information must be at least 10 characters if provided";
+      } else if (plainTextAdditionalInfo.length > 10000) {
+        newErrors.additionalInformation = "Additional information must not exceed 10000 characters";
+      }
     }
 
+    // Image validation
     const validImages = images.filter((img) => img.url.trim());
     if (validImages.length < 3) {
-      return "At least 3 images are required";
-    }
-    if (validImages.length > 10) {
-      return "Maximum 10 images allowed";
-    }
+      newErrors.images = "At least 3 images are required";
+    } else if (validImages.length > 10) {
+      newErrors.images = "Maximum 10 images allowed";
+    } else {
+      const urlPattern = /^https?:\/\/.+/i;
+      for (let i = 0; i < validImages.length; i++) {
+        const img = validImages[i];
+        if (!urlPattern.test(img.url.trim())) {
+          newErrors.images = `Image ${i + 1} URL must be a valid HTTP/HTTPS URL`;
+          break;
+        }
+      }
 
-    const urlPattern = /^https?:\/\/.+/i;
-    for (let i = 0; i < validImages.length; i++) {
-      const img = validImages[i];
-      if (!urlPattern.test(img.url.trim())) {
-        return `Image ${i + 1} URL must be a valid HTTP/HTTPS URL`;
+      if (!newErrors.images) {
+        const hasThumbnail = validImages.some((img) => img.isThumbnail);
+        if (!hasThumbnail) {
+          newErrors.images = "At least one image must be marked as thumbnail";
+        }
       }
     }
 
-    const hasThumbnail = validImages.some((img) => img.isThumbnail);
-    if (!hasThumbnail) {
-      return "At least one image must be marked as thumbnail";
-    }
-
-    return null;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,9 +347,18 @@ export default function EditListingPage() {
       return;
     }
 
-    const validationError = validateForm();
-    if (validationError) {
-      toastError(validationError);
+    if (!validateForm()) {
+      // Scroll to first error after state update
+      setTimeout(() => {
+        const firstErrorField = Object.keys(errors)[0];
+        if (firstErrorField) {
+          const element = document.querySelector(`[name="${firstErrorField}"]`) ||
+                         document.querySelector(`#${firstErrorField}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+      }, 100);
       return;
     }
 
@@ -304,7 +387,8 @@ export default function EditListingPage() {
             sellerId: user?.id || 0,
             categoryId: formData.categoryId,
             subcategoryId: null,
-            description: formData.description,
+            description: formData.description, // Original description (required by backend, but won't be updated)
+            additionalInformation: formData.additionalInformation || undefined, // Optional additional info
             images: imageDtos,
           } as any,
         })
@@ -344,7 +428,7 @@ export default function EditListingPage() {
     }
   };
 
-  if (loadingProduct) {
+  if (loadingProduct || productLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
@@ -355,13 +439,16 @@ export default function EditListingPage() {
     );
   }
 
-  if (!product) {
+  if (productError || !product || (id && product.id !== parseInt(id))) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Product not found</p>
+        <ToastContainer toasts={toasts} onClose={removeToast} />
+        <p className="text-gray-600 mb-4">
+          {productError || "Product not found"}
+        </p>
         <button
           onClick={() => navigate("/seller/listings")}
-          className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
         >
           Back to Listings
         </button>
@@ -406,11 +493,13 @@ export default function EditListingPage() {
               value={formData.title}
               onChange={handleInputChange}
               disabled={hasBids}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
-              minLength={3}
-              maxLength={200}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                errors.title ? "border-red-500 bg-red-50" : "border-gray-300"
+              }`}
             />
+            {errors.title && (
+              <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+            )}
           </div>
 
           <div>
@@ -426,8 +515,9 @@ export default function EditListingPage() {
               value={formData.categoryId || ""}
               onChange={handleInputChange}
               disabled={hasBids}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-              required
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                errors.categoryId ? "border-red-500 bg-red-50" : "border-gray-300"
+              }`}
             >
               <option value="">Select a category</option>
               {flattenCategories(categories).map((cat) => (
@@ -436,6 +526,9 @@ export default function EditListingPage() {
                 </option>
               ))}
             </select>
+            {errors.categoryId && (
+              <p className="mt-1 text-sm text-red-600">{errors.categoryId}</p>
+            )}
           </div>
 
           <div>
@@ -443,21 +536,64 @@ export default function EditListingPage() {
               htmlFor="description"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Description <span className="text-red-500">*</span>
+              Description <span className="text-gray-500 text-xs">(Read-only - Original description)</span>
             </label>
-            <div className="mt-1">
+            <div className="mt-1 border border-gray-300 rounded-lg p-4 bg-gray-50 min-h-[200px]">
+              {formData.description ? (
+                (() => {
+                  const hasHtml = /<[a-z][\s\S]*>/i.test(formData.description);
+                  if (hasHtml) {
+                    return (
+                      <div
+                        className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(formData.description),
+                        }}
+                      />
+                    );
+                  } else {
+                    return (
+                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {formData.description}
+                      </p>
+                    );
+                  }
+                })()
+              ) : (
+                <p className="text-gray-400 italic">No description available</p>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Original description cannot be edited. Use "Additional Information" below to add updates.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="additionalInformation"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Additional Information <span className="text-gray-500 text-xs">(Optional)</span>
+            </label>
+            <div className={`mt-1 ${errors.additionalInformation ? "border-2 border-red-500 rounded-lg p-2" : ""}`}>
               <RichTextEditor
-                value={formData.description}
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, description: value }))
-                }
-                placeholder="Provide a detailed description of your product..."
+                value={formData.additionalInformation}
+                onChange={(value) => {
+                  setFormData((prev) => ({ ...prev, additionalInformation: value }));
+                  if (errors.additionalInformation) {
+                    setErrors((prev) => ({ ...prev, additionalInformation: undefined }));
+                  }
+                }}
+                placeholder="Add additional information or updates to the product description..."
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              {formData.description.replace(/<[^>]*>/g, "").length}/10000
-              characters
+              {formData.additionalInformation.replace(/<[^>]*>/g, "").length}/10000
+              characters (if provided)
             </p>
+            {errors.additionalInformation && (
+              <p className="mt-1 text-sm text-red-600">{errors.additionalInformation}</p>
+            )}
           </div>
         </div>
 
@@ -484,9 +620,13 @@ export default function EditListingPage() {
                 disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.startPrice ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.startPrice && (
+                <p className="mt-1 text-sm text-red-600">{errors.startPrice}</p>
+              )}
             </div>
 
             <div>
@@ -505,9 +645,13 @@ export default function EditListingPage() {
                 disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.bidIncrement ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.bidIncrement && (
+                <p className="mt-1 text-sm text-red-600">{errors.bidIncrement}</p>
+              )}
             </div>
 
             <div>
@@ -527,8 +671,13 @@ export default function EditListingPage() {
                 disabled={hasBids}
                 step="0.01"
                 min="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.buyNowPrice ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.buyNowPrice && (
+                <p className="mt-1 text-sm text-red-600">{errors.buyNowPrice}</p>
+              )}
             </div>
           </div>
         </div>
@@ -554,9 +703,13 @@ export default function EditListingPage() {
                 value={formData.startTime}
                 onChange={handleInputChange}
                 disabled={hasBids}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.startTime ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.startTime && (
+                <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>
+              )}
             </div>
 
             <div>
@@ -573,9 +726,13 @@ export default function EditListingPage() {
                 value={formData.endTime}
                 onChange={handleInputChange}
                 disabled={hasBids}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                required
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  errors.endTime ? "border-red-500 bg-red-50" : "border-gray-300"
+                }`}
               />
+              {errors.endTime && (
+                <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>
+              )}
             </div>
           </div>
 
@@ -621,6 +778,9 @@ export default function EditListingPage() {
             At least 3 images required. Mark one as thumbnail. Maximum 10
             images.
           </p>
+          {errors.images && (
+            <p className="mt-1 text-sm text-red-600">{errors.images}</p>
+          )}
 
           {images.map((image, index) => (
             <div key={index} className="flex gap-4 items-start">

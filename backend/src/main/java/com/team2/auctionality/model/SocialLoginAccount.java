@@ -3,11 +3,13 @@ package com.team2.auctionality.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "social_login_account")
 @Data
+@EqualsAndHashCode(exclude = {"user"})
 @AllArgsConstructor
 @NoArgsConstructor
 public class SocialLoginAccount {

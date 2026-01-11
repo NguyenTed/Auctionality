@@ -7,6 +7,7 @@ import HomePage from "../pages/common/HomePage";
 import ProductListPage from "../pages/products/ProductListPage";
 import ProductDetailPage from "../pages/products/ProductDetailPage";
 import ProfilePage from "../pages/user/ProfilePage";
+import UserProfilePage from "../pages/user/UserProfilePage";
 import OrderManagementPage from "../pages/orders/OrderManagementPage";
 import OrderCompletionPage from "../pages/orders/OrderCompletionPage";
 import PaymentPage from "../pages/payment/PaymentPage";
@@ -86,6 +87,7 @@ function AppRouterContent() {
             </ProtectedRoute>
           }
         />
+        <Route path="/users/:userId/profile" element={<UserProfilePage />} />
         <Route
           path="/orders"
           element={

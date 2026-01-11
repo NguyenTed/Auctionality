@@ -9,6 +9,8 @@ import com.team2.auctionality.repository.WatchListItemRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,5 +60,16 @@ public class WatchListItemService {
         return watchListItems.stream()
                 .map(watchListItemMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<WatchListItemDto> getWatchListWithFilters(User user, String keyword, Integer categoryId, Pageable pageable) {
+        Page<WatchListItem> watchListItems = watchListItemRepository.findByUserWithFilters(
+                user.getId(),
+                keyword,
+                categoryId,
+                pageable
+        );
+        return watchListItems.map(watchListItemMapper::toDto);
     }
 }

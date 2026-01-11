@@ -60,11 +60,12 @@ export const getRelativeTime = (date: Date | string): string => {
 
 /**
  * Check if a product was created recently (within N minutes)
+ * Default is 2 minutes for "New" badge display
  */
-export const isNewProduct = (createdAt: Date | string, minutes: number = 60): boolean => {
+export const isNewProduct = (createdAt: Date | string, minutes: number = 2): boolean => {
   const createdDate = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
   const now = new Date();
   const diffMs = now.getTime() - createdDate.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  return diffMinutes <= minutes;
+  return diffMinutes <= minutes && diffMs >= 0; // Ensure product is not from the future
 };

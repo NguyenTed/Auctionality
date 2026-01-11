@@ -28,6 +28,7 @@ import {
   fetchBidHistoryAsync,
   selectBidHistory,
   selectBidLoading,
+  updateBidHistoryFromSSE,
 } from "../../features/bid/bidSlice";
 import { buyNowAsync, selectBuyingNow } from "../../features/order/orderSlice";
 import { orderService, type OrderDto } from "../../features/order/orderService";
@@ -47,10 +48,20 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import CountdownClock from "../../components/CountdownClock";
 import ProductCard from "../../components/ProductCard";
 import QASection from "../../components/QASection";
-import ExtraDescriptionSection from "../../components/ExtraDescriptionSection";
 import { useToast } from "../../hooks/useToast";
 import ToastContainer from "../../components/Toast";
 import DOMPurify from "dompurify";
+import { isNewProduct } from "../../utils/dateUtils";
+import BidConfirmDialog from "../../components/BidConfirmDialog";
+
+// Slideshow Timer Component
+function SlideshowTimer({ interval, onNext }: { interval: number; onNext: () => void }) {
+  useEffect(() => {
+    const timer = setInterval(onNext, interval);
+    return () => clearInterval(timer);
+  }, [interval, onNext]);
+  return null;
+}
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -79,6 +90,9 @@ export default function ProductDetailPage() {
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [autoBidConfig, setAutoBidConfig] = useState<AutoBidConfig | null>(null);
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
+  const [showBidConfirmDialog, setShowBidConfirmDialog] = useState(false);
+  const [bidError, setBidError] = useState<string | null>(null);
 
   // Use ref to track if we've already initiated watchlist fetch (prevents infinite loops)
   const hasFetchedWatchlist = useRef(false);
@@ -175,31 +189,36 @@ export default function ProductDetailPage() {
 
     return () => {
       if (eventSource) {
+        console.log("Closing event source for product price updates");
         eventSource.close();
       }
     };
   }, [product, isAuthenticated, dispatch, success]);
 
-  // SSE subscription for bid history updates
+  // SSE subscription for bid history updates (works for both authenticated and unauthenticated users)
   useEffect(() => {
-    if (!product || !isAuthenticated || product.status !== "ACTIVE") {
+    if (!product || product.status !== "ACTIVE") {
       return;
     }
 
     const eventSource = subscribeToBidHistory(product.id, (histories) => {
+      console.log("Received bid history updates:", histories);
       // Update bid history in Redux
-      dispatch({
-        type: 'bid/fetchBidHistoryAsync/fulfilled',
-        payload: { productId: product.id, history: histories },
-      });
+      dispatch(
+        updateBidHistoryFromSSE({
+          productId: product.id,
+          history: histories,
+        })
+      );
     });
 
     return () => {
       if (eventSource) {
+        console.log("Closing event source for bid history updates");
         eventSource.close();
       }
     };
-  }, [product, isAuthenticated, dispatch]);
+  }, [product, dispatch]);
 
   // WebSocket subscription for auction end notifications
   useEffect(() => {
@@ -250,13 +269,16 @@ export default function ProductDetailPage() {
     }).format(price);
   };
 
-  const handlePlaceBid = async () => {
+  const handleBidButtonClick = () => {
     if (!isAuthenticated) {
       error("Please log in to place a bid");
       navigate("/login");
       return;
     }
-    if (!product || !bidAmount) return;
+    if (!product || !bidAmount) {
+      error("Please enter a bid amount");
+      return;
+    }
 
     const amount = Number(bidAmount);
     const minBid =
@@ -268,7 +290,18 @@ export default function ProductDetailPage() {
       return;
     }
 
+    // Show confirmation dialog
+    setBidError(null);
+    setShowBidConfirmDialog(true);
+  };
+
+  const handleConfirmBid = async () => {
+    if (!product || !bidAmount) return;
+
+    const amount = Number(bidAmount);
     setIsPlacingBid(true);
+    setBidError(null);
+
     try {
       const result = await dispatch(
         placeBidAsync({ productId: product.id, amount })
@@ -296,31 +329,44 @@ export default function ProductDetailPage() {
         dispatch(fetchBidHistoryAsync(product.id));
 
         setBidAmount("");
+        setShowBidConfirmDialog(false);
         success(`Bid of ${formatPrice(amount)} placed successfully! Your auto-bid configuration has been set.`);
       } else {
-        const errorPayload = result.payload as any;
+        const errorPayload = result.payload as { type?: string; message?: string };
         
         if (errorPayload?.type === 'BID_PENDING_APPROVAL') {
           // Show specific message based on error text
           const message = errorPayload.message || 'Your bid requires approval';
           if (message.includes('already been sent')) {
-            error('Your bid approval request has already been sent. Please wait for seller approval.');
+            const errorMsg = 'Your bid approval request has already been sent. Please wait for seller approval.';
+            setBidError(errorMsg);
+            error(errorMsg);
           } else {
-            error('Your bid requires approval before being placed. A request has been sent to the seller.');
+            const errorMsg = 'Your bid requires approval before being placed. A request has been sent to the seller.';
+            setBidError(errorMsg);
+            error(errorMsg);
           }
         } else {
           const errorMessage = typeof errorPayload === 'string' 
             ? errorPayload 
             : errorPayload?.message || "Failed to place bid";
+          setBidError(errorMessage);
           error(errorMessage);
         }
       }
     } catch (err) {
-      error("An unexpected error occurred. Please try again.");
+      const errorMsg = "An unexpected error occurred. Please try again.";
+      setBidError(errorMsg);
+      error(errorMsg);
       console.error("Failed to place bid:", err);
     } finally {
       setIsPlacingBid(false);
     }
+  };
+
+  const handleCancelBid = () => {
+    setShowBidConfirmDialog(false);
+    setBidError(null);
   };
 
   const handleToggleWatchlist = async (e?: React.MouseEvent) => {
@@ -389,9 +435,6 @@ export default function ProductDetailPage() {
   }
 
   const images = product.images || [];
-  const mainImage =
-    images[selectedImageIndex]?.url ||
-    "https://via.placeholder.com/600x600?text=No+Image";
   const nextBidAmount =
     (product.currentPrice || product.startPrice || 0) +
     (product.bidIncrement || 0);
@@ -400,6 +443,20 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      
+      {/* Bid Confirmation Dialog */}
+      {product && (
+        <BidConfirmDialog
+          open={showBidConfirmDialog}
+          bidAmount={Number(bidAmount) || 0}
+          minBid={nextBidAmount}
+          productTitle={product.title}
+          errorMessage={bidError}
+          loading={isPlacingBid}
+          onConfirm={handleConfirmBid}
+          onCancel={handleCancelBid}
+        />
+      )}
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Breadcrumb Navigation */}
@@ -433,19 +490,85 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Images */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {/* Main Image */}
-              <div className="relative bg-gray-50 aspect-square flex items-center justify-center">
-                <img
-                  src={mainImage}
-                  alt={product.title}
-                  className="w-full h-full object-contain p-4"
-                />
+            <div className="relative bg-white rounded-xl shadow-sm overflow-hidden">
+              {/* New Badge */}
+              {product.createdAt && isNewProduct(product.createdAt, 2) && (
+                <div className="absolute top-4 left-4 z-20 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                  🆕 NEW
+                </div>
+              )}
+              
+              {/* Main Image Slideshow */}
+              <div className="relative bg-gray-50 aspect-square flex items-center justify-center overflow-hidden group">
+                {/* Slideshow Container */}
+                <div className="relative w-full h-full">
+                  {images.map((img, index) => (
+                    <img
+                      key={img.id}
+                      src={img.url}
+                      alt={`${product.title} ${index + 1}`}
+                      className={`absolute inset-0 w-full h-full object-contain p-4 transition-opacity duration-700 ${
+                        index === selectedImageIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+                      }`}
+                    />
+                  ))}
+                  
+                  {/* Navigation Arrows */}
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length);
+                          setIsSlideshowPlaying(false);
+                        }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                        aria-label="Previous image"
+                      >
+                        <ArrowBackIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedImageIndex((prev) => (prev + 1) % images.length);
+                          setIsSlideshowPlaying(false);
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 rotate-180"
+                        aria-label="Next image"
+                      >
+                        <ArrowBackIcon />
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Slideshow Controls */}
+                  {images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsSlideshowPlaying(!isSlideshowPlaying);
+                        }}
+                        className="px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={isSlideshowPlaying ? "Pause slideshow" : "Play slideshow"}
+                      >
+                        {isSlideshowPlaying ? "Pause" : "Play"}
+                      </button>
+                      <div className="px-3 py-1 bg-black/50 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                        {selectedImageIndex + 1} / {images.length}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
                 {/* Watchlist Button - Floating */}
                 <button
                   type="button"
                   onClick={handleToggleWatchlist}
-                  className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 z-10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 z-30 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label={
                     isInWatchlist ? "Remove from watchlist" : "Add to watchlist"
                   }
@@ -460,6 +583,16 @@ export default function ProductDetailPage() {
                   )}
                 </button>
               </div>
+              
+              {/* Auto-advance slideshow */}
+              {images.length > 1 && isSlideshowPlaying && (
+                <SlideshowTimer
+                  interval={3000}
+                  onNext={() => {
+                    setSelectedImageIndex((prev) => (prev + 1) % images.length);
+                  }}
+                />
+              )}
 
               {/* Thumbnail Gallery */}
               {images.length > 1 && (
@@ -487,7 +620,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Description Section */}
+            {/* Description Section - Shows original description + all versions */}
             <div className="mt-6 bg-white rounded-xl shadow-sm p-8">
               <div className="flex items-center gap-2 mb-6">
                 <InfoIcon className="text-primary" />
@@ -495,18 +628,98 @@ export default function ProductDetailPage() {
                   Description
                 </h2>
               </div>
-              <div className="prose max-w-none">
-                {product.description ? (
-                  <div
-                    className="text-gray-700 leading-relaxed text-lg"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(product.description),
-                    }}
-                  />
-                ) : (
-                  <p className="text-gray-500 italic">
-                    No description available for this product.
-                  </p>
+              <div className="space-y-6">
+                {/* Original Description */}
+                <div className="border-l-4 border-primary pl-4 py-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 font-medium">
+                      Original Description
+                    </span>
+                    {product.createdAt && (
+                      <span className="text-xs text-gray-400">
+                        {new Date(product.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  <div className="product-description-content">
+                    {product.description ? (
+                      (() => {
+                        const hasHtml = /<[a-z][\s\S]*>/i.test(product.description);
+                        if (hasHtml) {
+                          return (
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(product.description),
+                              }}
+                            />
+                          );
+                        } else {
+                          return (
+                            <p className="whitespace-pre-wrap">
+                              {product.description}
+                            </p>
+                          );
+                        }
+                      })()
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        No description available for this product.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Information Versions */}
+                {product.extraDescriptions && product.extraDescriptions.length > 0 && (
+                  <div className="space-y-4">
+                    {[...product.extraDescriptions]
+                      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                      .map((extraDesc, index) => (
+                        <div
+                          key={extraDesc.id}
+                          className="border-l-4 border-blue-400 pl-4 py-2 bg-gray-50 rounded-r-lg"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-gray-500 font-medium">
+                              Update #{index + 1} • Additional Information
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(extraDesc.createdAt).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          <div className="product-description-content">
+                            {(() => {
+                              const hasHtml = /<[a-z][\s\S]*>/i.test(extraDesc.content);
+                              if (hasHtml) {
+                                return (
+                                  <div
+                                    dangerouslySetInnerHTML={{
+                                      __html: DOMPurify.sanitize(extraDesc.content),
+                                    }}
+                                  />
+                                );
+                              } else {
+                                return (
+                                  <p className="whitespace-pre-wrap">
+                                    {extraDesc.content}
+                                  </p>
+                                );
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 )}
               </div>
             </div>
@@ -520,7 +733,10 @@ export default function ProductDetailPage() {
                     Seller Information
                   </h2>
                 </div>
-                <div className="flex items-center gap-4">
+                <Link
+                  to={`/users/${product.sellerId}/profile`}
+                  className="flex items-center gap-4 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors cursor-pointer"
+                >
                   {product.sellerInfo.avatarUrl ? (
                     <img
                       src={product.sellerInfo.avatarUrl}
@@ -546,7 +762,7 @@ export default function ProductDetailPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                </Link>
               </div>
             )}
 
@@ -559,11 +775,14 @@ export default function ProductDetailPage() {
                     Current Highest Bidder
                   </h2>
                 </div>
-                <div className="flex items-center gap-4">
+                <Link
+                  to={`/users/${product.highestBidderInfo.id}/profile?masked=true`}
+                  className="flex items-center gap-4 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors cursor-pointer"
+                >
                   {product.highestBidderInfo.avatarUrl ? (
                     <img
                       src={product.highestBidderInfo.avatarUrl}
-                      alt={product.highestBidderInfo.fullName || "Bidder"}
+                      alt={product.highestBidderInfo.maskedName || "Bidder"}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
@@ -571,21 +790,34 @@ export default function ProductDetailPage() {
                       <PersonIcon className="text-gray-400 text-2xl" />
                     </div>
                   )}
+                 <div className="flex items-center justify-between flex-1">
+                  {/* Left: bidder info */}
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">
-                      {product.highestBidderInfo.fullName || "Unknown Bidder"}
+                      {product.highestBidderInfo.maskedName || "Unknown Bidder"}
                     </p>
+
                     {product.highestBidderInfo.ratingPercent !== null && (
                       <div className="flex items-center gap-1 mt-1">
                         <StarIcon className="text-yellow-400 text-sm" />
                         <span className="text-sm font-medium text-gray-700">
-                          {product.highestBidderInfo.ratingPercent.toFixed(1)}%
-                          positive
+                          {product.highestBidderInfo.ratingPercent.toFixed(1)}% positive
                         </span>
                       </div>
                     )}
                   </div>
+
+                  {/* Right: bid amount */}
+                  <div className="text-right ml-4">
+                    <p className="text-lg font-bold text-green-600">
+                      ${product.highestBidderInfo.bidAmount.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Highest bid
+                    </p>
+                  </div>
                 </div>
+                </Link>
               </div>
             )}
 
@@ -610,12 +842,6 @@ export default function ProductDetailPage() {
             )}
 
             {/* Q&A Section */}
-            {/* Extra Description Section */}
-            <ExtraDescriptionSection
-              productId={product.id}
-              isSeller={user?.id === product.sellerId}
-            />
-
             <QASection productId={product.id} sellerId={product.sellerId} />
           </div>
 
@@ -701,13 +927,14 @@ export default function ProductDetailPage() {
                             />
                           </div>
                           <button
-                            onClick={handlePlaceBid}
+                            onClick={handleBidButtonClick}
                             className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md cursor-pointer"
                             disabled={
                               !bidAmount ||
                               Number(bidAmount) < nextBidAmount ||
                               isPlacingBid ||
-                              bidLoading
+                              bidLoading ||
+                              product?.status === "ENDED"
                             }
                           >
                             {isPlacingBid || bidLoading ? "Placing..." : "Bid"}
@@ -819,8 +1046,7 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Auto-Bid Configuration (only visible to user who created it) */}
-              {/*{autoBidConfig && isAuthenticated && user && autoBidConfig.bidderId === user.id && (*/}
-              {autoBidConfig && (
+              {autoBidConfig && isAuthenticated && user && autoBidConfig.bidderId === user.id && (
                 <div className="bg-blue-50 rounded-xl shadow-sm p-6 border border-blue-200">
                   <div className="flex items-center gap-2 mb-2">
                     <GavelIcon className="text-blue-600" fontSize="small" />

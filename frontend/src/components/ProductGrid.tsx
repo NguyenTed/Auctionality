@@ -17,6 +17,7 @@ interface ProductGridProps {
   isLoading?: boolean;
   onToggleWatchlist?: (productId: number) => void;
   watchlistIds?: number[];
+  highestBidderIds?: number[]; // Array of product IDs where current user is highest bidder
 }
 
 export default function ProductGrid({
@@ -24,6 +25,7 @@ export default function ProductGrid({
   isLoading = false,
   onToggleWatchlist,
   watchlistIds,
+  highestBidderIds
 }: ProductGridProps) {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -79,6 +81,7 @@ export default function ProductGrid({
           product={product}
           isInWatchlist={onToggleWatchlist ? getIsInWatchlist(product.id) : false}
           onToggleWatchlist={onToggleWatchlist || (isAuthenticated ? handleToggleWatchlist : undefined)}
+          isHighestBidder={highestBidderIds?.includes(product.id) || false}
         />
       ))}
     </div>

@@ -181,7 +181,6 @@ function SignUpPageContent() {
                   name="fullName"
                   type="text"
                   autoComplete="name"
-                  required
                   value={formData.fullName}
                   onChange={handleChange}
                   className={`pl-10 appearance-none relative block w-full px-3 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${
@@ -209,7 +208,6 @@ function SignUpPageContent() {
                   name="email"
                   type="email"
                   autoComplete="email"
-                  required
                   value={formData.email}
                   onChange={handleChange}
                   className={`pl-10 appearance-none relative block w-full px-3 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${
@@ -237,7 +235,6 @@ function SignUpPageContent() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  required
                   value={formData.password}
                   onChange={handleChange}
                   className={`pl-10 pr-10 appearance-none relative block w-full px-3 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${
@@ -276,7 +273,6 @@ function SignUpPageContent() {
                   name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  required
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className={`pl-10 pr-10 appearance-none relative block w-full px-3 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${

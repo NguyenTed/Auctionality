@@ -37,9 +37,44 @@ export default function EditProfileForm({
     phoneNumber: initialUser.phoneNumber || "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    fullName?: string;
+    phoneNumber?: string;
+  }>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Email must be valid";
+    }
+
+    if (!formData.fullName) {
+      newErrors.fullName = "Full name is required";
+    } else if (formData.fullName.length < 2) {
+      newErrors.fullName = "Full name must be at least 2 characters";
+    } else if (formData.fullName.length > 100) {
+      newErrors.fullName = "Full name must be less than 100 characters";
+    }
+
+    if (formData.phoneNumber && formData.phoneNumber.length > 20) {
+      newErrors.phoneNumber = "Phone number must be less than 20 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -65,10 +100,19 @@ export default function EditProfileForm({
         <input
           type="email"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          required
+          onChange={(e) => {
+            setFormData({ ...formData, email: e.target.value });
+            if (errors.email) {
+              setErrors((prev) => ({ ...prev, email: undefined }));
+            }
+          }}
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+            errors.email ? "border-red-500 bg-red-50" : "border-gray-300"
+          }`}
         />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+        )}
       </div>
 
       <div>
@@ -78,14 +122,19 @@ export default function EditProfileForm({
         <input
           type="text"
           value={formData.fullName}
-          onChange={(e) =>
-            setFormData({ ...formData, fullName: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          required
-          minLength={2}
-          maxLength={100}
+          onChange={(e) => {
+            setFormData({ ...formData, fullName: e.target.value });
+            if (errors.fullName) {
+              setErrors((prev) => ({ ...prev, fullName: undefined }));
+            }
+          }}
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+            errors.fullName ? "border-red-500 bg-red-50" : "border-gray-300"
+          }`}
         />
+        {errors.fullName && (
+          <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+        )}
       </div>
 
       <div>
@@ -95,12 +144,20 @@ export default function EditProfileForm({
         <input
           type="tel"
           value={formData.phoneNumber}
-          onChange={(e) =>
-            setFormData({ ...formData, phoneNumber: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          onChange={(e) => {
+            setFormData({ ...formData, phoneNumber: e.target.value });
+            if (errors.phoneNumber) {
+              setErrors((prev) => ({ ...prev, phoneNumber: undefined }));
+            }
+          }}
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
+            errors.phoneNumber ? "border-red-500 bg-red-50" : "border-gray-300"
+          }`}
           maxLength={20}
         />
+        {errors.phoneNumber && (
+          <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
+        )}
       </div>
 
       <div className="flex gap-2 pt-2">

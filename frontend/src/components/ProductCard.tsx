@@ -13,12 +13,14 @@ interface ProductCardProps {
   product: Product;
   isInWatchlist?: boolean;
   onToggleWatchlist?: (productId: number) => void;
+  isHighestBidder?: boolean;
 }
 
 export default function ProductCard({
   product,
   isInWatchlist = false,
   onToggleWatchlist,
+  isHighestBidder = false,
 }: ProductCardProps) {
   const formatPrice = (price: number | null | undefined) => {
     if (!price) return "€0";
@@ -30,19 +32,38 @@ export default function ProductCard({
     }).format(price);
   };
 
+  const isProductEnded = (endTime: string | null | undefined): boolean => {
+    if (!endTime) return true; // If no end time, consider it ended
+    const endDate = new Date(endTime);
+    const now = new Date();
+    return endDate.getTime() <= now.getTime();
+  };
+
   const thumbnailImage =
     product.images?.find((img) => img.isThumbnail)?.url ||
     product.images?.[0]?.url ||
     "https://via.placeholder.com/300x300?text=No+Image";
 
+  const hasEnded = isProductEnded(product.endTime);
+
   return (
-    <div className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
-      {/* New Badge */}
-      {product.createdAt && isNewProduct(product.createdAt) && (
-        <div className="absolute top-2 left-2 z-10 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
-          NEW
-        </div>
-      )}
+    <div className={`group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 h-full flex flex-col ${hasEnded ? "opacity-75" : ""}`}>
+      {/* Badges */}
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
+        {/* New Badge */}
+        {product.createdAt && isNewProduct(product.createdAt, 2) && (
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+            🆕 NEW
+          </div>
+        )}
+        {/* Highest Bidder Badge */}
+        {isHighestBidder && (
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
+            <span>👑</span>
+            <span>Highest Bidder</span>
+          </div>
+        )}
+      </div>
       <Link to={`/products/${product.id}`} className="flex-1 flex flex-col">
         {/* Image */}
         <div className="relative aspect-square bg-gray-100 overflow-hidden">
@@ -102,10 +123,12 @@ export default function ProductCard({
               )}
             </div>
             <div className="text-right">
-              <p className="text-sm font-semibold text-orange-600">
-                {product.endTime ? getRelativeTime(product.endTime) : "Ended"}
+              <p className={`text-sm font-semibold ${hasEnded ? "text-red-600" : "text-orange-600"}`}>
+                {hasEnded ? "Ended" : (product.endTime ? getRelativeTime(product.endTime) : "Ended")}
               </p>
-              <p className="text-xs text-gray-500">remaining</p>
+              <p className="text-xs text-gray-500">
+                {hasEnded ? "auction closed" : "remaining"}
+              </p>
             </div>
           </div>
         </div>
